@@ -1,73 +1,98 @@
 import { supabase } from "@/lib/supabase";
-import { refDepuisSlug } from "@/lib/url";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import type { Bien } from "@/lib/types";
+import Link from "next/link";
+import Navbar from "@/components/home/Navbar";
+import Footer from "@/components/home/Footer";
+import GaleriePhotos from "@/components/detail/GaleriePhotos";
+import InfosBien from "@/components/detail/InfosBien";
+import CarteContact from "@/components/detail/CarteContact";
+import CarteLocalisation from "@/components/detail/CarteLocalisation";
+import BiensSimiliaires from "@/components/detail/BiensSimiliaires";
 
 export const dynamic = "force-dynamic";
 
-const VERT = "#0F4C3A";
-const EMERAUDE = "#146C43";
-const OR = "#D4AF37";
+type Props = { params: Promise<{ slug: string }> };
 
-export default async function FicheBien({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const reference = refDepuisSlug(slug);
+  const { data } = await supabase.from("biens").select("titre").eq("slug", slug).single();
+  return {
+    title: data?.titre ? `${data.titre} | HOOMY.MA` : "Bien non trouvé | HOOMY.MA",
+  };
+}
 
-  const { data: bien } = await supabase.from("biens").select("*").eq("reference", reference).single();
-  if (!bien) notFound();
+export default async function PageDetailAchat({ params }: Props) {
+  const { slug } = await params;
+
+  const { data } = await supabase.from("biens").select("*").eq("slug", slug).single();
+  if (!data) notFound();
+
+  const bien = data as Bien;
 
   return (
     <main style={{ background: "#FAF7F0", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px" }}>
-        <Link href="/" style={{ color: EMERAUDE, fontSize: 14, textDecoration: "none" }}>← Retour aux biens</Link>
+      <Navbar />
 
-        <div style={{ height: 380, borderRadius: 16, overflow: "hidden", margin: "16px 0", background: "#EDE7D7", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {bien.photos?.[0] ? (
-            <img src={bien.photos[0]} alt={bien.titre} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <span style={{ color: "#B4AD97" }}>Pas de photo</span>
-          )}
+      <div className="max-w-6xl mx-auto px-6 pt-6 pb-16">
+
+        {/* Fil d'Ariane */}
+        <nav aria-label="Fil d'Ariane" className="flex items-center flex-wrap gap-1.5 text-sm mb-6" style={{ color: "#9DB8AD" }}>
+          <Link href="/" style={{ color: "#146C43", textDecoration: "none" }} className="hover:underline">Accueil</Link>
+          <span aria-hidden="true">›</span>
+          <Link href="/acheter" style={{ color: "#146C43", textDecoration: "none" }} className="hover:underline">Acheter</Link>
+          <span aria-hidden="true">›</span>
+          <Link href={`/acheter?ville=${encodeURIComponent(bien.ville)}`} style={{ color: "#146C43", textDecoration: "none" }} className="hover:underline">
+            {bien.ville}
+          </Link>
+          <span aria-hidden="true">›</span>
+          <span className="truncate max-w-xs" style={{ color: "#3D4A42" }}>{bien.titre}</span>
+        </nav>
+
+        {/* Galerie photos */}
+        <GaleriePhotos
+          photos={bien.photos ?? []}
+          titre={bien.titre}
+          transaction={bien.transaction}
+          verifie={bien.verifie}
+        />
+
+        {/* Corps principal : 65 % + 35 % */}
+        <div className="flex gap-8 mt-8 items-start">
+
+          {/* Colonne gauche */}
+          <div className="flex-1 min-w-0">
+            <InfosBien bien={bien} />
+            <CarteLocalisation
+              latitude={bien.latitude}
+              longitude={bien.longitude}
+              titre={bien.titre}
+            />
+          </div>
+
+          {/* Colonne droite sticky */}
+          <div className="w-80 flex-shrink-0">
+            <CarteContact
+              prix={bien.prix}
+              transaction={bien.transaction}
+              titre={bien.titre}
+              chemin={`acheter/${slug}`}
+            />
+          </div>
+
         </div>
-
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <span style={{ background: bien.transaction === "location" ? OR : EMERAUDE, color: bien.transaction === "location" ? VERT : "#fff", fontSize: 12, padding: "4px 12px", borderRadius: 6 }}>
-            {bien.transaction === "location" ? "À louer" : "À vendre"}
-          </span>
-          {bien.verifie && (
-            <span style={{ background: "#fff", color: VERT, fontSize: 12, padding: "4px 12px", borderRadius: 6, border: `1px solid ${OR}` }}>✓ Vérifié</span>
-          )}
-        </div>
-
-        <h1 style={{ fontFamily: "var(--font-marcellus), serif", color: VERT, fontSize: 30, fontWeight: 400, margin: "0 0 4px" }}>{bien.titre}</h1>
-        <p style={{ color: "#6B6450", fontSize: 16, margin: "0 0 16px" }}>{bien.quartier}, {bien.ville}</p>
-
-        <p style={{ color: VERT, fontSize: 28, fontWeight: 600, margin: "0 0 20px" }}>
-          {bien.prix.toLocaleString("fr-FR")} <span style={{ fontSize: 16, fontWeight: 400 }}>DH{bien.transaction === "location" ? "/mois" : ""}</span>
-        </p>
-
-        <div style={{ display: "flex", gap: 24, padding: "16px 0", borderTop: "1px solid #E8E2D2", borderBottom: "1px solid #E8E2D2", marginBottom: 20, color: "#3D4A42", fontSize: 15 }}>
-          <span>{bien.type}</span>
-          <span>{bien.chambres} chambres</span>
-          <span>{bien.salles_bain} salles de bain</span>
-          <span>{bien.surface} m²</span>
-        </div>
-
-        <h2 style={{ fontFamily: "var(--font-marcellus), serif", color: VERT, fontSize: 20, fontWeight: 400 }}>Description</h2>
-        <p style={{ lineHeight: 1.7, color: "#3D4A42" }}>{bien.description}</p>
-
-        {bien.equipements?.length > 0 && (
-          <>
-            <h2 style={{ fontFamily: "var(--font-marcellus), serif", color: VERT, fontSize: 20, fontWeight: 400, marginTop: 24 }}>Équipements</h2>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {bien.equipements.map((e: string) => (
-                <span key={e} style={{ background: "#fff", border: "1px solid #E8E2D2", borderRadius: 20, padding: "6px 14px", fontSize: 13, color: "#3D4A42" }}>{e}</span>
-              ))}
-            </div>
-          </>
-        )}
-
-        <p style={{ fontSize: 12, color: "#999", marginTop: 28 }}>Référence : {bien.reference}</p>
       </div>
+
+      {/* Biens similaires */}
+      <BiensSimiliaires
+        ville={bien.ville}
+        type={bien.type}
+        transaction={bien.transaction}
+        idExclu={bien.id}
+      />
+
+      <Footer />
     </main>
   );
 }
