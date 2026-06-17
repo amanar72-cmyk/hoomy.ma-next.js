@@ -1,206 +1,375 @@
 import { createClient } from "@/lib/supabase/server";
-import CarteBienPro from "@/components/pro/CarteBienPro";
-import CarteVide from "@/components/pro/CarteVide";
-import BarreRecherche from "@/components/pro/BarreRecherche";
-import Pagination from "@/components/pro/Pagination";
+import { redirect } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
+import BoutonActionPro from "@/components/pro/BoutonActionPro";
+import { transmettreAuBo } from "./actions";
 
-type SearchParams = Promise<{
-  transaction?: string;
-  q?: string;
-  type?: string;
-  ville?: string;
-  statut?: string;
-  tri?: string;
-  page?: string;
-}>;
+export const metadata: Metadata = {
+  title: "Mes biens — Espace Pro HOOMY.MA",
+};
 
-const PAR_PAGE = 12;
-const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
-const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
-const TRIS = [
-  { value: "", label: "Date (récent)" },
-  { value: "prix_asc", label: "Prix croissant" },
-  { value: "prix_desc", label: "Prix décroissant" },
-  { value: "surface_asc", label: "Surface croissante" },
-  { value: "surface_desc", label: "Surface décroissante" },
-];
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-// Statuts disponibles (basés sur verifie — colonne statut à venir)
-const STATUTS = [
-  { value: "", label: "Tous les statuts" },
-  { value: "publie", label: "Publié" },
-  { value: "en_traitement", label: "En traitement" },
-];
+type BienAgent = {
+  id: string;
+  reference: string | null;
+  slug: string | null;
+  titre: string;
+  type: string;
+  transaction: string;
+  prix: number;
+  ville: string;
+  quartier: string | null;
+  photos: string[] | null;
+  statut: string | null;
+  surface: number;
+  chambres: number;
+  cree_le: string;
+  date_affectation: string | null;
+};
 
-export default async function PageProBiens({ searchParams }: { searchParams: SearchParams }) {
-  const sp = await searchParams;
-  const supabase = await createClient();
+// ── Zones ─────────────────────────────────────────────────────────────────────
 
-  const transaction = sp.transaction ?? "";
-  const statut = sp.statut ?? "";
-  const tri = sp.tri ?? "";
-  const page = Math.max(1, parseInt(sp.page ?? "1", 10));
-  const offset = (page - 1) * PAR_PAGE;
+const ZONES = [
+  {
+    id: "en_cours",
+    label: "En cours de traitement",
+    statuts: ["brouillon", "affecte"],
+    badge: { bg: "#FEF3C7", color: "#92400E" },
+    avecAction: true,
+  },
+  {
+    id: "en_validation",
+    label: "En validation BO",
+    statuts: ["en_validation"],
+    badge: { bg: "#DBEAFE", color: "#1E40AF" },
+    avecAction: false,
+  },
+  {
+    id: "publies",
+    label: "Publiés",
+    statuts: ["finalise", "transacte"],
+    badge: { bg: "#D1FAE5", color: "#065F46" },
+    avecAction: false,
+  },
+] as const;
 
-  // Construction de la requête
-  let query = supabase
-    .from("biens")
-    .select("id, reference, slug, titre, type, transaction, prix, ville, quartier, chambres, surface, photos, verifie, cree_le", { count: "exact" });
+// ── Utilitaires ───────────────────────────────────────────────────────────────
 
-  if (transaction) query = query.eq("transaction", transaction);
-  if (sp.ville) query = query.eq("ville", sp.ville);
-  if (sp.type) query = query.eq("type", sp.type);
-  if (sp.q) query = query.ilike("titre", `%${sp.q}%`);
+function formaterPrix(prix: number, transaction: string) {
+  const m = prix.toLocaleString("fr-MA");
+  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
+}
 
-  // Filtre statut via verifie (futur: colonne statut dédiée)
-  if (statut === "publie") query = query.eq("verifie", true);
-  if (statut === "en_traitement") query = query.eq("verifie", false);
+function formaterDate(d: string) {
+  return new Date(d).toLocaleDateString("fr-MA", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
 
-  // Tri
-  if (tri === "prix_asc") query = query.order("prix", { ascending: true });
-  else if (tri === "prix_desc") query = query.order("prix", { ascending: false });
-  else if (tri === "surface_asc") query = query.order("surface", { ascending: true });
-  else if (tri === "surface_desc") query = query.order("surface", { ascending: false });
-  else query = query.order("cree_le", { ascending: false });
+// ── Carte bien agent ──────────────────────────────────────────────────────────
 
-  query = query.range(offset, offset + PAR_PAGE - 1);
-
-  const { data: biens, count } = await query;
-  const total = count ?? 0;
-
-  // URL de base pour la pagination (sans ?page=)
-  const paramsBase = new URLSearchParams();
-  if (transaction) paramsBase.set("transaction", transaction);
-  if (sp.ville) paramsBase.set("ville", sp.ville);
-  if (sp.type) paramsBase.set("type", sp.type);
-  if (sp.q) paramsBase.set("q", sp.q);
-  if (statut) paramsBase.set("statut", statut);
-  if (tri) paramsBase.set("tri", tri);
-  const baseUrl = `/pro/biens${paramsBase.toString() ? `?${paramsBase.toString()}` : ""}`;
-
-  const onglets = [
-    { label: "Catalogue", value: "" },
-    { label: "À vendre", value: "vente" },
-    { label: "À louer", value: "location" },
-  ];
-
-  const sel = "border rounded-xl px-3 py-2 text-sm focus:outline-none";
-  const selStyle = { borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" };
+function CarteBienAgent({
+  bien,
+  avecAction,
+}: {
+  bien: BienAgent;
+  avecAction: boolean;
+}) {
+  const photo = bien.photos?.[0] ?? null;
+  const estPublie = bien.statut === "finalise" || bien.statut === "transacte";
+  const lienAnnonce =
+    estPublie && bien.slug
+      ? `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug}`
+      : null;
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* En-tête */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+    <article
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: "#fff",
+        border: "1px solid #F0EDE5",
+        boxShadow: "0 1px 8px rgba(15,76,58,0.05)",
+      }}
+    >
+      <div className="flex gap-3 p-3">
+        {/* Photo */}
+        <div
+          className="flex-shrink-0 rounded-xl overflow-hidden"
+          style={{ width: 88, height: 72, background: "#F4F6F5" }}
+        >
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo} alt={bien.titre} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#C4D8CE" strokeWidth="1.2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {/* Infos */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-0.5 flex-wrap">
+            <p
+              className="text-sm font-semibold leading-snug line-clamp-1"
+              style={{ color: "#1f2a24" }}
+            >
+              {bien.titre}
+            </p>
+            {bien.reference && (
+              <span
+                className="text-xs font-mono px-1.5 py-0.5 rounded flex-shrink-0"
+                style={{ background: "#F0EDE5", color: "#9DB8AD" }}
+              >
+                {bien.reference}
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs" style={{ color: "#9DB8AD" }}>
+            {bien.type}
+            {bien.quartier ? ` · ${bien.quartier}` : ""}
+            {" · "}{bien.ville}
+          </p>
+
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <span className="text-sm font-bold" style={{ color: "#0F4C3A" }}>
+              {formaterPrix(bien.prix, bien.transaction)}
+            </span>
+            <span className="text-xs" style={{ color: "#C4D8CE" }}>
+              {bien.surface} m²
+              {bien.chambres > 0 ? ` · ${bien.chambres} ch.` : ""}
+            </span>
+            <span className="text-xs" style={{ color: "#C4D8CE" }}>
+              {formaterDate(bien.cree_le)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      {(avecAction || lienAnnonce) && (
+        <div
+          className="px-3 pb-3 flex gap-2 flex-wrap"
+          style={{ borderTop: "1px solid #F8F5EE" }}
+        >
+          {avecAction && (
+            <BoutonActionPro
+              action={transmettreAuBo.bind(null, bien.id)}
+              label="Transmettre au BO"
+              labelChargement="Transmission…"
+              confirmation="Confirmer la transmission de ce bien au back-office pour publication ?"
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl mt-2"
+              style={{ background: "#0F4C3A", color: "#fff", cursor: "pointer" }}
+            />
+          )}
+          {lienAnnonce && (
+            <Link
+              href={lienAnnonce}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl mt-2 hover:opacity-90 transition-opacity"
+              style={{ background: "#D4AF37", color: "#0F4C3A", textDecoration: "none" }}
+            >
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+              Voir l&apos;annonce
+            </Link>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
+
+// ── searchParams ──────────────────────────────────────────────────────────────
+
+type SearchParams = Promise<{ transaction?: string }>;
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
+export default async function PageProMesBiens({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const sp = await searchParams;
+  const transaction = sp.transaction ?? "";
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/connexion");
+
+  // Uniquement les biens de cet agent
+  let query = supabase
+    .from("biens")
+    .select(
+      "id, reference, slug, titre, type, transaction, prix, ville, quartier, " +
+      "photos, statut, surface, chambres, cree_le, date_affectation"
+    )
+    .eq("agent_id", user.id)
+    .order("cree_le", { ascending: false });
+
+  if (transaction) {
+    query = query.eq("transaction", transaction);
+  }
+
+  const { data: biensRaw } = await query;
+  const biens = (biensRaw ?? []) as unknown as BienAgent[];
+
+  // Répartition par zone
+  const biensParZone = ZONES.map((zone) => ({
+    zone,
+    biens: biens.filter((b) => (zone.statuts as readonly string[]).includes(b.statut ?? "")),
+  }));
+
+  const totalBiens = biens.length;
+
+  const onglets = [
+    { label: "Tous", value: "" },
+    { label: "Vente", value: "vente" },
+    { label: "Location", value: "location" },
+  ];
+
+  return (
+    <div className="max-w-4xl mx-auto">
+
+      {/* ── En-tête ──────────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-normal mb-1"
-            style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}>
+          <h1
+            className="text-2xl font-normal mb-1"
+            style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}
+          >
             Mes biens
           </h1>
           <p className="text-sm" style={{ color: "#9DB8AD" }}>
-            {total} bien{total !== 1 ? "s" : ""} · page {page}
+            {totalBiens} bien{totalBiens !== 1 ? "s" : ""} en portefeuille
           </p>
         </div>
-        <button type="button"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium cursor-pointer"
-          style={{ background: "#0F4C3A", color: "#fff" }}>
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+        <Link
+          href="/pro/biens/nouveau"
+          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+          style={{ background: "#D4AF37", color: "#0F4C3A", textDecoration: "none" }}
+        >
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Ajouter un bien
-        </button>
+          Créer un bien
+        </Link>
       </div>
 
-      {/* Onglets transaction */}
-      <div className="flex gap-1 mb-5 p-1 rounded-xl w-fit"
-        style={{ background: "#E8E4DA" }}>
+      {/* ── Filtres transaction ──────────────────────────────────────────── */}
+      <div
+        className="flex gap-1 p-1 rounded-xl w-fit mb-6"
+        style={{ background: "#E8E4DA" }}
+      >
         {onglets.map((o) => {
           const actif = transaction === o.value;
           const href = `/pro/biens${o.value ? `?transaction=${o.value}` : ""}`;
           return (
-            <Link key={o.value} href={href}
+            <Link
+              key={o.value}
+              href={href}
               className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-              style={actif
-                ? { background: "#fff", color: "#0F4C3A", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }
-                : { color: "#6B7A71" }
-              }>
+              style={
+                actif
+                  ? { background: "#fff", color: "#0F4C3A", boxShadow: "0 1px 4px rgba(0,0,0,0.08)", textDecoration: "none" }
+                  : { color: "#6B7A71", textDecoration: "none" }
+              }
+            >
               {o.label}
             </Link>
           );
         })}
       </div>
 
-      {/* Filtres */}
-      <form method="get" className="flex flex-wrap gap-3 mb-6 items-center">
-        {transaction && <input type="hidden" name="transaction" value={transaction} />}
-
-        <BarreRecherche defaultValue={sp.q} placeholder="Titre, référence, ville…" />
-
-        <select name="type" defaultValue={sp.type ?? ""} className={sel} style={selStyle}>
-          <option value="">Tous les types</option>
-          {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-
-        <select name="ville" defaultValue={sp.ville ?? ""} className={sel} style={selStyle}>
-          <option value="">Toutes les villes</option>
-          {VILLES.map((v) => <option key={v} value={v}>{v}</option>)}
-        </select>
-
-        <select name="statut" defaultValue={statut} className={sel} style={selStyle}>
-          {STATUTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
-
-        <select name="tri" defaultValue={tri} className={sel} style={selStyle}>
-          {TRIS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-        </select>
-
-        <button type="submit"
-          className="px-4 py-2 rounded-xl text-sm font-medium cursor-pointer"
-          style={{ background: "#0F4C3A", color: "#fff" }}>
-          Filtrer
-        </button>
-
-        {(sp.q || sp.type || sp.ville || statut || tri) && (
-          <Link href={`/pro/biens${transaction ? `?transaction=${transaction}` : ""}`}
-            className="px-4 py-2 rounded-xl text-sm"
-            style={{ background: "#F4F6F5", color: "#6B7A71" }}>
-            Effacer
+      {/* ── État vide global ─────────────────────────────────────────────── */}
+      {totalBiens === 0 && (
+        <div
+          className="rounded-2xl flex flex-col items-center justify-center py-16 px-6 text-center"
+          style={{ background: "#fff", border: "1px solid #F0EDE5" }}
+        >
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: "#F0FAF4" }}
+          >
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.5">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold mb-1" style={{ color: "#0F4C3A" }}>
+            Aucun bien en portefeuille
+          </p>
+          <p className="text-sm mb-4" style={{ color: "#9DB8AD" }}>
+            Créez votre premier bien ou acceptez-en un depuis la file d'affectation.
+          </p>
+          <Link
+            href="/pro/biens/nouveau"
+            className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            style={{ background: "#0F4C3A", color: "#fff", textDecoration: "none" }}
+          >
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Créer un bien
           </Link>
-        )}
-      </form>
+        </div>
+      )}
 
-      {/* Grille de biens */}
-      {(!biens || biens.length === 0) ? (
-        <CarteVide
-          message="Aucun bien trouvé"
-          sousTitre="Ajustez les filtres ou ajoutez un nouveau bien."
-          icone="🏠"
-        />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {biens.map((b, i) => (
-            <CarteBienPro
-              key={b.id}
-              id={b.id}
-              reference={b.reference}
-              titre={b.titre}
-              type={b.type}
-              transaction={b.transaction}
-              prix={b.prix}
-              ville={b.ville}
-              quartier={b.quartier}
-              chambres={b.chambres}
-              surface={b.surface}
-              photos={b.photos as string[] | null}
-              verifie={b.verifie}
-              cree_le={b.cree_le}
-              vues={Math.floor(Math.random() * 200) + i * 7}
-            />
+      {/* ── Zones ────────────────────────────────────────────────────────── */}
+      {totalBiens > 0 && (
+        <div className="flex flex-col gap-8">
+          {biensParZone.map(({ zone, biens: biensDeLaZone }) => (
+            <section key={zone.id}>
+              {/* En-tête de zone */}
+              <div className="flex items-center gap-3 mb-3">
+                <h2 className="text-sm font-semibold" style={{ color: "#0F4C3A" }}>
+                  {zone.label}
+                </h2>
+                <span
+                  className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                  style={{ background: zone.badge.bg, color: zone.badge.color }}
+                >
+                  {biensDeLaZone.length}
+                </span>
+              </div>
+
+              {/* Biens de la zone */}
+              {biensDeLaZone.length === 0 ? (
+                <div
+                  className="rounded-2xl py-8 text-center text-sm"
+                  style={{ background: "#FAFAF8", border: "1px dashed #E8E2D2", color: "#C4D8CE" }}
+                >
+                  Aucun bien dans cette zone
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {biensDeLaZone.map((b) => (
+                    <CarteBienAgent
+                      key={b.id}
+                      bien={b}
+                      avecAction={zone.avecAction}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
           ))}
         </div>
       )}
 
-      <Pagination page={page} total={total} parPage={PAR_PAGE} baseUrl={baseUrl} />
     </div>
   );
 }

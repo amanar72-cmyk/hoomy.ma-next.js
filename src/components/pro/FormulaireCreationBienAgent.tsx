@@ -1,0 +1,331 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { creerBienAgent, type DonneesBienAgent } from "@/app/pro/biens/actions";
+
+const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
+const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
+const EQUIPEMENTS_LISTE = [
+  "Parking", "Piscine", "Jardin", "Terrasse", "Balcon", "Ascenseur",
+  "Gardien", "Climatisation", "Chauffage central", "Double vitrage",
+  "Cuisine équipée", "Digicode", "Interphone", "Cave",
+];
+
+const sel =
+  "w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all";
+const selStyle = {
+  borderColor: "#E0DAC8",
+  color: "#1f2a24",
+  background: "#fff",
+};
+const selFocus = "#0F4C3A";
+
+const labelClass = "block text-xs font-semibold mb-1.5";
+const labelStyle = { color: "#0F4C3A" };
+
+export default function FormulaireCreationBienAgent() {
+  const router = useRouter();
+  const [chargement, setChargement] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [equipementsChoisis, setEquipementsChoisis] = useState<string[]>([]);
+
+  function toggleEquipement(eq: string) {
+    setEquipementsChoisis((prev) =>
+      prev.includes(eq) ? prev.filter((e) => e !== eq) : [...prev, eq]
+    );
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setErreur(null);
+    setChargement(true);
+
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+
+    const donnees: DonneesBienAgent = {
+      titre: String(fd.get("titre") ?? "").trim(),
+      description: String(fd.get("description") ?? "").trim() || null,
+      type: String(fd.get("type") ?? ""),
+      transaction: String(fd.get("transaction") ?? ""),
+      prix: Number(fd.get("prix")),
+      ville: String(fd.get("ville") ?? ""),
+      quartier: String(fd.get("quartier") ?? "").trim() || null,
+      chambres: Number(fd.get("chambres")),
+      salles_bain: Number(fd.get("salles_bain")),
+      surface: Number(fd.get("surface")),
+      equipements: equipementsChoisis.length > 0 ? equipementsChoisis : null,
+    };
+
+    try {
+      await creerBienAgent(donnees);
+      router.push("/pro/biens");
+    } catch (err) {
+      setErreur(err instanceof Error ? err.message : "Erreur lors de la création.");
+      setChargement(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+
+      {/* ── Informations de base ──────────────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-6"
+        style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
+      >
+        <h2 className="text-base font-semibold mb-4" style={{ color: "#0F4C3A" }}>
+          Informations de base
+        </h2>
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="titre" className={labelClass} style={labelStyle}>
+              Titre de l'annonce *
+            </label>
+            <input
+              id="titre"
+              name="titre"
+              type="text"
+              required
+              placeholder="Ex : Villa moderne avec piscine, Casablanca"
+              className={sel}
+              style={selStyle}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="type" className={labelClass} style={labelStyle}>
+                Type de bien *
+              </label>
+              <select id="type" name="type" required className={sel} style={selStyle}>
+                <option value="">Sélectionner</option>
+                {TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="transaction" className={labelClass} style={labelStyle}>
+                Transaction *
+              </label>
+              <select id="transaction" name="transaction" required className={sel} style={selStyle}>
+                <option value="">Sélectionner</option>
+                <option value="vente">Vente</option>
+                <option value="location">Location</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="description" className={labelClass} style={labelStyle}>
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows={4}
+              placeholder="Décrivez le bien : caractéristiques, environnement, atouts…"
+              className={sel}
+              style={{ ...selStyle, resize: "vertical" }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Localisation ─────────────────────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-6"
+        style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
+      >
+        <h2 className="text-base font-semibold mb-4" style={{ color: "#0F4C3A" }}>
+          Localisation
+        </h2>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="ville" className={labelClass} style={labelStyle}>
+              Ville *
+            </label>
+            <select id="ville" name="ville" required className={sel} style={selStyle}>
+              <option value="">Sélectionner</option>
+              {VILLES.map((v) => (
+                <option key={v} value={v}>{v}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="quartier" className={labelClass} style={labelStyle}>
+              Quartier
+            </label>
+            <input
+              id="quartier"
+              name="quartier"
+              type="text"
+              placeholder="Ex : Maarif, Guéliz…"
+              className={sel}
+              style={selStyle}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Caractéristiques ─────────────────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-6"
+        style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
+      >
+        <h2 className="text-base font-semibold mb-4" style={{ color: "#0F4C3A" }}>
+          Caractéristiques
+        </h2>
+
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div>
+            <label htmlFor="prix" className={labelClass} style={labelStyle}>
+              Prix (DH) *
+            </label>
+            <input
+              id="prix"
+              name="prix"
+              type="number"
+              required
+              min="0"
+              step="1000"
+              placeholder="1 500 000"
+              className={sel}
+              style={selStyle}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="surface" className={labelClass} style={labelStyle}>
+              Surface (m²) *
+            </label>
+            <input
+              id="surface"
+              name="surface"
+              type="number"
+              required
+              min="1"
+              placeholder="120"
+              className={sel}
+              style={selStyle}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="chambres" className={labelClass} style={labelStyle}>
+              Chambres
+            </label>
+            <input
+              id="chambres"
+              name="chambres"
+              type="number"
+              min="0"
+              defaultValue={0}
+              className={sel}
+              style={selStyle}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="salles_bain" className={labelClass} style={labelStyle}>
+              Salles de bain
+            </label>
+            <input
+              id="salles_bain"
+              name="salles_bain"
+              type="number"
+              min="0"
+              defaultValue={0}
+              className={sel}
+              style={selStyle}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Équipements ──────────────────────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-6"
+        style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
+      >
+        <h2 className="text-base font-semibold mb-4" style={{ color: "#0F4C3A" }}>
+          Équipements
+        </h2>
+
+        <div className="flex flex-wrap gap-2">
+          {EQUIPEMENTS_LISTE.map((eq) => {
+            const choisi = equipementsChoisis.includes(eq);
+            return (
+              <button
+                key={eq}
+                type="button"
+                onClick={() => toggleEquipement(eq)}
+                className="text-xs font-medium px-3 py-1.5 rounded-full border transition-all cursor-pointer"
+                style={
+                  choisi
+                    ? { background: "#0F4C3A", color: "#fff", borderColor: "#0F4C3A" }
+                    : { background: "#fff", color: "#6B7A71", borderColor: "#E0DAC8" }
+                }
+              >
+                {choisi && (
+                  <span className="mr-1">✓</span>
+                )}
+                {eq}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Erreur + Soumettre ────────────────────────────────────────────── */}
+      {erreur && (
+        <div
+          className="rounded-xl px-4 py-3 text-sm"
+          style={{ background: "#FEE2E2", color: "#991B1B" }}
+        >
+          {erreur}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="text-sm px-5 py-2.5 rounded-xl border cursor-pointer transition-colors hover:bg-gray-50"
+          style={{ borderColor: "#E0DAC8", color: "#6B7A71" }}
+        >
+          Annuler
+        </button>
+
+        <button
+          type="submit"
+          disabled={chargement}
+          className="flex items-center gap-2 text-sm font-semibold px-6 py-2.5 rounded-xl transition-opacity cursor-pointer"
+          style={{
+            background: chargement ? "#9DB8AD" : "#0F4C3A",
+            color: "#fff",
+            opacity: chargement ? 0.7 : 1,
+          }}
+        >
+          {chargement ? (
+            "Création en cours…"
+          ) : (
+            <>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Créer le brouillon
+            </>
+          )}
+        </button>
+      </div>
+
+    </form>
+  );
+}

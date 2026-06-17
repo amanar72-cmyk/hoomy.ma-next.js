@@ -70,32 +70,21 @@ function CarteBienContenu({
   bien,
   agentNom,
   erreur,
-  dragHandleProps,
 }: {
   bien: BienFile;
   agentNom?: string | null;
   erreur?: string | null;
-  dragHandleProps?: {
-    listeners: ReturnType<typeof useDraggable>["listeners"];
-    attributes: ReturnType<typeof useDraggable>["attributes"];
-  };
 }) {
   const photo = bien.photos?.[0] ?? null;
   return (
     <div className="rounded-xl border overflow-hidden"
       style={{ background: "#fff", borderColor: "#F0EDE5", boxShadow: "0 1px 8px rgba(15,76,58,0.05)" }}>
 
-      {/* Ligne du haut : poignée + référence + type */}
+      {/* Ligne du haut : poignée visuelle + référence + type */}
       <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5"
         style={{ borderBottom: "1px solid #F8F5EE" }}>
-        <div
-          {...(dragHandleProps?.listeners ?? {})}
-          {...(dragHandleProps?.attributes ?? {})}
-          className="flex items-center gap-1 select-none"
-          style={{ color: "#C4D8CE", cursor: "grab", touchAction: "none" }}
-          title="Glisser pour déplacer"
-        >
-          {/* Grille 2×3 drag handle */}
+        {/* Icône grip — purement visuelle, le drag se fait sur toute la carte */}
+        <div className="flex items-center gap-1 select-none" style={{ color: "#C4D8CE" }}>
           <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
             <circle cx="3" cy="2" r="1.4"/><circle cx="7" cy="2" r="1.4"/>
             <circle cx="3" cy="7" r="1.4"/><circle cx="7" cy="7" r="1.4"/>
@@ -184,30 +173,32 @@ function CarteDraggable({
   onRetirerDeFile?: () => void;
   onRetirerAgent?: (enFile: boolean) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: bien.id,
     data: { colonne },
   });
 
+  // Pas de transform sur l'original — DragOverlay gère la carte fantôme
   const style: React.CSSProperties = {
     opacity: isDragging ? 0.35 : 1,
-    transform: transform
-      ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
-      : undefined,
-    transition: isDragging ? undefined : "opacity 0.15s",
+    cursor: isDragging ? "grabbing" : "grab",
+    touchAction: "none",
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    // listeners sur tout le div → toute la carte est draggable (pas seulement l'icône grip)
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
       <CarteBienContenu
         bien={bien}
         agentNom={agentNom}
         erreur={erreur}
-        dragHandleProps={{ listeners, attributes }}
       />
 
-      {/* Boutons d'action — fallback mobile et raccourcis */}
-      <div className="px-3 pb-3 flex flex-wrap gap-1.5">
+      {/* Boutons d'action — stopPropagation pour ne pas déclencher le drag */}
+      <div
+        className="px-3 pb-3 flex flex-wrap gap-1.5"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <button type="button" onClick={onAffecter}
           className="text-xs px-2.5 py-1 rounded-lg font-medium cursor-pointer hover:opacity-90 transition-opacity"
           style={{ background: "#D4AF37", color: "#0F4C3A" }}>

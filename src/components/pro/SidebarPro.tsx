@@ -7,6 +7,14 @@ import { createClient } from "@/lib/supabase/client";
 
 // Icônes SVG inline (lucide-compatible)
 const icones: Record<string, React.ReactNode> = {
+  file: (
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+      <rect x="9" y="3" width="6" height="4" rx="1" />
+      <line x1="9" y1="12" x2="15" y2="12" />
+      <line x1="9" y1="16" x2="13" y2="16" />
+    </svg>
+  ),
   biens: (
     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -92,7 +100,8 @@ const icones: Record<string, React.ReactNode> = {
 };
 
 const NAV: { href: string; icone: keyof typeof icones; label: string; exact?: boolean }[] = [
-  { href: "/pro/biens",        icone: "biens",       label: "Mes biens",         exact: false },
+  { href: "/pro/file",         icone: "file",        label: "File d'affectation", exact: false },
+  { href: "/pro/biens",        icone: "biens",       label: "Mes biens",          exact: false },
   { href: "/pro/team",         icone: "team",        label: "Ma Team",           exact: false },
   { href: "/pro/neuf",         icone: "neuf",        label: "Immobilier neuf",   exact: false },
   { href: "/pro/catalogue-neuf", icone: "catalogue", label: "Catalogue neuf",    exact: false },
