@@ -12,14 +12,17 @@ export default async function Navbar() {
   let nomComplet: string | null = null;
   let avatarUrl: string | null = null;
 
+  let role: string | null = null;
+
   if (user) {
     const { data: profil } = await supabase
       .from("profils")
-      .select("nom_complet, avatar_url")
+      .select("nom_complet, avatar_url, role")
       .eq("id", user.id)
       .single();
     nomComplet = profil?.nom_complet ?? null;
     avatarUrl = profil?.avatar_url ?? null;
+    role = profil?.role ?? null;
   }
 
   return (
@@ -63,6 +66,7 @@ export default async function Navbar() {
                 nomComplet={nomComplet}
                 email={user.email ?? null}
                 avatarUrl={avatarUrl}
+                role={role}
               />
             </>
           ) : (

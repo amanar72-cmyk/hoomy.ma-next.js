@@ -29,14 +29,29 @@ export default function FormulaireConnexion() {
     try {
       console.log("[CONNEXION] 2. URL Supabase:", process.env.NEXT_PUBLIC_SUPABASE_URL);
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password: motDePasse });
+      const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password: motDePasse });
       console.log("[CONNEXION] 3. résultat:", error?.message ?? "OK");
       if (error) {
         setErreur(`Erreur : ${error.message}`);
         setChargement(false);
         return;
       }
-      router.push("/");
+
+      // Redirection selon le rôle
+      let destination = "/mon-compte";
+      if (authData.user) {
+        const { data: profil } = await supabase
+          .from("profils")
+          .select("role")
+          .eq("id", authData.user.id)
+          .single();
+        const role = profil?.role ?? "acheteur";
+        console.log("[CONNEXION] 4. rôle:", role);
+        if (role === "admin") destination = "/admin";
+        else if (role === "agent" || role === "agence") destination = "/pro";
+      }
+
+      router.push(destination);
       router.refresh();
     } catch (ex) {
       console.error("[CONNEXION] exception:", ex);

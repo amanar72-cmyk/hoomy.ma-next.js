@@ -9,7 +9,20 @@ type Props = {
   nomComplet: string | null;
   email: string | null;
   avatarUrl: string | null;
+  role: string | null;
 };
+
+function hrefTableauDeBord(role: string | null): string {
+  if (role === "admin") return "/admin";
+  if (role === "agent" || role === "agence") return "/pro";
+  return "/mon-compte";
+}
+
+function labelTableauDeBord(role: string | null): string {
+  if (role === "admin") return "Administration";
+  if (role === "agent" || role === "agence") return "Espace Pro";
+  return "Mon tableau de bord";
+}
 
 // Génère les initiales à partir du nom complet
 function initiales(nom: string | null, email: string | null): string {
@@ -38,7 +51,7 @@ const itemMenuStyle = {
   textAlign: "left" as const,
 };
 
-export default function MenuUtilisateur({ nomComplet, email, avatarUrl }: Props) {
+export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: Props) {
   const [ouvert, setOuvert] = useState(false);
   const router = useRouter();
   const refMenu = useRef<HTMLDivElement>(null);
@@ -127,7 +140,7 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl }: Props)
           {/* Items du menu */}
           <div className="p-2">
             <Link
-              href="/tableau-de-bord"
+              href={hrefTableauDeBord(role)}
               onClick={() => setOuvert(false)}
               style={itemMenuStyle}
               className="hover:bg-gray-50 flex"
@@ -138,7 +151,7 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl }: Props)
                 <rect x="3" y="14" width="7" height="7" rx="1" />
                 <rect x="14" y="14" width="7" height="7" rx="1" />
               </svg>
-              Mon tableau de bord
+              {labelTableauDeBord(role)}
             </Link>
 
             <Link

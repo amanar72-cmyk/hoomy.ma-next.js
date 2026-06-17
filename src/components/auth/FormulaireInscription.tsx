@@ -49,14 +49,12 @@ export default function FormulaireInscription() {
         return;
       }
 
-      // Confirmation email requise
       if (!data.session) {
         setSucces(true);
         setChargement(false);
         return;
       }
 
-      // Connexion immédiate (email confirmation désactivé)
       router.push("/mon-compte");
       router.refresh();
     } catch (ex) {
@@ -100,7 +98,6 @@ export default function FormulaireInscription() {
     <main className="min-h-screen flex items-center justify-center px-4 py-12"
       style={{ background: "linear-gradient(160deg,#f0f7f4 0%,#FAF7F0 60%,#f5efe3 100%)" }}>
       <div className="w-full max-w-md">
-
         <div className="flex justify-center mb-8">
           <Link href="/" style={{ textDecoration: "none" }}><Logo size={40} /></Link>
         </div>

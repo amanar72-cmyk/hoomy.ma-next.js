@@ -22,7 +22,7 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
 
   let query = supabase
     .from("biens")
-    .select("id, reference, titre, type, transaction, prix, ville, quartier, verifie, cree_le", { count: "exact" })
+    .select("id, reference, titre, type, transaction, prix, ville, quartier, verifie, statut, photos, cree_le", { count: "exact" })
     .order("cree_le", { ascending: false });
 
   if (sp.ville) query = query.eq("ville", sp.ville);
@@ -50,6 +50,13 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
             {count ?? 0} bien{(count ?? 0) > 1 ? "s" : ""} au total
           </p>
         </div>
+        <Link
+          href="/admin/biens/nouveau"
+          className="flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+          style={{ background: "#0F4C3A", color: "#fff", textDecoration: "none" }}
+        >
+          <span>+</span> Nouveau bien
+        </Link>
       </div>
 
       {/* Filtres */}
@@ -117,12 +124,26 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
       </form>
 
       <TableauAdmin
-        colonnes={["Réf.", "Titre", "Type", "Prix", "Ville", "Statut", "Actions"]}
+        colonnes={["Photo", "Réf.", "Titre", "Type", "Prix", "Ville", "Statut", "Actions"]}
         estVide={(biens ?? []).length === 0}
         vide="Aucun bien ne correspond aux filtres"
       >
-        {(biens ?? []).map((b) => (
+        {(biens ?? []).map((b) => {
+          const photo = Array.isArray(b.photos) && b.photos.length > 0 ? b.photos[0] : null;
+          return (
           <tr key={b.id} style={{ borderBottom: "1px solid #F0EDE5" }}>
+            {/* Photo */}
+            <td className="px-4 py-3">
+              <div className="w-14 h-10 rounded-lg overflow-hidden flex-shrink-0"
+                style={{ background: "#F4F6F5" }}>
+                {photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photo} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-lg">🏠</div>
+                )}
+              </div>
+            </td>
             <td className="px-4 py-3 text-xs" style={{ color: "#9DB8AD" }}>
               {b.reference ?? "—"}
             </td>
@@ -152,7 +173,15 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
               </span>
             </td>
             <td className="px-4 py-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Modifier */}
+                <Link
+                  href={`/admin/biens/${b.id}`}
+                  className="text-xs px-3 py-1 rounded-lg font-medium"
+                  style={{ background: "#E8F5ED", color: "#0F4C3A", border: "1px solid #C6E8D4" }}
+                >
+                  Modifier
+                </Link>
                 {/* Vérifier / Dévérifier via form + Server Action */}
                 {b.verifie ? (
                   <form action={deverifierBien.bind(null, b.id)}>
@@ -179,7 +208,8 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
               </div>
             </td>
           </tr>
-        ))}
+          );
+        })}
       </TableauAdmin>
     </div>
   );

@@ -31,7 +31,7 @@ export default async function PageAdminDashboard() {
     supabase.from("biens").select("*", { count: "exact", head: true }).eq("transaction", "location"),
     supabase
       .from("biens")
-      .select("id, titre, type, transaction, prix, ville, verifie, cree_le")
+      .select("id, titre, type, transaction, prix, ville, verifie, photos, cree_le")
       .order("cree_le", { ascending: false })
       .limit(10),
     supabase
@@ -131,14 +131,31 @@ export default async function PageAdminDashboard() {
           </Link>
         </div>
         <TableauAdmin
-          colonnes={["Titre", "Type", "Transaction", "Prix", "Ville", "Vérifié"]}
+          colonnes={["Photo", "Titre", "Type", "Transaction", "Prix", "Ville", "Vérifié"]}
           estVide={(derniersBiens ?? []).length === 0}
           vide="Aucun bien pour l'instant"
         >
-          {(derniersBiens ?? []).map((b) => (
+          {(derniersBiens ?? []).map((b) => {
+            const photo = Array.isArray(b.photos) && b.photos.length > 0 ? b.photos[0] : null;
+            return (
             <tr key={b.id} style={{ borderBottom: "1px solid #F0EDE5" }}>
-              <td className="px-4 py-3 text-sm max-w-xs truncate" style={{ color: "#3D4A42" }}>
-                {b.titre}
+              <td className="px-4 py-3">
+                <div className="w-12 h-9 rounded-lg overflow-hidden flex-shrink-0"
+                  style={{ background: "#F4F6F5" }}>
+                  {photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photo} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-base">🏠</div>
+                  )}
+                </div>
+              </td>
+              <td className="px-4 py-3 text-sm max-w-xs">
+                <Link href={`/admin/biens/${b.id}`}
+                  className="font-medium truncate block hover:underline"
+                  style={{ color: "#3D4A42", textDecoration: "none" }}>
+                  {b.titre}
+                </Link>
               </td>
               <td className="px-4 py-3 text-sm" style={{ color: "#6B7A71" }}>{b.type}</td>
               <td className="px-4 py-3 text-sm capitalize" style={{ color: "#6B7A71" }}>
@@ -161,7 +178,8 @@ export default async function PageAdminDashboard() {
                 </span>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </TableauAdmin>
       </div>
 

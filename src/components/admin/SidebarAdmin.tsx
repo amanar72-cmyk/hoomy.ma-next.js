@@ -9,6 +9,9 @@ const NAV_ITEMS = [
   { href: "/admin", icone: "📊", label: "Tableau de bord", exact: true },
   { href: "/admin/biens", icone: "🏠", label: "Biens", exact: false },
   { href: "/admin/verifications", icone: "✅", label: "Vérifications", exact: false },
+  { href: "/admin/affectation", icone: "📋", label: "File d'affectation", exact: false },
+  { href: "/admin/agents", icone: "🧑‍💼", label: "Agents", exact: false },
+  { href: "/admin/clients", icone: "👤", label: "Clients", exact: false },
   { href: "/admin/utilisateurs", icone: "👥", label: "Utilisateurs", exact: false },
 ];
 
