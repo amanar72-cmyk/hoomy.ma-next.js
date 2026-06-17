@@ -1,104 +1,204 @@
 import type { Bien } from "@/lib/types";
 
-function formatPrix(prix: number, transaction: string) {
-  return `${prix.toLocaleString("fr-FR")} DH${transaction === "location" ? "/mois" : ""}`;
+// ── Icônes SVG inline ─────────────────────────────────────────────────────────
+
+function IcSurface() {
+  return (
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.6">
+      <path d="M3 3h18v18H3z" />
+      <path d="M3 9h18M9 3v18" strokeDasharray="2 2" />
+    </svg>
+  );
+}
+function IcChambre() {
+  return (
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.6">
+      <path d="M3 7v10M21 7v10M3 11h18" />
+      <rect x="3" y="7" width="18" height="10" rx="2" />
+      <path d="M9 11V9a2 2 0 0 1 4 0v2" />
+    </svg>
+  );
+}
+function IcBain() {
+  return (
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.6">
+      <path d="M9 6a2 2 0 0 1 4 0v9H9V6z" />
+      <path d="M3 15h18" />
+      <path d="M4 15a7 7 0 0 0 16 0" />
+    </svg>
+  );
+}
+function IcType() {
+  return (
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.6">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  );
+}
+function IcPin() {
+  return (
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+function IcCheck() {
+  return (
+    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
 }
 
+// ── Formatage ─────────────────────────────────────────────────────────────────
+
+function formatPrixBase(prix: number) {
+  return prix.toLocaleString("fr-FR");
+}
+
+// ── Composant ─────────────────────────────────────────────────────────────────
+
 export default function InfosBien({ bien }: { bien: Bien }) {
-  const equipements = bien.equipements ?? [];
+  const equipements = (bien.equipements ?? []) as string[];
 
   return (
     <div>
-      {/* Référence */}
-      {bien.reference && (
-        <p className="text-sm mb-2" style={{ color: "#B4AD97" }}>
-          {bien.reference}
-        </p>
-      )}
 
-      {/* Titre H1 */}
+      {/* ── Référence + badge type ─────────────────────────────────────── */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        {bien.reference && (
+          <span
+            className="text-xs font-mono px-2.5 py-1 rounded-lg"
+            style={{ background: "#F0EDE5", color: "#9B9282" }}
+          >
+            {bien.reference}
+          </span>
+        )}
+        <span
+          className="text-xs font-medium px-2.5 py-1 rounded-lg"
+          style={{ background: "#EDF5F0", color: "#146C43" }}
+        >
+          {bien.type}
+        </span>
+      </div>
+
+      {/* ── Titre ─────────────────────────────────────────────────────── */}
       <h1
-        className="text-4xl font-normal mb-4 leading-tight"
-        style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+        className="font-normal leading-tight mb-4"
+        style={{
+          fontFamily: "var(--font-marcellus), serif",
+          color: "#0F4C3A",
+          fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
+        }}
       >
         {bien.titre}
       </h1>
 
-      {/* Prix */}
-      <p className="text-3xl font-semibold mb-3" style={{ color: "#D4AF37" }}>
-        {formatPrix(bien.prix, bien.transaction)}
-      </p>
-
-      {/* Ville + quartier */}
-      <p className="flex items-center gap-1.5 text-base mb-7" style={{ color: "#6B6450" }}>
-        <span aria-hidden="true">📍</span>
+      {/* ── Localisation ──────────────────────────────────────────────── */}
+      <p className="flex items-center gap-1.5 text-sm mb-6" style={{ color: "#6B7A71" }}>
+        <IcPin />
         {bien.quartier ? `${bien.quartier}, ` : ""}{bien.ville}
       </p>
 
-      {/* Rangée caractéristiques */}
-      <div
-        className="flex flex-wrap items-center gap-6 py-5 mb-8 border-t border-b"
-        style={{ borderColor: "#E8E2D2" }}
-      >
-        <div className="text-center">
-          <p className="text-2xl font-semibold" style={{ color: "#0F4C3A" }}>{bien.surface}</p>
-          <p className="text-xs mt-0.5" style={{ color: "#888" }}>m²</p>
-        </div>
-        <div className="w-px h-10" style={{ background: "#E8E2D2" }} />
-        <div className="text-center">
-          <p className="text-2xl font-semibold" style={{ color: "#0F4C3A" }}>
-            <span aria-hidden="true">🛏</span> {bien.chambres}
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: "#888" }}>chambres</p>
-        </div>
-        <div className="w-px h-10" style={{ background: "#E8E2D2" }} />
-        <div className="text-center">
-          <p className="text-2xl font-semibold" style={{ color: "#0F4C3A" }}>
-            <span aria-hidden="true">🚿</span> {bien.salles_bain}
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: "#888" }}>salles de bain</p>
-        </div>
-        <div className="w-px h-10" style={{ background: "#E8E2D2" }} />
-        <div>
-          <p className="text-base font-medium" style={{ color: "#0F4C3A" }}>{bien.type}</p>
-          <p className="text-xs mt-0.5" style={{ color: "#888" }}>type de bien</p>
-        </div>
+      {/* ── Prix ──────────────────────────────────────────────────────── */}
+      <div className="mb-8">
+        <p
+          className="leading-none"
+          style={{
+            fontFamily: "var(--font-marcellus), serif",
+            color: "#D4AF37",
+            fontSize: "clamp(2rem, 4vw, 3rem)",
+          }}
+        >
+          {formatPrixBase(bien.prix)}{" "}
+          <span style={{ fontSize: "0.55em", color: "#B8932A" }}>DH</span>
+          {bien.transaction === "location" && (
+            <span
+              className="ml-1"
+              style={{ fontSize: "0.4em", color: "#9B9282", fontFamily: "var(--font-outfit), sans-serif", fontWeight: 400 }}
+            >
+              /mois
+            </span>
+          )}
+        </p>
       </div>
 
-      {/* Description */}
+      {/* ── Stats cartes ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+        {[
+          { icone: <IcSurface />, valeur: `${bien.surface}`, unite: "m²",          label: "Surface" },
+          { icone: <IcChambre />, valeur: `${bien.chambres}`, unite: "",            label: bien.chambres > 1 ? "Chambres" : "Chambre" },
+          { icone: <IcBain />,    valeur: `${bien.salles_bain}`, unite: "",         label: bien.salles_bain > 1 ? "Salles de bain" : "Salle de bain" },
+          { icone: <IcType />,    valeur: bien.type, unite: "",                     label: "Type" },
+        ].map(({ icone, valeur, unite, label }) => (
+          <div
+            key={label}
+            className="flex flex-col items-center gap-2.5 px-4 py-5 rounded-2xl"
+            style={{
+              background: "#fff",
+              border: "1px solid #EDE7D7",
+              boxShadow: "0 2px 12px rgba(15,76,58,0.06)",
+            }}
+          >
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "#F0FAF4" }}
+            >
+              {icone}
+            </div>
+            <div className="text-center">
+              <p className="text-base font-semibold leading-tight" style={{ color: "#0F4C3A" }}>
+                {valeur}
+                {unite && <span className="text-sm font-normal ml-0.5" style={{ color: "#9B9282" }}>{unite}</span>}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "#9B9282" }}>{label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Séparateur gold ───────────────────────────────────────────── */}
+      <div className="mb-10" style={{ height: 1, background: "linear-gradient(to right, #D4AF37, transparent)" }} />
+
+      {/* ── Description ───────────────────────────────────────────────── */}
       {bien.description && (
-        <section className="mb-10">
+        <section className="mb-12">
           <h2
-            className="text-xl font-normal mb-4"
+            className="text-xl font-normal mb-5"
             style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
           >
             Description
           </h2>
-          <p className="leading-relaxed whitespace-pre-line text-sm" style={{ color: "#3D4A42" }}>
+          <p
+            className="leading-8 whitespace-pre-line"
+            style={{ color: "#4B5563", fontSize: "0.9375rem" }}
+          >
             {bien.description}
           </p>
         </section>
       )}
 
-      {/* Équipements */}
+      {/* ── Équipements ───────────────────────────────────────────────── */}
       {equipements.length > 0 && (
-        <section>
+        <section className="mb-10">
           <h2
-            className="text-xl font-normal mb-5"
+            className="text-xl font-normal mb-6"
             style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
           >
-            Équipements
+            Équipements & prestations
           </h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
             {equipements.map((e) => (
-              <div key={e} className="flex items-center gap-2.5 text-sm" style={{ color: "#3D4A42" }}>
+              <div key={e} className="flex items-center gap-3">
                 <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                  style={{ background: "rgba(20,108,67,0.12)", color: "#146C43" }}
+                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "#EDF5F0", color: "#146C43" }}
                 >
-                  ✓
+                  <IcCheck />
                 </span>
-                {e}
+                <span className="text-sm" style={{ color: "#374151" }}>{e}</span>
               </div>
             ))}
           </div>

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 // ── Slug / référence ──────────────────────────────────────────────────────────
@@ -110,4 +111,55 @@ export async function creerBienAgent(donnees: DonneesBienAgent): Promise<{ id: s
 
   revalidatePath("/pro/biens");
   return { id: bien.id };
+}
+
+// ── Modifier un bien (brouillon ou affecte) ───────────────────────────────────
+
+export type DonneesModificationBienAgent = {
+  titre: string;
+  description: string | null;
+  type: string;
+  transaction: string;
+  prix: number;
+  ville: string;
+  quartier: string | null;
+  chambres: number;
+  salles_bain: number;
+  surface: number;
+  equipements: string[] | null;
+  photos: string[] | null;
+};
+
+export async function modifierBienAgent(
+  bienId: string,
+  donnees: DonneesModificationBienAgent
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié.");
+
+  // Vérifier propriété et statut autorisé (select passe la RLS lecture publique)
+  const { data: bien } = await supabase
+    .from("biens")
+    .select("agent_id, statut")
+    .eq("id", bienId)
+    .single();
+
+  if (!bien || bien.agent_id !== user.id) throw new Error("Accès refusé.");
+  if (!["brouillon", "affecte"].includes(bien.statut ?? "")) {
+    throw new Error("Ce bien ne peut plus être modifié dans son état actuel.");
+  }
+
+  // UPDATE via admin client — contourne la policy RLS UPDATE (admin-only)
+  // La vérification de propriété est faite ci-dessus dans le code
+  const adminClient = createAdminClient();
+  const { error } = await adminClient
+    .from("biens")
+    .update(donnees)
+    .eq("id", bienId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/pro/biens");
+  revalidatePath(`/pro/biens/${bienId}`);
 }

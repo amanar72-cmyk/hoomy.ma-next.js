@@ -17,51 +17,58 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const { data } = await supabase.from("biens").select("titre").eq("slug", slug).single();
+  const { data } = await supabase.from("biens").select("titre, ville, prix").eq("slug", slug).single();
+  if (!data) return { title: "Bien non trouvé | HOOMY.MA" };
   return {
-    title: data?.titre ? `${data.titre} | HOOMY.MA` : "Bien non trouvé | HOOMY.MA",
+    title: `${data.titre} — À louer à ${data.ville} | HOOMY.MA`,
+    description: `${data.titre} à louer à ${data.ville}. Loyer : ${Number(data.prix).toLocaleString("fr-FR")} DH/mois.`,
   };
 }
 
 export default async function PageDetailLocation({ params }: Props) {
   const { slug } = await params;
 
-  const { data } = await supabase.from("biens").select("*").eq("slug", slug).single();
+  const { data } = await supabase.from("biens").select("*, agent_id").eq("slug", slug).single();
   if (!data) notFound();
 
-  const bien = data as Bien;
+  const bien = data as Bien & { agent_id: string | null };
 
   return (
     <main style={{ background: "#FAF7F0", minHeight: "100vh" }}>
       <Navbar />
 
-      <div className="max-w-6xl mx-auto px-6 pt-6 pb-16">
-
-        {/* Fil d'Ariane */}
-        <nav aria-label="Fil d'Ariane" className="flex items-center flex-wrap gap-1.5 text-sm mb-6" style={{ color: "#9DB8AD" }}>
-          <Link href="/" style={{ color: "#146C43", textDecoration: "none" }} className="hover:underline">Accueil</Link>
+      {/* ── Fil d'Ariane ─────────────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-6 pt-5">
+        <nav
+          aria-label="Fil d'Ariane"
+          className="flex items-center flex-wrap gap-1.5 text-xs"
+          style={{ color: "#9DB8AD" }}
+        >
+          <Link href="/" className="hover:underline" style={{ color: "#146C43", textDecoration: "none" }}>Accueil</Link>
           <span aria-hidden="true">›</span>
-          <Link href="/louer" style={{ color: "#146C43", textDecoration: "none" }} className="hover:underline">Louer</Link>
+          <Link href="/louer" className="hover:underline" style={{ color: "#146C43", textDecoration: "none" }}>Louer</Link>
           <span aria-hidden="true">›</span>
-          <Link href={`/louer?ville=${encodeURIComponent(bien.ville)}`} style={{ color: "#146C43", textDecoration: "none" }} className="hover:underline">
-            {bien.ville}
-          </Link>
+          <Link href={`/louer?ville=${encodeURIComponent(bien.ville)}`} className="hover:underline" style={{ color: "#146C43", textDecoration: "none" }}>{bien.ville}</Link>
           <span aria-hidden="true">›</span>
-          <span className="truncate max-w-xs" style={{ color: "#3D4A42" }}>{bien.titre}</span>
+          <span className="truncate max-w-[200px]" style={{ color: "#3D4A42" }}>{bien.titre}</span>
         </nav>
+      </div>
 
-        {/* Galerie photos */}
+      {/* ── Galerie mosaïque ─────────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-6 pt-4 pb-2">
         <GaleriePhotos
           photos={bien.photos ?? []}
           titre={bien.titre}
           transaction={bien.transaction}
           verifie={bien.verifie}
         />
+      </div>
 
-        {/* Corps principal : 65 % + 35 % */}
-        <div className="flex gap-8 mt-8 items-start">
+      {/* ── Corps : 65 % contenu + 35 % carte sticky ─────────────────────── */}
+      <div className="max-w-7xl mx-auto px-6 pb-16">
+        <div className="flex gap-10 mt-10 items-start">
 
-          {/* Colonne gauche */}
+          {/* Colonne gauche — contenu */}
           <div className="flex-1 min-w-0">
             <InfosBien bien={bien} />
             <CarteLocalisation
@@ -71,20 +78,37 @@ export default async function PageDetailLocation({ params }: Props) {
             />
           </div>
 
-          {/* Colonne droite sticky */}
-          <div className="w-80 flex-shrink-0">
+          {/* Colonne droite — carte contact sticky */}
+          <div className="hidden lg:block w-[340px] flex-shrink-0">
             <CarteContact
               prix={bien.prix}
               transaction={bien.transaction}
               titre={bien.titre}
               chemin={`louer/${slug}`}
+              bienId={bien.id}
+              agentId={bien.agent_id ?? null}
             />
           </div>
 
         </div>
+
+        {/* Carte contact mobile (bas de page) */}
+        <div
+          className="lg:hidden mt-8 rounded-2xl overflow-hidden"
+          style={{ border: "1px solid #EDE7D7" }}
+        >
+          <CarteContact
+            prix={bien.prix}
+            transaction={bien.transaction}
+            titre={bien.titre}
+            chemin={`louer/${slug}`}
+            bienId={bien.id}
+            agentId={bien.agent_id ?? null}
+          />
+        </div>
       </div>
 
-      {/* Biens similaires */}
+      {/* ── Biens similaires ─────────────────────────────────────────────── */}
       <BiensSimiliaires
         ville={bien.ville}
         type={bien.type}
