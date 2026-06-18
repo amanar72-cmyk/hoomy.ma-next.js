@@ -86,20 +86,25 @@ export default async function PageLouer({ searchParams }: Props) {
         </div>
 
         {biens.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="mb-4" style={{ fontSize: 48 }}>🏠</div>
-            <p
-              className="text-xl font-normal mb-2"
-              style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+          <div className="flex flex-col items-center py-28 text-center">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
+              style={{ background: "#F0FAF4" }}
             >
+              <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.4">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </div>
+            <p className="text-xl font-normal mb-2" style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}>
               Aucun bien trouvé
             </p>
-            <p className="text-sm" style={{ color: "#888" }}>
-              Essayez d'élargir vos critères de recherche ou de changer de ville.
+            <p className="text-sm max-w-xs" style={{ color: "#9DB8AD" }}>
+              Essayez d'élargir vos critères ou de changer de ville.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
             {biens.map((bien) => (
               <CarteAnnonce key={bien.id} bien={bien} />
             ))}

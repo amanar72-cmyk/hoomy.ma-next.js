@@ -54,31 +54,31 @@ export default async function PageDetailAchat({ params }: Props) {
         </nav>
       </div>
 
-      {/* ── Galerie mosaïque ─────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-6 pt-4 pb-2">
-        <GaleriePhotos
-          photos={bien.photos ?? []}
-          titre={bien.titre}
-          transaction={bien.transaction}
-          verifie={bien.verifie}
-        />
-      </div>
+      {/* ── Layout 2 colonnes : galerie+contenu gauche / carte droite ──────── */}
+      <div className="max-w-7xl mx-auto px-6 pt-4 pb-16">
+        <div className="flex gap-8">
 
-      {/* ── Corps : 65 % contenu + 35 % carte sticky ─────────────────────── */}
-      <div className="max-w-7xl mx-auto px-6 pb-16">
-        <div className="flex gap-10 mt-10 items-start">
-
-          {/* Colonne gauche — contenu */}
+          {/* Colonne gauche — galerie + infos */}
           <div className="flex-1 min-w-0">
-            <InfosBien bien={bien} />
-            <CarteLocalisation
-              latitude={bien.latitude}
-              longitude={bien.longitude}
+            <GaleriePhotos
+              photos={bien.photos ?? []}
               titre={bien.titre}
+              transaction={bien.transaction}
+              verifie={bien.verifie}
             />
+            <div className="mt-10">
+              <InfosBien bien={bien} />
+              <CarteLocalisation
+                latitude={bien.latitude}
+                longitude={bien.longitude}
+                titre={bien.titre}
+              />
+            </div>
           </div>
 
-          {/* Colonne droite — carte contact sticky */}
+          {/* Colonne droite — carte contact (desktop) */}
+          {/* La colonne s'étire sur toute la hauteur (flex stretch par défaut)
+              pour que le sticky top-6 à l'intérieur fonctionne jusqu'en bas */}
           <div className="hidden lg:block w-[340px] flex-shrink-0">
             <CarteContact
               prix={bien.prix}
@@ -92,11 +92,8 @@ export default async function PageDetailAchat({ params }: Props) {
 
         </div>
 
-        {/* Carte contact mobile (bas de page) */}
-        <div
-          className="lg:hidden mt-8 rounded-2xl overflow-hidden"
-          style={{ border: "1px solid #EDE7D7" }}
-        >
+        {/* Carte contact mobile — sous la galerie */}
+        <div className="lg:hidden mt-6">
           <CarteContact
             prix={bien.prix}
             transaction={bien.transaction}
