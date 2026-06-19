@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-const MapLeaflet = dynamic(() => import("./MapLeaflet"), {
+const MapboxLocalisation = dynamic(() => import("./MapboxLocalisation"), {
   ssr: false,
   loading: () => (
     <div
@@ -36,7 +36,7 @@ export default function CarteLocalisation({ latitude, longitude, titre }: Props)
         className="rounded-2xl overflow-hidden"
         style={{ height: 320, border: "1px solid #EDE7D7", boxShadow: "0 2px 16px rgba(15,76,58,0.06)" }}
       >
-        <MapLeaflet latitude={latitude} longitude={longitude} titre={titre} />
+        <MapboxLocalisation latitude={latitude} longitude={longitude} titre={titre} />
       </div>
 
       <p

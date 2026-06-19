@@ -1,39 +1,28 @@
 import { NextResponse } from "next/server";
 
-// ─── System prompt strict : uniquement immobilier marocain ───────────────────
+// ─── System prompt (réponses dans la langue du visiteur) ──────────────────────
 
 const SYSTEM_PROMPT = `
-Tu es l'assistant virtuel de HOOMY.MA, la plateforme immobilière premium du Maroc.
+Tu es l'assistant virtuel de HOOMY.MA, plateforme immobilière marocaine premium (achat, vente, location de biens au Maroc).
 
-RÈGLES ABSOLUES :
-1. Tu réponds UNIQUEMENT aux questions liées à l'immobilier : achat, vente, location, estimation de biens, prix du marché marocain, quartiers, villes (Casablanca, Marrakech, Rabat, Tanger, Agadir, Fès…), démarches administratives (compromis, acte adoul, notaire, titre foncier), crédit immobilier, syndic, copropriété, conseils pour acheteurs/vendeurs/investisseurs/locataires.
+RÈGLES STRICTES :
+- Tu réponds UNIQUEMENT aux questions liées à l'immobilier au Maroc : achat, vente, location, estimation, quartiers, prix, surfaces, démarches administratives, crédit immobilier, conseils acheteur/vendeur, fonctionnement de HOOMY.
+- Si la question n'a AUCUN rapport avec l'immobilier (cuisine, code informatique, politique, sport, devoirs scolaires, santé, etc.), refuse poliment et recentre sur l'immobilier, dans la langue du visiteur. Exemple FR : "Je suis l'assistant immobilier de HOOMY, je peux uniquement vous aider sur vos projets immobiliers au Maroc."
+- DÉTECTE la langue du visiteur et réponds TOUJOURS dans la MÊME langue : darija marocaine (arabe dialectal), arabe classique, français, ou anglais. En darija, utilise un registre naturel (ex: "Salam! Ana hna bach n3awnek f l3qar dyalek..."). En arabe, utilise l'arabe standard moderne.
+- Ton chaleureux, professionnel, concis. Réponses courtes et directement utiles.
+- Mets en avant les services HOOMY quand pertinent : annonces vérifiées, conseillers dédiés, estimation gratuite, accompagnement personnalisé.
 
-2. DÉTECTE la langue du visiteur et réponds TOUJOURS dans la MÊME langue :
-   - Darija marocaine (الدارجة المغربية) → réponds en darija
-   - Arabe classique / Fusha (العربية الفصحى) → réponds en arabe
-   - Français → réponds en français
-   - Anglais → réponds en anglais
-   En cas de mélange, utilise la langue dominante.
+DONNÉES DE PRIX DE RÉFÉRENCE (Bank Al-Maghrib / ANCFCC, IPAI 2024, DH/m²) :
+- Casablanca : Appartement 12 503, Villa 16 458
+- Rabat : Appartement 12 392, Villa 13 066
+- Marrakech : Appartement 14 720, Villa 19 686
+- Tanger : Appartement 14 980, Villa 16 903
+- Agadir : Appartement 5 060, Villa 7 026
+- Skhirate-Témara : Appartement 9 004, Villa 10 991
 
-3. Si la question n'a AUCUN rapport avec l'immobilier, refuse poliment et recentre la conversation :
-   - En français : "Je suis l'assistant immobilier de HOOMY, je peux uniquement vous aider sur vos projets immobiliers au Maroc. 😊 Avez-vous une question sur l'achat, la vente ou la location d'un bien ?"
-   - En darija : "أنا المساعد ديال هومي للعقار، غيمكنني نعاونك فالمواضيع العقارية فالمغرب. واش عندك سؤال على الشرا, البيع أو الكراء؟"
-   - En arabe : "أنا مساعد HOOMY العقاري، لا يمكنني الإجابة إلا على أسئلة تتعلق بالعقار في المغرب. هل لديك سؤال حول الشراء أو البيع أو الإيجار؟"
-   - En anglais : "I'm HOOMY's real estate assistant, and I can only help with property-related questions in Morocco. 😊 Do you have a question about buying, selling, or renting?"
-
-4. Ne JAMAIS inventer de prix précis ou de données chiffrées inventées. Pour toute demande d'estimation, oriente systématiquement : "Pour une estimation précise et gratuite basée sur les prix réels du marché, utilisez notre outil d'estimation sur /estimer"
-
-5. Mets en avant les services HOOMY quand c'est pertinent :
-   - Annonces immobilières vérifiées avec label "Vérifié HOOMY"
-   - Outil d'estimation gratuit disponible sur /estimer
-   - Conseillers immobiliers disponibles pour accompagner les projets
-   - Couverture nationale : Casablanca, Marrakech, Rabat, Tanger, Agadir, Fès et plus
-
-6. Ton chaleureux, professionnel, concis et rassurant. Évite les réponses trop longues.
-   Utilise des listes simples avec • pour les étapes ou points multiples.
-   N'utilise pas de titres Markdown complexes (##, ###).
-
-7. Tu t'appelles "l'assistant HOOMY" ou "مساعد هومي". Ne mentionne jamais Gemini, Google ou tout autre fournisseur IA.
+Tu peux donner ces ordres de grandeur comme référence, mais pour une estimation précise d'un bien spécifique, oriente toujours vers l'outil gratuit : "Pour une estimation précise de votre bien, utilisez notre estimateur gratuit sur la page Estimer."
+Ne JAMAIS inventer un prix exact pour un bien précis sans passer par l'estimateur.
+Tu t'appelles "l'assistant HOOMY". Ne mentionne jamais Gemini, Google ou tout autre fournisseur IA.
 `.trim();
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -43,15 +32,11 @@ type Message = {
   content: string;
 };
 
-type RequestBody = {
-  messages: Message[];
-};
-
-// ─── Route Handler ────────────────────────────────────────────────────────────
+// ─── Route Handler POST ───────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as RequestBody;
+    const body = await req.json() as { messages: Message[] };
     const { messages } = body;
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -63,17 +48,17 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error("GEMINI_API_KEY manquante dans les variables d'environnement.");
+      console.error("[chat] GEMINI_API_KEY manquante dans .env.local");
       return NextResponse.json(
-        { erreur: "Configuration du service IA manquante." },
+        { erreur: "Service IA non configuré. Contactez un conseiller." },
         { status: 500 }
       );
     }
 
-    // Conversion au format Gemini (role "model" au lieu de "assistant")
-    const contents = messages.map((msg) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
+    // Conversion au format Gemini : "assistant" → "model"
+    const contents = messages.map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
     }));
 
     const payload = {
@@ -82,18 +67,14 @@ export async function POST(req: Request) {
         parts: [{ text: SYSTEM_PROMPT }],
       },
       generationConfig: {
-        maxOutputTokens: 800,
         temperature: 0.7,
+        maxOutputTokens: 500,
         topP: 0.9,
       },
-      safetySettings: [
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-      ],
     };
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,16 +85,12 @@ export async function POST(req: Request) {
     const geminiData = await geminiRes.json();
 
     if (!geminiRes.ok) {
-      console.error("Erreur Gemini API :", geminiData);
-
-      const status = geminiData?.error?.status;
+      console.error("[chat] Erreur Gemini :", geminiData?.error);
+      const erreurStatus = geminiData?.error?.status;
       const message =
-        status === "RESOURCE_EXHAUSTED"
+        erreurStatus === "RESOURCE_EXHAUSTED"
           ? "Le service IA est temporairement saturé. Réessayez dans quelques instants."
-          : status === "INVALID_ARGUMENT"
-          ? "Requête invalide envoyée au service IA."
-          : "Le service IA est temporairement indisponible. Veuillez réessayer.";
-
+          : "Le service IA est momentanément indisponible. Veuillez réessayer.";
       return NextResponse.json({ erreur: message }, { status: 503 });
     }
 
@@ -121,16 +98,16 @@ export async function POST(req: Request) {
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!reply) {
-      console.error("Réponse Gemini vide :", JSON.stringify(geminiData));
+      console.error("[chat] Réponse vide de Gemini :", JSON.stringify(geminiData));
       return NextResponse.json(
-        { erreur: "Le service IA n'a pas pu générer de réponse. Réessayez." },
+        { erreur: "L'assistant n'a pas pu générer de réponse. Réessayez." },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ reply: reply.trim() });
   } catch (err) {
-    console.error("Erreur inattendue dans /api/chat :", err);
+    console.error("[chat] Erreur inattendue :", err);
     return NextResponse.json(
       { erreur: "Une erreur technique est survenue. Veuillez réessayer." },
       { status: 500 }

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { creerBien } from "@/app/admin/actions";
+import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 
 // ── Constantes partagées (mêmes que FormulaireEditionBien) ───────────────────
 
@@ -54,6 +55,8 @@ export default function FormulaireCreationBien() {
   const [equipements, setEquipements] = useState<string[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [nouvelleUrl, setNouvelleUrl] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
   // États UI
   const [chargement, setChargement] = useState(false);
@@ -119,6 +122,8 @@ export default function FormulaireCreationBien() {
           surface: surfaceNum,
           equipements: equipements.length > 0 ? equipements : null,
           photos: photos.length > 0 ? photos : null,
+          latitude,
+          longitude,
         },
         mettreEnFile
       );
@@ -184,6 +189,20 @@ export default function FormulaireCreationBien() {
             <input type="text" value={quartier} onChange={(e) => setQuartier(e.target.value)}
               className={cls} style={inp} placeholder="Ex: Maarif, Guéliz, Agdal…" />
           </Champ>
+          <div className="col-span-full">
+            <label className="text-xs font-medium block mb-1" style={{ color: "#555" }}>
+              Position exacte sur la carte
+            </label>
+            <p className="text-xs mb-2" style={{ color: "#9DB8AD" }}>
+              Cliquez pour épingler l'emplacement précis — les visiteurs ne voient qu'une zone approximative
+            </p>
+            <ChampLocalisationCarte
+              latitude={latitude}
+              longitude={longitude}
+              ville={ville}
+              onChangement={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+            />
+          </div>
           <Champ label="Chambres">
             <input type="number" value={chambres} onChange={(e) => setChambres(e.target.value)}
               min="0" className={cls} style={inp} />

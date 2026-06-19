@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { modifierBien, supprimerBien } from "@/app/admin/actions";
+import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +24,8 @@ type BienComplet = {
   photos: string[] | null;
   verifie: boolean;
   statut: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 // ── Helpers UI ───────────────────────────────────────────────────────────────
@@ -81,6 +84,8 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
   const [nouvelleUrl, setNouvelleUrl] = useState("");
   const [verifie, setVerifie] = useState(bien.verifie);
   const [statut, setStatut] = useState(bien.statut ?? "");
+  const [latitude, setLatitude] = useState<number | null>(bien.latitude ?? null);
+  const [longitude, setLongitude] = useState<number | null>(bien.longitude ?? null);
 
   // États UI
   const [chargement, setChargement] = useState(false);
@@ -139,6 +144,8 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
         photos: photos.length > 0 ? photos : null,
         verifie,
         statut: statut || null,
+        latitude,
+        longitude,
       });
       setSucces(true);
       router.refresh();
@@ -216,6 +223,20 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
             <input type="text" value={quartier} onChange={(e) => setQuartier(e.target.value)}
               className={cls} style={inp} placeholder="Ex: Maarif, Guéliz…" />
           </Champ>
+          <div className="col-span-full">
+            <label className="text-xs font-medium block mb-1" style={{ color: "#555" }}>
+              Position exacte sur la carte
+            </label>
+            <p className="text-xs mb-2" style={{ color: "#9DB8AD" }}>
+              Cliquez pour épingler l'emplacement précis — les visiteurs ne voient qu'une zone approximative
+            </p>
+            <ChampLocalisationCarte
+              latitude={latitude}
+              longitude={longitude}
+              ville={ville}
+              onChangement={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+            />
+          </div>
           <Champ label="Chambres">
             <input type="number" value={chambres} onChange={(e) => setChambres(e.target.value)}
               min="0" className={cls} style={inp} />

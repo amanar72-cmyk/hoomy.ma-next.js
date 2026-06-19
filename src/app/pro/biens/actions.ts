@@ -76,6 +76,8 @@ export type DonneesBienAgent = {
   salles_bain: number;
   surface: number;
   equipements: string[] | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export async function creerBienAgent(donnees: DonneesBienAgent): Promise<{ id: string }> {
@@ -128,6 +130,8 @@ export type DonneesModificationBienAgent = {
   surface: number;
   equipements: string[] | null;
   photos: string[] | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export async function modifierBienAgent(

@@ -48,6 +48,9 @@ export default async function Navbar() {
           <Link href="/estimer" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "#146C43" }}>
             Estimer
           </Link>
+          <Link href="/carte" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
+            Carte
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">

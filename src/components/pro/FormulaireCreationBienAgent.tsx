@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { creerBienAgent, type DonneesBienAgent } from "@/app/pro/biens/actions";
+import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 
 const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
 const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
@@ -29,6 +30,9 @@ export default function FormulaireCreationBienAgent() {
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [equipementsChoisis, setEquipementsChoisis] = useState<string[]>([]);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [villeSelectionnee, setVilleSelectionnee] = useState("");
 
   function toggleEquipement(eq: string) {
     setEquipementsChoisis((prev) =>
@@ -56,6 +60,8 @@ export default function FormulaireCreationBienAgent() {
       salles_bain: Number(fd.get("salles_bain")),
       surface: Number(fd.get("surface")),
       equipements: equipementsChoisis.length > 0 ? equipementsChoisis : null,
+      latitude,
+      longitude,
     };
 
     try {
@@ -150,7 +156,14 @@ export default function FormulaireCreationBienAgent() {
             <label htmlFor="ville" className={labelClass} style={labelStyle}>
               Ville *
             </label>
-            <select id="ville" name="ville" required className={sel} style={selStyle}>
+            <select
+              id="ville"
+              name="ville"
+              required
+              className={sel}
+              style={selStyle}
+              onChange={(e) => setVilleSelectionnee(e.target.value)}
+            >
               <option value="">Sélectionner</option>
               {VILLES.map((v) => (
                 <option key={v} value={v}>{v}</option>
@@ -171,6 +184,21 @@ export default function FormulaireCreationBienAgent() {
               style={selStyle}
             />
           </div>
+        </div>
+
+        <div className="mt-4">
+          <label className={labelClass} style={labelStyle}>
+            Position exacte sur la carte
+          </label>
+          <p className="text-xs mb-2" style={{ color: "#9DB8AD" }}>
+            Cliquez pour épingler l'emplacement précis — les visiteurs ne verront qu'une zone approximative
+          </p>
+          <ChampLocalisationCarte
+            latitude={latitude}
+            longitude={longitude}
+            ville={villeSelectionnee}
+            onChangement={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+          />
         </div>
       </div>
 

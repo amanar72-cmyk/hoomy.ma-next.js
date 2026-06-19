@@ -19,9 +19,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const { data } = await supabase.from("biens").select("titre, ville, prix").eq("slug", slug).single();
   if (!data) return { title: "Bien non trouvé | HOOMY.MA" };
+  const titre = `${data.titre} — À louer à ${data.ville} | HOOMY.MA`;
+  const description = `${data.titre} à louer à ${data.ville}. Loyer : ${Number(data.prix).toLocaleString("fr-FR")} DH/mois.`;
+  const ogImage = `/api/og?slug=${slug}`;
   return {
-    title: `${data.titre} — À louer à ${data.ville} | HOOMY.MA`,
-    description: `${data.titre} à louer à ${data.ville}. Loyer : ${Number(data.prix).toLocaleString("fr-FR")} DH/mois.`,
+    title: titre,
+    description,
+    openGraph: {
+      title: titre,
+      description,
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: titre,
+      description,
+      images: [ogImage],
+    },
   };
 }
 
@@ -87,6 +102,7 @@ export default async function PageDetailLocation({ params }: Props) {
               chemin={`louer/${slug}`}
               bienId={bien.id}
               agentId={bien.agent_id ?? null}
+              slug={slug}
             />
           </div>
 
@@ -101,6 +117,7 @@ export default async function PageDetailLocation({ params }: Props) {
             chemin={`louer/${slug}`}
             bienId={bien.id}
             agentId={bien.agent_id ?? null}
+            slug={slug}
           />
         </div>
       </div>

@@ -23,7 +23,7 @@ export default async function PageEditionBienAgent({ params }: Props) {
     .from("biens")
     .select(
       "id, reference, titre, description, type, transaction, prix, ville, quartier, " +
-      "chambres, salles_bain, surface, equipements, photos, statut, agent_id"
+      "chambres, salles_bain, surface, equipements, photos, statut, agent_id, latitude, longitude"
     )
     .eq("id", id)
     .single();

@@ -37,6 +37,8 @@ export type DonneesBienClient = {
   titre: string;
   description: string;
   prix: number;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export async function publierBien(donnees: DonneesBienClient): Promise<{ id: string }> {
@@ -60,6 +62,8 @@ export async function publierBien(donnees: DonneesBienClient): Promise<{ id: str
       prix: donnees.prix,
       ville: donnees.ville,
       quartier: donnees.quartier || null,
+      latitude: donnees.latitude ?? null,
+      longitude: donnees.longitude ?? null,
       chambres: donnees.chambres,
       salles_bain: donnees.salles_bain,
       surface: donnees.surface,

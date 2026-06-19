@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { publierBien } from "@/app/publier/actions";
+import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,8 @@ type DonneesWizard = {
   titre: string;
   description: string;
   prix: number;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 const ETAPE_LABELS = [
@@ -242,6 +245,8 @@ export default function WizardPublication({ userId }: { userId: string }) {
     titre: "",
     description: "",
     prix: 0,
+    latitude: null,
+    longitude: null,
   });
 
   // Upload photos
@@ -375,6 +380,8 @@ export default function WizardPublication({ userId }: { userId: string }) {
         titre: donnees.titre,
         description: donnees.description,
         prix: donnees.prix,
+        latitude: donnees.latitude,
+        longitude: donnees.longitude,
       });
       setSucces(true);
     } catch (e: unknown) {
@@ -480,6 +487,23 @@ export default function WizardPublication({ userId }: { userId: string }) {
                   placeholder="Ex : Gauthier, Guéliz, Souissi…"
                   className="w-full border rounded-xl px-4 py-3 text-sm"
                   style={{ borderColor: "#E0DAC8", color: "#1f2a24" }}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: "#3D4A42" }}>
+                  Position exacte sur la carte
+                </label>
+                <p className="text-xs mb-2" style={{ color: "#9DB8AD" }}>
+                  Facultatif — cliquez pour épingler l'emplacement. Les visiteurs verront seulement une zone approximative.
+                </p>
+                <ChampLocalisationCarte
+                  latitude={donnees.latitude}
+                  longitude={donnees.longitude}
+                  ville={donnees.ville}
+                  onChangement={(lat, lng) => {
+                    mettreAJour("latitude", lat);
+                    mettreAJour("longitude", lng);
+                  }}
                 />
               </div>
             </div>

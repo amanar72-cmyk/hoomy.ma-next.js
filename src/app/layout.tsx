@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Marcellus, Outfit } from "next/font/google";
 import "./globals.css";
+import BulleChatConditionnelle from "@/components/chat/BulleChatConditionnelle";
 
 const marcellus = Marcellus({ subsets: ["latin"], weight: "400", variable: "--font-marcellus" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         style={{ margin: 0, fontFamily: "var(--font-outfit), sans-serif", background: "#FAF7F0", color: "#1f2a24" }}
       >
         {children}
+        <BulleChatConditionnelle />
       </body>
     </html>
   );

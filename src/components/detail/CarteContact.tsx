@@ -11,9 +11,10 @@ type Props = {
   chemin: string;
   bienId: string;
   agentId: string | null;
+  slug: string;
 };
 
-export default function CarteContact({ prix, transaction, titre, chemin, bienId, agentId }: Props) {
+export default function CarteContact({ prix, transaction, titre, chemin, bienId, agentId, slug }: Props) {
   const [lienCopie, setLienCopie] = useState(false);
   const [pageUrl, setPageUrl] = useState("");
   const [modalVisiteOuvert, setModalVisiteOuvert] = useState(false);
@@ -175,6 +176,28 @@ export default function CarteContact({ prix, transaction, titre, chemin, bienId,
               </button>
 
             </div>
+
+            {/* ── Télécharger la carte de partage ───────────────────────── */}
+            <a
+              href={`/api/og?slug=${slug}`}
+              download={`hoomy-${slug}.png`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full mt-1 py-2.5 rounded-xl text-xs font-medium flex items-center justify-center gap-2 transition-all hover:opacity-80"
+              style={{
+                background: "#F5F0E6",
+                color: "#6B6450",
+                textDecoration: "none",
+                border: "1px dashed #D4C9A8",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Télécharger la carte de partage
+            </a>
           </div>
         </div>
       </div>

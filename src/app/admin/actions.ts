@@ -48,6 +48,8 @@ type DonneesBien = {
   photos: string[] | null;
   verifie: boolean;
   statut: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export async function modifierBien(bienId: string, donnees: DonneesBien) {
@@ -157,6 +159,8 @@ type NouveauBien = {
   chambres: number;
   salles_bain: number;
   surface: number;
+  latitude: number | null;
+  longitude: number | null;
   equipements: string[] | null;
   photos: string[] | null;
 };

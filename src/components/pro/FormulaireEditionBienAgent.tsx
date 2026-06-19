@@ -8,6 +8,7 @@ import {
   transmettreAuBo,
   type DonneesModificationBienAgent,
 } from "@/app/pro/biens/actions";
+import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,8 @@ export type BienEditable = {
   equipements: string[] | null;
   photos: string[] | null;
   statut: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 // ── Helpers UI ────────────────────────────────────────────────────────────────
@@ -91,6 +94,8 @@ export default function FormulaireEditionBienAgent({
   const [surface, setSurface] = useState(bien.surface.toString());
   const [equipements, setEquipements] = useState<string[]>(bien.equipements ?? []);
   const [photos, setPhotos] = useState<string[]>(bien.photos ?? []);
+  const [latitude, setLatitude] = useState<number | null>(bien.latitude ?? null);
+  const [longitude, setLongitude] = useState<number | null>(bien.longitude ?? null);
 
   // ── État UI ──────────────────────────────────────────────────────────────────
   const [chargement, setChargement] = useState(false);
@@ -188,6 +193,8 @@ export default function FormulaireEditionBienAgent({
       surface: Math.max(0, parseFloat(surface) || 0),
       equipements: equipements.length > 0 ? equipements : null,
       photos: photos.length > 0 ? photos : null,
+      latitude,
+      longitude,
     };
 
     setErreur(null);
@@ -305,6 +312,20 @@ export default function FormulaireEditionBienAgent({
               placeholder="Ex: Maarif, Guéliz…"
             />
           </Champ>
+          <div className="col-span-full">
+            <label className="text-xs font-medium block mb-1" style={{ color: "#555" }}>
+              Position exacte sur la carte
+            </label>
+            <p className="text-xs mb-2" style={{ color: "#9DB8AD" }}>
+              Cliquez pour épingler l'emplacement précis — les visiteurs ne voient qu'une zone approximative
+            </p>
+            <ChampLocalisationCarte
+              latitude={latitude}
+              longitude={longitude}
+              ville={ville}
+              onChangement={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+            />
+          </div>
           <Champ label="Chambres">
             <input
               type="number"
