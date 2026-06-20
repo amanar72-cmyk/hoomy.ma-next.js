@@ -36,6 +36,7 @@ export async function supprimerBien(id: string) {
 type DonneesBien = {
   titre: string;
   description: string | null;
+  description_ar: string | null;
   type: string;
   transaction: string;
   prix: number;
@@ -151,6 +152,7 @@ function genererSlug(titre: string, ville: string, reference: string): string {
 type NouveauBien = {
   titre: string;
   description: string | null;
+  description_ar: string | null;
   type: string;
   transaction: string;
   prix: number;

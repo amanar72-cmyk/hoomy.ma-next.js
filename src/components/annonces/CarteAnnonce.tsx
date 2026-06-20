@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Bien } from "@/lib/types";
 import { trackEvenement } from "@/lib/tracking/track";
 import { useComparateur } from "@/lib/comparateur/ComparateurContext";
+import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
@@ -212,21 +213,29 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
         <div className="flex flex-col flex-1 px-5 pt-4 pb-4">
 
           {/* Prix */}
-          <div className="flex items-baseline gap-1 mb-2.5">
-            <span
-              className="leading-tight"
-              style={{
-                fontFamily: "var(--font-marcellus), serif",
-                color: "var(--primaire)",
-                fontSize: "1.2rem",
-              }}
-            >
-              {prixBase}
-            </span>
-            <span className="text-sm font-medium" style={{ color: "var(--primaire)" }}>DH</span>
-            {bien.transaction === "location" && (
-              <span className="text-xs ml-0.5" style={{ color: "var(--texte-tertiaire)" }}>/mois</span>
-            )}
+          <div className="mb-2.5">
+            <div className="flex items-baseline gap-1">
+              <span
+                className="leading-tight"
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)", fontSize: "1.2rem" }}
+              >
+                {prixBase}
+              </span>
+              <span className="text-sm font-medium" style={{ color: "var(--primaire)" }}>DH</span>
+              {bien.transaction === "location" && (
+                <span className="text-xs ml-0.5" style={{ color: "var(--texte-tertiaire)" }}>/mois</span>
+              )}
+            </div>
+            {/* Frais d'acquisition estimés — vente uniquement */}
+            {bien.transaction !== "location" && (() => {
+              const f = calculerFraisAcquisition(bien.prix);
+              return (
+                <p className="text-xs mt-0.5" style={{ color: "var(--texte-tertiaire)" }}>
+                  + ~{formaterDH(f.totalFrais)} de frais{" "}
+                  <span style={{ color: "var(--texte-pale)" }}>· coût total {formaterDH(f.coutTotal)}</span>
+                </p>
+              );
+            })()}
           </div>
 
           {/* Titre */}

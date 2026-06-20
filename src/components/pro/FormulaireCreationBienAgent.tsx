@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { creerBienAgent, type DonneesBienAgent } from "@/app/pro/biens/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
+import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 
 const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
 const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
@@ -33,6 +34,16 @@ export default function FormulaireCreationBienAgent() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [villeSelectionnee, setVilleSelectionnee] = useState("");
+  // Champs contrôlés pour la génération IA
+  const [typeSelectionne, setTypeSelectionne] = useState("");
+  const [transactionSelectionnee, setTransactionSelectionnee] = useState("");
+  const [description, setDescription] = useState("");
+  const [descriptionAr, setDescriptionAr] = useState("");
+  const [prixSaisi, setPrixSaisi] = useState("");
+  const [surfaceSaisie, setSurfaceSaisie] = useState("");
+  const [chambresSaisies, setChambresSaisies] = useState("0");
+  const [sallesBainSaisies, setSallesBainSaisies] = useState("0");
+  const [quartierSaisi, setQuartierSaisi] = useState("");
 
   function toggleEquipement(eq: string) {
     setEquipementsChoisis((prev) =>
@@ -50,15 +61,16 @@ export default function FormulaireCreationBienAgent() {
 
     const donnees: DonneesBienAgent = {
       titre: String(fd.get("titre") ?? "").trim(),
-      description: String(fd.get("description") ?? "").trim() || null,
-      type: String(fd.get("type") ?? ""),
-      transaction: String(fd.get("transaction") ?? ""),
-      prix: Number(fd.get("prix")),
-      ville: String(fd.get("ville") ?? ""),
-      quartier: String(fd.get("quartier") ?? "").trim() || null,
-      chambres: Number(fd.get("chambres")),
-      salles_bain: Number(fd.get("salles_bain")),
-      surface: Number(fd.get("surface")),
+      description: description.trim() || null,
+      description_ar: descriptionAr.trim() || null,
+      type: typeSelectionne || String(fd.get("type") ?? ""),
+      transaction: transactionSelectionnee || String(fd.get("transaction") ?? ""),
+      prix: Number(prixSaisi || fd.get("prix")),
+      ville: villeSelectionnee || String(fd.get("ville") ?? ""),
+      quartier: quartierSaisi.trim() || String(fd.get("quartier") ?? "").trim() || null,
+      chambres: Number(chambresSaisies || fd.get("chambres")),
+      salles_bain: Number(sallesBainSaisies || fd.get("salles_bain")),
+      surface: Number(surfaceSaisie || fd.get("surface")),
       equipements: equipementsChoisis.length > 0 ? equipementsChoisis : null,
       latitude,
       longitude,
@@ -106,7 +118,15 @@ export default function FormulaireCreationBienAgent() {
               <label htmlFor="type" className={labelClass} style={labelStyle}>
                 Type de bien *
               </label>
-              <select id="type" name="type" required className={sel} style={selStyle}>
+              <select
+                id="type"
+                name="type"
+                required
+                className={sel}
+                style={selStyle}
+                value={typeSelectionne}
+                onChange={(e) => setTypeSelectionne(e.target.value)}
+              >
                 <option value="">Sélectionner</option>
                 {TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -118,7 +138,15 @@ export default function FormulaireCreationBienAgent() {
               <label htmlFor="transaction" className={labelClass} style={labelStyle}>
                 Transaction *
               </label>
-              <select id="transaction" name="transaction" required className={sel} style={selStyle}>
+              <select
+                id="transaction"
+                name="transaction"
+                required
+                className={sel}
+                style={selStyle}
+                value={transactionSelectionnee}
+                onChange={(e) => setTransactionSelectionnee(e.target.value)}
+              >
                 <option value="">Sélectionner</option>
                 <option value="vente">Vente</option>
                 <option value="location">Location</option>
@@ -126,18 +154,50 @@ export default function FormulaireCreationBienAgent() {
             </div>
           </div>
 
-          <div>
-            <label htmlFor="description" className={labelClass} style={labelStyle}>
-              Description
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={4}
-              placeholder="Décrivez le bien : caractéristiques, environnement, atouts…"
-              className={sel}
-              style={{ ...selStyle, resize: "vertical" }}
+          <div className="flex flex-col gap-3">
+            <BoutonGenerationIA
+              type={typeSelectionne}
+              transaction={transactionSelectionnee}
+              ville={villeSelectionnee}
+              quartier={quartierSaisi}
+              prix={prixSaisi}
+              surface={surfaceSaisie}
+              chambres={chambresSaisies}
+              sallesBain={sallesBainSaisies}
+              equipements={equipementsChoisis}
+              onGenere={(fr, ar) => { setDescription(fr); setDescriptionAr(ar); }}
             />
+
+            <div>
+              <label htmlFor="description" className={labelClass} style={labelStyle}>
+                Description — Français
+              </label>
+              <textarea
+                id="description"
+                rows={4}
+                placeholder="Décrivez le bien : caractéristiques, environnement, atouts…"
+                className={sel}
+                style={{ ...selStyle, resize: "vertical" }}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass} style={{ ...labelStyle, color: "#6B7A71" }}>
+                عربي — Arabic{" "}
+                <span style={{ color: "#9DB8AD", fontWeight: 400 }}>(généré automatiquement ou à saisir)</span>
+              </label>
+              <textarea
+                rows={4}
+                placeholder="وصف العقار باللغة العربية…"
+                dir="rtl"
+                className={sel}
+                style={{ ...selStyle, resize: "vertical", fontFamily: "serif", lineHeight: "1.9" }}
+                value={descriptionAr}
+                onChange={(e) => setDescriptionAr(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -182,6 +242,8 @@ export default function FormulaireCreationBienAgent() {
               placeholder="Ex : Maarif, Guéliz…"
               className={sel}
               style={selStyle}
+              value={quartierSaisi}
+              onChange={(e) => setQuartierSaisi(e.target.value)}
             />
           </div>
         </div>
@@ -226,6 +288,8 @@ export default function FormulaireCreationBienAgent() {
               placeholder="1 500 000"
               className={sel}
               style={selStyle}
+              value={prixSaisi}
+              onChange={(e) => setPrixSaisi(e.target.value)}
             />
           </div>
 
@@ -242,6 +306,8 @@ export default function FormulaireCreationBienAgent() {
               placeholder="120"
               className={sel}
               style={selStyle}
+              value={surfaceSaisie}
+              onChange={(e) => setSurfaceSaisie(e.target.value)}
             />
           </div>
 
@@ -254,9 +320,10 @@ export default function FormulaireCreationBienAgent() {
               name="chambres"
               type="number"
               min="0"
-              defaultValue={0}
               className={sel}
               style={selStyle}
+              value={chambresSaisies}
+              onChange={(e) => setChambresSaisies(e.target.value)}
             />
           </div>
 
@@ -269,9 +336,10 @@ export default function FormulaireCreationBienAgent() {
               name="salles_bain"
               type="number"
               min="0"
-              defaultValue={0}
               className={sel}
               style={selStyle}
+              value={sallesBainSaisies}
+              onChange={(e) => setSallesBainSaisies(e.target.value)}
             />
           </div>
         </div>

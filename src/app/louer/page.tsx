@@ -21,16 +21,18 @@ export default async function PageLouer({ searchParams }: Props) {
   const sp = await searchParams;
 
   const ville    = str(sp.ville);
+  const quartier = str(sp.quartier);
   const type     = str(sp.type);
   const prixMin  = str(sp.prixMin);
   const prixMax  = str(sp.prixMax);
   const chambres = str(sp.chambres);
   const tri      = str(sp.tri) || "cree_le_desc";
 
-  const filtresActifs: FiltresActifs = { ville, type, prixMin, prixMax, chambres, tri };
+  const filtresActifs: FiltresActifs = { ville, quartier, type, prixMin, prixMax, chambres, tri };
 
   const paramsActifs: Record<string, string> = {};
   if (ville)    paramsActifs.ville    = ville;
+  if (quartier) paramsActifs.quartier = quartier;
   if (type)     paramsActifs.type     = type;
   if (prixMin)  paramsActifs.prixMin  = prixMin;
   if (prixMax)  paramsActifs.prixMax  = prixMax;
@@ -39,10 +41,11 @@ export default async function PageLouer({ searchParams }: Props) {
   // ── Requête Supabase — transaction = "location" ──
   let query = supabase.from("biens").select("*").eq("transaction", "location");
 
-  if (ville)   query = query.eq("ville", ville);
-  if (type)    query = query.eq("type", type);
-  if (prixMin) query = query.gte("prix", Number(prixMin));
-  if (prixMax) query = query.lte("prix", Number(prixMax));
+  if (ville)    query = query.eq("ville", ville);
+  if (quartier) query = query.eq("quartier", quartier);
+  if (type)     query = query.eq("type", type);
+  if (prixMin)  query = query.gte("prix", Number(prixMin));
+  if (prixMax)  query = query.lte("prix", Number(prixMax));
 
   if (chambres === "5+") {
     query = query.gte("chambres", 5);

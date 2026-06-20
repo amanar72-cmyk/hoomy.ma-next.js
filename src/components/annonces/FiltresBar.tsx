@@ -20,6 +20,8 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
   // État local initialisé depuis les props serveur ; le composant est remonté
   // via key={} à chaque navigation, donc les valeurs restent synchronisées.
   const [ville, setVille] = useState(defaultFiltres.ville);
+  // quartier : préservé dans l'URL mais non exposé dans cette barre de filtres
+  const quartier = defaultFiltres.quartier;
   const [type, setType] = useState(defaultFiltres.type);
   const [prixMin, setPrixMin] = useState(defaultFiltres.prixMin);
   const [prixMax, setPrixMax] = useState(defaultFiltres.prixMax);
@@ -28,6 +30,7 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
   function filtrer() {
     const params = new URLSearchParams();
     if (ville) params.set("ville", ville);
+    if (quartier) params.set("quartier", quartier); // préservé si venu du hero
     if (type) params.set("type", type);
     if (prixMin) params.set("prixMin", prixMin);
     if (prixMax) params.set("prixMax", prixMax);

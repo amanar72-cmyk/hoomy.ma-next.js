@@ -67,6 +67,7 @@ export async function accepterBien(bienId: string) {
 export type DonneesBienAgent = {
   titre: string;
   description: string | null;
+  description_ar: string | null;
   type: string;
   transaction: string;
   prix: number;
@@ -120,6 +121,7 @@ export async function creerBienAgent(donnees: DonneesBienAgent): Promise<{ id: s
 export type DonneesModificationBienAgent = {
   titre: string;
   description: string | null;
+  description_ar: string | null;
   type: string;
   transaction: string;
   prix: number;

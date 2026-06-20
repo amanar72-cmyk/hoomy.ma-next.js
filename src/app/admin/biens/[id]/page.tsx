@@ -12,7 +12,7 @@ export default async function PageEditionBien({ params }: Props) {
   const { data: bien, error } = await supabase
     .from("biens")
     .select(
-      "id, reference, titre, description, type, transaction, prix, ville, quartier, chambres, salles_bain, surface, equipements, photos, verifie, statut, latitude, longitude"
+      "id, reference, titre, description, description_ar, type, transaction, prix, ville, quartier, chambres, salles_bain, surface, equipements, photos, verifie, statut, latitude, longitude"
     )
     .eq("id", id)
     .single();

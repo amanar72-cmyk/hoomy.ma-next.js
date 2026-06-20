@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import ModalDemandeVisite from "@/components/detail/ModalDemandeVisite";
 import ModalEnvoyerMessage from "@/components/detail/ModalEnvoyerMessage";
+import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
 
 type Props = {
   prix: number;
@@ -61,6 +62,54 @@ export default function CarteContact({ prix, transaction, titre, chemin, bienId,
           >
             {prixFormate}
           </p>
+
+          {/* Frais d'acquisition inline — vente uniquement */}
+          {transaction !== "location" && (() => {
+            const f = calculerFraisAcquisition(prix);
+            return (
+              <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.12)" }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs" style={{ color: "#A8D5B8" }}>Frais d'acquisition (estimés)</span>
+                  <span className="text-xs font-semibold" style={{ color: "#D4AF37" }}>
+                    +{formaterDH(f.totalFrais)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs" style={{ color: "#A8D5B8" }}>Coût total réel</span>
+                  <span className="text-xs font-bold" style={{ color: "#fff" }}>
+                    {formaterDH(f.coutTotal)}
+                  </span>
+                </div>
+                <Link
+                  href={`/frais-acquisition?prix=${prix}`}
+                  className="block mt-2 text-xs underline-offset-2 hover:underline"
+                  style={{ color: "rgba(212,175,55,0.75)", textDecoration: "none" }}
+                >
+                  Voir le détail des frais →
+                </Link>
+              </div>
+            );
+          })()}
+
+          {/* Bouton simulateur de crédit — vente uniquement */}
+          {transaction !== "location" && (
+            <Link
+              href={`/simulateur-credit?prix=${prix}`}
+              className="flex items-center justify-center gap-2 mt-2 py-2.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
+              style={{
+                background: "rgba(212,175,55,0.10)",
+                color: "#A07C1E",
+                border: "1px solid rgba(212,175,55,0.35)",
+                textDecoration: "none",
+              }}
+            >
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+              </svg>
+              Simuler mon crédit
+            </Link>
+          )}
         </div>
 
         <div className="px-6 py-5 flex flex-col gap-3">
@@ -103,26 +152,6 @@ export default function CarteContact({ prix, transaction, titre, chemin, bienId,
             </svg>
             Contacter sur WhatsApp
           </a>
-
-          {/* ── Calculateur de frais (vente uniquement) ──────────────────── */}
-          {transaction !== "location" && (
-            <Link
-              href={`/frais-acquisition?prix=${prix}`}
-              className="w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all hover:opacity-80"
-              style={{
-                background: "var(--fond-accent)",
-                color: "var(--texte-chaud)",
-                textDecoration: "none",
-                border: "1px dashed #D4C9A8",
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-3" />
-                <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3" />
-              </svg>
-              Estimer les frais d'acquisition
-            </Link>
-          )}
 
           {/* ── Réassurance ──────────────────────────────────────────────── */}
           <div

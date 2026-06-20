@@ -6,6 +6,26 @@ import { useEffect, useRef } from "react";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
+// ── Langue des labels ─────────────────────────────────────────────────────────
+// Centraliser ici : passer "ar" suffit pour basculer en arabe côté carte.
+// Quand un contexte de langue global existera, il pourra alimenter la prop.
+export type LangueMapbox = "fr" | "ar" | "en" | "es";
+
+function appliquerLangue(map: mapboxgl.Map, langue: LangueMapbox) {
+  // Parcourt toutes les couches symbol et remplace name → name_LANGUE avec
+  // coalesce vers name en fallback (évite les tuiles sans traduction).
+  const expression: mapboxgl.Expression = [
+    "coalesce",
+    ["get", `name_${langue}`],
+    ["get", "name"],
+  ];
+  map.getStyle()?.layers?.forEach((layer) => {
+    if (layer.type === "symbol" && layer.layout?.["text-field"]) {
+      map.setLayoutProperty(layer.id, "text-field", expression);
+    }
+  });
+}
+
 // ── Position décalée (150–250 m, déterministe par UUID) ───────────────────────
 function decalerPosition(lat: number, lng: number, bienId: string): { lat: number; lng: number } {
   const hex = bienId.replace(/-/g, "");
@@ -44,11 +64,11 @@ function cercleGeoJSON(lat: number, lng: number, rayonM: number) {
   };
 }
 
-// ── Couleurs selon le thème (ne peuvent pas être des CSS vars dans Mapbox API) ─
+// ── Couleurs du cercle selon le thème ─────────────────────────────────────────
 function couleursTheme(sombre: boolean) {
   return sombre
-    ? { marker: "#D4AF37", fill: "#D4AF37", fillOpacity: 0.10, border: "#D4AF37" }
-    : { marker: "#0F4C3A", fill: "#146C43", fillOpacity: 0.15, border: "#0F4C3A" };
+    ? { fill: "#D4AF37", fillOpacity: 0.10, border: "#D4AF37" }
+    : { fill: "#146C43", fillOpacity: 0.15, border: "#0F4C3A" };
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -57,19 +77,23 @@ type Props = {
   longitude: number;
   titre: string;
   bienId: string;
+  langue?: LangueMapbox; // "fr" par défaut, passer "ar" quand le switch FR/AR existera
 };
 
-export default function MapboxLocalisation({ latitude, longitude, titre, bienId }: Props) {
+export default function MapboxLocalisation({
+  latitude,
+  longitude,
+  bienId,
+  langue = "fr",
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     const pos = decalerPosition(latitude, longitude, bienId);
     const estSombre = document.documentElement.getAttribute("data-theme") === "dark";
-    const c = couleursTheme(estSombre);
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
@@ -84,18 +108,7 @@ export default function MapboxLocalisation({ latitude, longitude, titre, bienId 
 
     mapRef.current = map;
 
-    // Marqueur — couleur adaptatif (CSS var non supporté dans Mapbox Marker.color)
-    markerRef.current = new mapboxgl.Marker({ color: c.marker })
-      .setLngLat([pos.lng, pos.lat])
-      .setPopup(
-        // CSS variables valides dans les innerHTML (DOM normal)
-        new mapboxgl.Popup({ closeButton: false }).setHTML(
-          `<span style="font-family:var(--font-outfit,sans-serif);font-size:13px;color:var(--primaire)">${titre}</span>`
-        )
-      )
-      .addTo(map);
-
-    // Ajoute les couches cercle + masque la frontière du Sahara
+    // ── Ajoute cercle, masque frontière contestée, applique langue ────────────
     function ajouterCouches(sombre: boolean) {
       const col = couleursTheme(sombre);
       const data = cercleGeoJSON(pos.lat, pos.lng, 350);
@@ -105,19 +118,30 @@ export default function MapboxLocalisation({ latitude, longitude, titre, bienId 
       }
       if (!map.getLayer("zone-fill")) {
         map.addLayer({
-          id: "zone-fill", type: "fill", source: "zone",
+          id: "zone-fill",
+          type: "fill",
+          source: "zone",
           paint: { "fill-color": col.fill, "fill-opacity": col.fillOpacity },
         });
       }
       if (!map.getLayer("zone-border")) {
         map.addLayer({
-          id: "zone-border", type: "line", source: "zone",
+          id: "zone-border",
+          type: "line",
+          source: "zone",
+          // Trait continu — pas de line-dasharray
           paint: { "line-color": col.border, "line-width": 2.5 },
         });
       }
+
+      // Masquer la frontière contestée du Sahara occidental
       if (map.getLayer("admin-0-boundary-disputed")) {
         map.setLayoutProperty("admin-0-boundary-disputed", "visibility", "none");
       }
+
+      // Labels en français (ou la langue choisie)
+      appliquerLangue(map, langue);
+
       map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "bottom-right");
     }
 
@@ -125,7 +149,7 @@ export default function MapboxLocalisation({ latitude, longitude, titre, bienId 
       ajouterCouches(document.documentElement.getAttribute("data-theme") === "dark");
     });
 
-    // Re-ajouter les couches après chaque changement de style (setStyle vide tout)
+    // Après chaque changement de style (setStyle vide toutes les couches)
     map.on("style.load", () => {
       ajouterCouches(document.documentElement.getAttribute("data-theme") === "dark");
     });
@@ -133,25 +157,12 @@ export default function MapboxLocalisation({ latitude, longitude, titre, bienId 
     // Observer les changements de thème pour basculer le style de la carte
     const observer = new MutationObserver(() => {
       const sombre = document.documentElement.getAttribute("data-theme") === "dark";
-      const col = couleursTheme(sombre);
-
-      // Mise à jour du style cartographique (déclenche style.load → ajouterCouches)
       map.setStyle(
         sombre
           ? "mapbox://styles/mapbox/dark-v11"
           : "mapbox://styles/mapbox/streets-v12"
       );
-
-      // Mise à jour du marqueur (couleur non CSS-variable dans Mapbox API)
-      markerRef.current?.remove();
-      markerRef.current = new mapboxgl.Marker({ color: col.marker })
-        .setLngLat([pos.lng, pos.lat])
-        .setPopup(
-          new mapboxgl.Popup({ closeButton: false }).setHTML(
-            `<span style="font-family:var(--font-outfit,sans-serif);font-size:13px;color:var(--primaire)">${titre}</span>`
-          )
-        )
-        .addTo(map);
+      // ajouterCouches sera appelé par l'événement style.load qui suit setStyle
     });
 
     observer.observe(document.documentElement, {
@@ -161,12 +172,10 @@ export default function MapboxLocalisation({ latitude, longitude, titre, bienId 
 
     return () => {
       observer.disconnect();
-      markerRef.current?.remove();
       map.remove();
       mapRef.current = null;
-      markerRef.current = null;
     };
-  }, [latitude, longitude, titre, bienId]);
+  }, [latitude, longitude, bienId, langue]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
 }

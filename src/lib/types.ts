@@ -19,11 +19,13 @@ export type Bien = {
   photos: string[] | null;
   verifie: boolean;
   cree_le: string;
+  description_ar: string | null;
 };
 
 // Valeurs courantes des filtres de recherche
 export type FiltresActifs = {
   ville: string;
+  quartier: string;
   type: string;
   prixMin: string;
   prixMax: string;
