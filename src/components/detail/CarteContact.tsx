@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import ModalDemandeVisite from "@/components/detail/ModalDemandeVisite";
 import ModalEnvoyerMessage from "@/components/detail/ModalEnvoyerMessage";
 
@@ -102,6 +103,26 @@ export default function CarteContact({ prix, transaction, titre, chemin, bienId,
             </svg>
             Contacter sur WhatsApp
           </a>
+
+          {/* ── Calculateur de frais (vente uniquement) ──────────────────── */}
+          {transaction !== "location" && (
+            <Link
+              href={`/frais-acquisition?prix=${prix}`}
+              className="w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all hover:opacity-80"
+              style={{
+                background: "var(--fond-accent)",
+                color: "var(--texte-chaud)",
+                textDecoration: "none",
+                border: "1px dashed #D4C9A8",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-3" />
+                <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3" />
+              </svg>
+              Estimer les frais d'acquisition
+            </Link>
+          )}
 
           {/* ── Réassurance ──────────────────────────────────────────────── */}
           <div

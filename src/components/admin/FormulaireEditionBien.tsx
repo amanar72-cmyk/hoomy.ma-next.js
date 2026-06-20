@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { modifierBien, supprimerBien } from "@/app/admin/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
+import { createClient } from "@/lib/supabase/client";
+import { appliquerWatermark } from "@/lib/images/watermark";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,6 +93,9 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState(false);
+  const [uploadEnCours, setUploadEnCours] = useState(false);
+  const [erreurPhoto, setErreurPhoto] = useState<string | null>(null);
+  const inputFichierRef = useRef<HTMLInputElement>(null);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -113,10 +118,57 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
 
   function ajouterPhoto() {
     const url = nouvelleUrl.trim();
-    if (url && !photos.includes(url)) {
-      setPhotos((prev) => [...prev, url]);
-      setNouvelleUrl("");
+    if (!url) {
+      setErreurPhoto("Veuillez saisir une URL valide avant de cliquer Ajouter.");
+      return;
     }
+    if (photos.includes(url)) {
+      setErreurPhoto("Cette URL est déjà dans la liste.");
+      return;
+    }
+    setPhotos((prev) => [...prev, url]);
+    setNouvelleUrl("");
+    setErreurPhoto(null);
+  }
+
+  async function uploadFichiers(fichiers: FileList | null) {
+    if (!fichiers || fichiers.length === 0) return;
+    const liste = Array.from(fichiers).filter(
+      (f) => ["image/jpeg", "image/png", "image/webp"].includes(f.type) && f.size <= 10 * 1024 * 1024
+    );
+    if (liste.length === 0) {
+      setErreurPhoto("Formats acceptés : JPG, PNG, WebP — 10 Mo max par photo.");
+      return;
+    }
+    if (photos.length + liste.length > 15) {
+      setErreurPhoto("Maximum 15 photos par bien.");
+      return;
+    }
+    setUploadEnCours(true);
+    setErreurPhoto(null);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const prefix = user?.id ?? "admin";
+    const nouvellesUrls: string[] = [];
+    for (const fichier of liste) {
+      const chemin = `${prefix}/${Date.now()}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      let aUploader: File | Blob = fichier;
+      try {
+        aUploader = await appliquerWatermark(fichier);
+      } catch (err) {
+        console.warn("[HOOMY] Watermark échoué, upload original :", err);
+      }
+      const { data, error } = await supabase.storage.from("biens").upload(chemin, aUploader);
+      if (error) {
+        setErreurPhoto(`Erreur upload "${fichier.name}" : ${error.message}`);
+        setUploadEnCours(false);
+        return;
+      }
+      const { data: { publicUrl } } = supabase.storage.from("biens").getPublicUrl(data.path);
+      nouvellesUrls.push(publicUrl);
+    }
+    setPhotos((prev) => [...prev, ...nouvellesUrls]);
+    setUploadEnCours(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -301,16 +353,42 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
             <p className="text-sm" style={{ color: "#C4D8CE" }}>Aucune photo — ajoutez une URL ci-dessous</p>
           </div>
         )}
-        {/* Ajout par URL */}
+        {/* Feedback erreur photos */}
+        {erreurPhoto && (
+          <div className="px-4 py-2 rounded-xl text-xs border mb-3"
+            style={{ background: "#FEF2F2", color: "#991B1B", borderColor: "#FECACA" }}>
+            {erreurPhoto}
+          </div>
+        )}
+
+        {/* Upload fichier — input caché déclenché par le bouton */}
+        <input
+          ref={inputFichierRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className="hidden"
+          onChange={(e) => { uploadFichiers(e.target.files); e.target.value = ""; }}
+        />
+        <button
+          type="button"
+          onClick={() => inputFichierRef.current?.click()}
+          disabled={uploadEnCours}
+          className="w-full mb-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer disabled:opacity-60 transition-opacity hover:opacity-90"
+          style={{ background: "#0F4C3A", color: "#fff" }}>
+          {uploadEnCours ? "Upload en cours…" : "Ajouter des photos (depuis votre ordinateur)"}
+        </button>
+
+        {/* Ajout par URL (option alternative) */}
         <div className="flex gap-2">
-          <input type="url" value={nouvelleUrl} onChange={(e) => setNouvelleUrl(e.target.value)}
-            placeholder="https://exemple.com/photo.jpg"
+          <input type="url" value={nouvelleUrl} onChange={(e) => { setNouvelleUrl(e.target.value); setErreurPhoto(null); }}
+            placeholder="Ou coller une URL : https://…"
             className={`${cls} flex-1`} style={inp}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); ajouterPhoto(); } }} />
           <button type="button" onClick={ajouterPhoto}
             className="px-4 py-2 rounded-xl text-sm font-medium cursor-pointer flex-shrink-0"
             style={{ background: "#F4F6F5", color: "#0F4C3A", border: "1px solid #E0DAC8" }}>
-            + Ajouter
+            + URL
           </button>
         </div>
         <p className="text-xs mt-1.5" style={{ color: "#9DB8AD" }}>
