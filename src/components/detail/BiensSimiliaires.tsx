@@ -31,18 +31,18 @@ export default async function BiensSimiliaires({ ville, type, transaction, idExc
   if (biens.length === 0) return null;
 
   return (
-    <section className="py-16 px-6" style={{ background: "#F5F1E8" }}>
+    <section className="py-16 px-6" style={{ background: "var(--fond-accent)" }}>
       <div className="max-w-7xl mx-auto">
 
         {/* ── En-tête section ── */}
         <div className="flex items-end justify-between mb-10 gap-4 flex-wrap">
           <div>
-            <p className="text-xs font-medium tracking-widest uppercase mb-2" style={{ color: "#D4AF37" }}>
+            <p className="text-xs font-medium tracking-widest uppercase mb-2" style={{ color: "var(--accent)" }}>
               Découvrir aussi
             </p>
             <h2
               className="text-2xl font-normal"
-              style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+              style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
             >
               Biens similaires à {ville}
             </h2>
@@ -50,7 +50,7 @@ export default async function BiensSimiliaires({ ville, type, transaction, idExc
           <Link
             href={`/${transaction === "location" ? "louer" : "acheter"}?ville=${encodeURIComponent(ville)}`}
             className="text-sm font-medium flex items-center gap-1.5 hover:gap-2.5 transition-all"
-            style={{ color: "#146C43", textDecoration: "none" }}
+            style={{ color: "var(--primaire-clair)", textDecoration: "none" }}
           >
             Voir tout
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -70,10 +70,10 @@ export default async function BiensSimiliaires({ ville, type, transaction, idExc
             >
               <article
                 className="rounded-2xl overflow-hidden flex flex-col h-full transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-xl"
-                style={{ background: "#fff", border: "1px solid #EDE7D7", boxShadow: "0 2px 16px rgba(15,76,58,0.06)" }}
+                style={{ background: "var(--fond-secondaire)", border: "1px solid #EDE7D7", boxShadow: "0 2px 16px rgba(15,76,58,0.06)" }}
               >
                 {/* Photo */}
-                <div className="relative overflow-hidden" style={{ height: 220, background: "#EDE7D7" }}>
+                <div className="relative overflow-hidden" style={{ height: 220, background: "var(--bordure)" }}>
                   {bien.photos?.[0] ? (
                     <img
                       src={bien.photos[0]}
@@ -95,8 +95,8 @@ export default async function BiensSimiliaires({ ville, type, transaction, idExc
                       className="text-xs font-semibold px-2.5 py-1 rounded-full"
                       style={
                         bien.transaction === "location"
-                          ? { background: "#D4AF37", color: "#0F4C3A" }
-                          : { background: "#0F4C3A", color: "#fff" }
+                          ? { background: "var(--accent)", color: "var(--primaire)" }
+                          : { background: "var(--primaire)", color: "var(--fond-secondaire)" }
                       }
                     >
                       {bien.transaction === "location" ? "À louer" : "À vendre"}
@@ -104,7 +104,7 @@ export default async function BiensSimiliaires({ ville, type, transaction, idExc
                     {bien.verifie && (
                       <span
                         className="text-xs font-medium px-2.5 py-1 rounded-full"
-                        style={{ background: "rgba(255,255,255,0.92)", color: "#146C43" }}
+                        style={{ background: "rgba(255,255,255,0.92)", color: "var(--primaire-clair)" }}
                       >
                         ✓ Vérifié
                       </span>
@@ -120,12 +120,12 @@ export default async function BiensSimiliaires({ ville, type, transaction, idExc
 
                   <p
                     className="text-base leading-snug line-clamp-2 mb-2 flex-1"
-                    style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+                    style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
                   >
                     {bien.titre}
                   </p>
 
-                  <p className="flex items-center gap-1 text-xs mb-3" style={{ color: "#6B7A71" }}>
+                  <p className="flex items-center gap-1 text-xs mb-3" style={{ color: "var(--texte-secondaire)" }}>
                     <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                     </svg>
@@ -136,12 +136,12 @@ export default async function BiensSimiliaires({ ville, type, transaction, idExc
                     className="flex items-center justify-between pt-3"
                     style={{ borderTop: "1px solid #F0EDE5" }}
                   >
-                    <p className="text-lg font-semibold" style={{ fontFamily: "var(--font-marcellus), serif", color: "#D4AF37" }}>
+                    <p className="text-lg font-semibold" style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--accent)" }}>
                       {formatPrix(bien.prix, bien.transaction)}
                     </p>
-                    <div className="flex items-center gap-3 text-xs" style={{ color: "#9B9282" }}>
+                    <div className="flex items-center gap-3 text-xs" style={{ color: "var(--texte-brun)" }}>
                       <span>{bien.surface} m²</span>
-                      <span style={{ color: "#E0DAC8" }}>·</span>
+                      <span style={{ color: "var(--bordure-chaude)" }}>·</span>
                       <span>{bien.chambres} ch.</span>
                     </div>
                   </div>

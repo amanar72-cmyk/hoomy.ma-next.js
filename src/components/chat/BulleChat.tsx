@@ -65,13 +65,13 @@ function IndicateurTyping() {
     <div className="flex items-start gap-2">
       <div
         className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-white"
-        style={{ background: "#0F4C3A" }}
+        style={{ background: "var(--primaire)" }}
       >
         <IcMaison />
       </div>
       <div
         className="rounded-2xl rounded-bl-sm px-4 py-3.5"
-        style={{ background: "#FAF7F0", border: "1px solid #EDE7D7" }}
+        style={{ background: "var(--fond-principal)", border: "1px solid #EDE7D7" }}
       >
         <div className="flex gap-1.5 items-center" style={{ height: 14 }}>
           {[0, 160, 320].map((delay, i) => (
@@ -79,7 +79,7 @@ function IndicateurTyping() {
               key={i}
               className="w-2 h-2 rounded-full motion-safe:animate-bounce"
               style={{
-                background: "#9DB8AD",
+                background: "var(--texte-tertiaire)",
                 animationDelay: `${delay}ms`,
                 animationDuration: "900ms",
               }}
@@ -101,7 +101,7 @@ function BulleMessage({ message }: { message: Message }) {
         <p
           dir="auto"
           className="max-w-[82%] rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words"
-          style={{ background: "#F0EDE5", color: "#1a2822" }}
+          style={{ background: "var(--bordure-legere)", color: "var(--texte-principal)" }}
         >
           {message.content}
         </p>
@@ -113,14 +113,14 @@ function BulleMessage({ message }: { message: Message }) {
     <div className="flex items-start gap-2">
       <div
         className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-white"
-        style={{ background: "#0F4C3A" }}
+        style={{ background: "var(--primaire)" }}
       >
         <IcMaison />
       </div>
       <p
         dir="auto"
         className="max-w-[82%] rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words"
-        style={{ background: "#FAF7F0", border: "1px solid #EDE7D7", color: "#1a2822" }}
+        style={{ background: "var(--fond-principal)", border: "1px solid #EDE7D7", color: "var(--texte-principal)" }}
       >
         {message.content}
       </p>
@@ -258,7 +258,7 @@ export default function BulleChat() {
         ].join(" ")}
         style={{
           height: "min(85svh, 555px)",
-          background: "#fff",
+          background: "var(--fond-secondaire)",
           boxShadow:
             "0 24px 56px rgba(15,76,58,0.22), 0 6px 16px rgba(15,76,58,0.1)",
         }}
@@ -266,7 +266,7 @@ export default function BulleChat() {
         {/* ─ En-tête ───────────────────────────────────────────────── */}
         <header
           className="flex items-center justify-between px-4 py-3.5 flex-shrink-0"
-          style={{ background: "#0F4C3A" }}
+          style={{ background: "var(--primaire)" }}
         >
           <div className="flex items-center gap-3">
             {/* Avatar logo */}
@@ -277,7 +277,7 @@ export default function BulleChat() {
                 border: "1.5px solid rgba(212,175,55,0.45)",
               }}
             >
-              <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#D4AF37" strokeWidth="2">
+              <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" strokeWidth="2">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
@@ -314,7 +314,7 @@ export default function BulleChat() {
         <div
           ref={zoneMsgRef}
           className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3"
-          style={{ background: "#fff" }}
+          style={{ background: "var(--fond-secondaire)" }}
         >
           {messages.map((msg) => (
             <BulleMessage key={msg.id} message={msg} />
@@ -340,7 +340,7 @@ export default function BulleChat() {
               <a
                 href="/contact"
                 className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ background: "#0F4C3A" }}
+                style={{ background: "var(--primaire)" }}
               >
                 <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.44 2 2 0 0 1 3.6 1.26h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6.06 6.06l.92-1.06a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
@@ -372,15 +372,15 @@ export default function BulleChat() {
                 className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none transition-all disabled:opacity-60"
                 style={{
                   border: "1.5px solid #EDE7D7",
-                  color: "#1a2822",
+                  color: "var(--texte-principal)",
                   background: "#FAFAF9",
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = "#0F4C3A";
+                  e.target.style.borderColor = "var(--primaire)";
                   e.target.style.boxShadow = "0 0 0 3px rgba(15,76,58,0.08)";
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = "#EDE7D7";
+                  e.target.style.borderColor = "var(--bordure)";
                   e.target.style.boxShadow = "none";
                 }}
               />
@@ -390,8 +390,8 @@ export default function BulleChat() {
                 aria-label="Envoyer"
                 className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all motion-safe:duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
-                  background: saisie.trim() && !chargement ? "#D4AF37" : "#E8E4D9",
-                  color: saisie.trim() && !chargement ? "#fff" : "#B4AD97",
+                  background: saisie.trim() && !chargement ? "var(--accent)" : "#E8E4D9",
+                  color: saisie.trim() && !chargement ? "var(--fond-secondaire)" : "#B4AD97",
                   boxShadow:
                     saisie.trim() && !chargement
                       ? "0 3px 10px rgba(212,175,55,0.4)"
@@ -427,7 +427,7 @@ export default function BulleChat() {
             : "hover:scale-105",
         ].join(" ")}
         style={{
-          background: "#0F4C3A",
+          background: "var(--primaire)",
           boxShadow: ouvert
             ? "0 4px 14px rgba(15,76,58,0.25)"
             : "0 8px 24px rgba(15,76,58,0.38), 0 2px 8px rgba(15,76,58,0.18)",
@@ -446,7 +446,7 @@ export default function BulleChat() {
           <span
             aria-hidden="true"
             className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white motion-safe:animate-pulse"
-            style={{ background: "#D4AF37", animationDuration: "2.5s" }}
+            style={{ background: "var(--accent)", animationDuration: "2.5s" }}
           />
         )}
       </button>

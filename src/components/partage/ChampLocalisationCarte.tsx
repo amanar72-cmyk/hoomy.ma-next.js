@@ -7,9 +7,9 @@ const CartePickerMapbox = dynamic(() => import("./CartePickerMapbox"), {
   loading: () => (
     <div
       className="flex items-center justify-center h-full rounded-xl"
-      style={{ background: "#EDE7D7" }}
+      style={{ background: "var(--bordure)" }}
     >
-      <p style={{ color: "#9DB8AD", fontFamily: "var(--font-outfit,sans-serif)", fontSize: 13 }}>
+      <p style={{ color: "var(--texte-tertiaire)", fontFamily: "var(--font-outfit,sans-serif)", fontSize: 13 }}>
         Chargement de la carte…
       </p>
     </div>
@@ -44,14 +44,14 @@ export default function ChampLocalisationCarte({ latitude, longitude, ville, onC
 
       {/* Affichage des coordonnées */}
       <div className="flex items-center gap-2 mt-2">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9DB8AD" strokeWidth="2">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--texte-tertiaire)" strokeWidth="2">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
           <circle cx="12" cy="10" r="3" />
         </svg>
         {latitude && longitude ? (
-          <span style={{ fontSize: 12, color: "#6B7A71" }}>
+          <span style={{ fontSize: 12, color: "var(--texte-secondaire)" }}>
             Position sélectionnée :{" "}
-            <span style={{ fontWeight: 600, color: "#0F4C3A" }}>
+            <span style={{ fontWeight: 600, color: "var(--primaire)" }}>
               {latitude.toFixed(6)}, {longitude.toFixed(6)}
             </span>
           </span>

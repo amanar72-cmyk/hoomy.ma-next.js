@@ -46,9 +46,9 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
   }
 
   const champStyle = {
-    borderColor: "#E0DAC8",
-    color: "#0F4C3A",
-    background: "#fff",
+    borderColor: "var(--bordure-chaude)",
+    color: "var(--primaire)",
+    background: "var(--fond-secondaire)",
   } as const;
 
   return (
@@ -132,22 +132,22 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
             <button
               onClick={reinitialiser}
               className="px-4 py-2 rounded-lg text-sm border transition-colors hover:bg-gray-50 cursor-pointer"
-              style={{ borderColor: "#0F4C3A", color: "#0F4C3A" }}
+              style={{ borderColor: "var(--primaire)", color: "var(--primaire)" }}
             >
               Réinitialiser
             </button>
             <button
               onClick={filtrer}
               className="px-5 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90 cursor-pointer"
-              style={{ background: "#D4AF37", color: "#0F4C3A" }}
+              style={{ background: "var(--accent)", color: "var(--primaire)" }}
             >
               Filtrer
             </button>
           </div>
 
           {/* Compteur résultats */}
-          <p className="ml-auto text-sm hidden md:block" style={{ color: "#6B6450" }}>
-            <span className="font-semibold" style={{ color: "#0F4C3A" }}>{total}</span>{" "}
+          <p className="ml-auto text-sm hidden md:block" style={{ color: "var(--texte-chaud)" }}>
+            <span className="font-semibold" style={{ color: "var(--primaire)" }}>{total}</span>{" "}
             bien{total !== 1 ? "s" : ""} trouvé{total !== 1 ? "s" : ""}
           </p>
 

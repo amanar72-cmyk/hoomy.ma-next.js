@@ -54,7 +54,7 @@ export default function FormulaireDefinirMotDePasse() {
     }
   }
 
-  const inp: React.CSSProperties = { borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" };
+  const inp: React.CSSProperties = { borderColor: "var(--bordure-chaude)", color: "var(--primaire)", background: "var(--fond-secondaire)" };
 
   if (succes) {
     return (
@@ -65,13 +65,13 @@ export default function FormulaireDefinirMotDePasse() {
             <Link href="/" style={{ textDecoration: "none" }}><Logo size={40} /></Link>
           </div>
           <div className="rounded-2xl p-8 text-center"
-            style={{ background: "#fff", boxShadow: "0 4px 32px rgba(15,76,58,0.10)" }}>
+            style={{ background: "var(--fond-secondaire)", boxShadow: "0 4px 32px rgba(15,76,58,0.10)" }}>
             <div className="text-4xl mb-4">✅</div>
             <h1 className="text-xl mb-2"
-              style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}>
+              style={{ fontFamily: "var(--font-marcellus),serif", color: "var(--primaire)" }}>
               Mot de passe défini !
             </h1>
-            <p className="text-sm" style={{ color: "#9DB8AD" }}>
+            <p className="text-sm" style={{ color: "var(--texte-tertiaire)" }}>
               Redirection vers votre espace pro…
             </p>
           </div>
@@ -89,18 +89,18 @@ export default function FormulaireDefinirMotDePasse() {
         </div>
 
         <div className="rounded-2xl p-8"
-          style={{ background: "#fff", boxShadow: "0 4px 32px rgba(15,76,58,0.10)" }}>
+          style={{ background: "var(--fond-secondaire)", boxShadow: "0 4px 32px rgba(15,76,58,0.10)" }}>
           <h1 className="text-2xl font-normal mb-1 text-center"
-            style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}>
+            style={{ fontFamily: "var(--font-marcellus),serif", color: "var(--primaire)" }}>
             Créer votre mot de passe
           </h1>
-          <p className="text-sm text-center mb-7" style={{ color: "#9DB8AD" }}>
+          <p className="text-sm text-center mb-7" style={{ color: "var(--texte-tertiaire)" }}>
             Bienvenue sur HOOMY.MA — définissez votre mot de passe pour accéder à votre espace agent.
           </p>
 
           {erreur && (
             <div className="mb-5 px-4 py-3 rounded-lg text-sm border"
-              style={{ background: "#FEF2F2", color: "#991B1B", borderColor: "#FECACA" }}>
+              style={{ background: "#FEF2F2", color: "var(--erreur-texte)", borderColor: "#FECACA" }}>
               {erreur}
             </div>
           )}
@@ -124,7 +124,7 @@ export default function FormulaireDefinirMotDePasse() {
                   type="button"
                   onClick={() => setAfficherMdp((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-                  style={{ color: "#9DB8AD" }}
+                  style={{ color: "var(--texte-tertiaire)" }}
                 >
                   <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                     {afficherMdp
@@ -135,7 +135,7 @@ export default function FormulaireDefinirMotDePasse() {
                 </button>
               </div>
               {motDePasse.length > 0 && motDePasse.length < 8 && (
-                <p className="text-xs mt-1" style={{ color: "#DC2626" }}>
+                <p className="text-xs mt-1" style={{ color: "var(--erreur)" }}>
                   {8 - motDePasse.length} caractère{8 - motDePasse.length > 1 ? "s" : ""} manquant{8 - motDePasse.length > 1 ? "s" : ""}
                 </p>
               )}
@@ -154,11 +154,11 @@ export default function FormulaireDefinirMotDePasse() {
                 className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                 style={{
                   ...inp,
-                  borderColor: confirmation.length > 0 && confirmation !== motDePasse ? "#FECACA" : "#E0DAC8",
+                  borderColor: confirmation.length > 0 && confirmation !== motDePasse ? "#FECACA" : "var(--bordure-chaude)",
                 }}
               />
               {confirmation.length > 0 && confirmation !== motDePasse && (
-                <p className="text-xs mt-1" style={{ color: "#DC2626" }}>
+                <p className="text-xs mt-1" style={{ color: "var(--erreur)" }}>
                   Les mots de passe ne correspondent pas.
                 </p>
               )}
@@ -168,7 +168,7 @@ export default function FormulaireDefinirMotDePasse() {
               type="submit"
               disabled={chargement || motDePasse.length < 8 || motDePasse !== confirmation}
               className="w-full py-3 rounded-xl text-sm font-semibold hover:opacity-90 mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-              style={{ background: "#0F4C3A", color: "#fff" }}
+              style={{ background: "var(--primaire)", color: "var(--fond-secondaire)" }}
             >
               {chargement ? "Enregistrement…" : "Définir mon mot de passe"}
             </button>

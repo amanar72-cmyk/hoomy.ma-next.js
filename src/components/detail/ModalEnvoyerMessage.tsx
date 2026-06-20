@@ -81,7 +81,7 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
     setChargement(false);
   }
 
-  const inp = { borderColor: "#E0DAC8", color: "#1f2a24", background: "#fff" };
+  const inp = { borderColor: "var(--bordure-chaude)", color: "var(--texte-principal)", background: "var(--fond-secondaire)" };
   const cls = "border rounded-xl px-4 py-2.5 text-sm w-full focus:outline-none";
 
   return (
@@ -92,7 +92,7 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
     >
       <div
         className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: "#fff", boxShadow: "0 24px 64px rgba(15,76,58,0.25)" }}
+        style={{ background: "var(--fond-secondaire)", boxShadow: "0 24px 64px rgba(15,76,58,0.25)" }}
       >
         {/* ── En-tête ─────────────────────────────────────────────────────── */}
         <div
@@ -102,11 +102,11 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
           <div>
             <h2
               className="text-base font-semibold"
-              style={{ color: "#0F4C3A", fontFamily: "var(--font-marcellus),serif" }}
+              style={{ color: "var(--primaire)", fontFamily: "var(--font-marcellus),serif" }}
             >
               Envoyer un message
             </h2>
-            <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "#9DB8AD" }}>
+            <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "var(--texte-tertiaire)" }}>
               {titreBien}
             </p>
           </div>
@@ -127,17 +127,17 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
           <div className="px-6 py-12 flex flex-col items-center text-center gap-4">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ background: "#D1FAE5" }}
+              style={{ background: "var(--succes-fond)" }}
             >
-              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#065F46" strokeWidth="2">
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="var(--succes-texte)" strokeWidth="2">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
             <div>
-              <p className="text-base font-semibold mb-2" style={{ color: "#0F4C3A" }}>
+              <p className="text-base font-semibold mb-2" style={{ color: "var(--primaire)" }}>
                 Message envoyé !
               </p>
-              <p className="text-sm leading-relaxed" style={{ color: "#9DB8AD" }}>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--texte-tertiaire)" }}>
                 Votre message a bien été transmis. Un conseiller vous répondra sous 24h.
               </p>
             </div>
@@ -145,7 +145,7 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
               type="button"
               onClick={onClose}
               className="mt-2 px-6 py-2.5 rounded-xl text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity"
-              style={{ background: "#0F4C3A", color: "#fff" }}
+              style={{ background: "var(--primaire)", color: "var(--fond-secondaire)" }}
             >
               Fermer
             </button>
@@ -156,7 +156,7 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
             {erreur && (
               <div
                 className="px-4 py-2.5 rounded-xl text-sm"
-                style={{ background: "#FEE2E2", color: "#991B1B" }}
+                style={{ background: "var(--erreur-fond)", color: "var(--erreur-texte)" }}
               >
                 {erreur}
               </div>
@@ -202,7 +202,7 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
               type="submit"
               disabled={chargement}
               className="w-full py-3 rounded-xl text-sm font-semibold transition-opacity cursor-pointer disabled:opacity-60 hover:opacity-90 mt-1"
-              style={{ background: "#0F4C3A", color: "#fff" }}
+              style={{ background: "var(--primaire)", color: "var(--fond-secondaire)" }}
             >
               {chargement ? "Envoi en cours…" : "Envoyer mon message"}
             </button>

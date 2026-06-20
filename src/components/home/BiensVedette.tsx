@@ -15,7 +15,7 @@ function formatPrix(prix: number, transaction: string) {
 
 function IconCoeur({ plein }: { plein: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill={plein ? "#D4AF37" : "none"} stroke={plein ? "#D4AF37" : "#999"} strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill={plein ? "var(--accent)" : "none"} stroke={plein ? "var(--accent)" : "#999"} strokeWidth="2">
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
   );
@@ -47,11 +47,11 @@ export default function BiensVedette({ biens }: { biens: Bien[] }) {
       <div className="flex items-baseline justify-between mb-8">
         <h2
           className="text-3xl font-normal"
-          style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+          style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
         >
           Biens en vedette
         </h2>
-        <Link href="/acheter" className="text-sm hover:underline" style={{ color: "#146C43", textDecoration: "none" }}>
+        <Link href="/acheter" className="text-sm hover:underline" style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>
           Voir tous les biens →
         </Link>
       </div>
@@ -66,10 +66,10 @@ export default function BiensVedette({ biens }: { biens: Bien[] }) {
             <div
               key={bien.id}
               className="rounded-2xl overflow-hidden border transition-shadow hover:shadow-lg"
-              style={{ background: "#fff", borderColor: "#E8E2D2" }}
+              style={{ background: "var(--fond-secondaire)", borderColor: "#E8E2D2" }}
             >
               {/* Photo — Link séparé du bouton favori pour éviter button dans anchor */}
-              <div className="relative h-48 overflow-hidden" style={{ background: "#EDE7D7" }}>
+              <div className="relative h-48 overflow-hidden" style={{ background: "var(--bordure)" }}>
                 <Link href={cheminBien(bien)} className="block h-full" style={{ textDecoration: "none" }}>
                   {bien.photos?.[0] ? (
                     <img
@@ -88,7 +88,7 @@ export default function BiensVedette({ biens }: { biens: Bien[] }) {
                 {bien.verifie && (
                   <span
                     className="absolute top-3 left-3 text-xs px-2.5 py-1 rounded border"
-                    style={{ background: "#fff", color: "#0F4C3A", borderColor: "#D4AF37" }}
+                    style={{ background: "var(--fond-secondaire)", color: "var(--primaire)", borderColor: "var(--accent)" }}
                   >
                     ✓ Vérifié
                   </span>
@@ -99,8 +99,8 @@ export default function BiensVedette({ biens }: { biens: Bien[] }) {
                   className="absolute top-3 right-12 text-xs px-2.5 py-1 rounded"
                   style={
                     bien.transaction === "location"
-                      ? { background: "#D4AF37", color: "#0F4C3A" }
-                      : { background: "#146C43", color: "#fff" }
+                      ? { background: "var(--accent)", color: "var(--primaire)" }
+                      : { background: "var(--primaire-clair)", color: "var(--fond-secondaire)" }
                   }
                 >
                   {bien.transaction === "location" ? "À louer" : "À vendre"}
@@ -127,11 +127,11 @@ export default function BiensVedette({ biens }: { biens: Bien[] }) {
                 </p>
                 <p
                   className="text-base mb-2 leading-snug line-clamp-2"
-                  style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+                  style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
                 >
                   {bien.titre}
                 </p>
-                <p className="text-xl font-semibold mb-3" style={{ color: "#0F4C3A" }}>
+                <p className="text-xl font-semibold mb-3" style={{ color: "var(--primaire)" }}>
                   {formatPrix(bien.prix, bien.transaction)}
                 </p>
                 <div

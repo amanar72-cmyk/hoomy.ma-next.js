@@ -15,7 +15,7 @@ export default function SectionVilles() {
       <div className="max-w-6xl mx-auto">
         <h2
           className="text-3xl font-normal text-center mb-3"
-          style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+          style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
         >
           Explorer par ville
         </h2>
@@ -43,11 +43,11 @@ export default function SectionVilles() {
               />
               <p
                 className="relative text-xl font-normal"
-                style={{ fontFamily: "var(--font-marcellus), serif", color: "#fff" }}
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--fond-secondaire)" }}
               >
                 {ville.nom}
               </p>
-              <p className="relative text-xs mt-1" style={{ color: "#D4AF37" }}>
+              <p className="relative text-xs mt-1" style={{ color: "var(--accent)" }}>
                 {ville.annonces} annonces
               </p>
             </Link>

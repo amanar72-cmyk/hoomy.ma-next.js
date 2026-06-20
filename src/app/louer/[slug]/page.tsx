@@ -10,6 +10,7 @@ import InfosBien from "@/components/detail/InfosBien";
 import CarteContact from "@/components/detail/CarteContact";
 import CarteLocalisation from "@/components/detail/CarteLocalisation";
 import BiensSimiliaires from "@/components/detail/BiensSimiliaires";
+import TrackVue from "@/components/tracking/TrackVue";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,8 @@ export default async function PageDetailLocation({ params }: Props) {
   const bien = data as Bien & { agent_id: string | null };
 
   return (
-    <main style={{ background: "#FAF7F0", minHeight: "100vh" }}>
+    <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
+      <TrackVue bienId={bien.id} />
       <Navbar />
 
       {/* ── Fil d'Ariane ─────────────────────────────────────────────────── */}
@@ -57,15 +59,15 @@ export default async function PageDetailLocation({ params }: Props) {
         <nav
           aria-label="Fil d'Ariane"
           className="flex items-center flex-wrap gap-1.5 text-xs"
-          style={{ color: "#9DB8AD" }}
+          style={{ color: "var(--texte-tertiaire)" }}
         >
-          <Link href="/" className="hover:underline" style={{ color: "#146C43", textDecoration: "none" }}>Accueil</Link>
+          <Link href="/" className="hover:underline" style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>Accueil</Link>
           <span aria-hidden="true">›</span>
-          <Link href="/louer" className="hover:underline" style={{ color: "#146C43", textDecoration: "none" }}>Louer</Link>
+          <Link href="/louer" className="hover:underline" style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>Louer</Link>
           <span aria-hidden="true">›</span>
-          <Link href={`/louer?ville=${encodeURIComponent(bien.ville)}`} className="hover:underline" style={{ color: "#146C43", textDecoration: "none" }}>{bien.ville}</Link>
+          <Link href={`/louer?ville=${encodeURIComponent(bien.ville)}`} className="hover:underline" style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>{bien.ville}</Link>
           <span aria-hidden="true">›</span>
-          <span className="truncate max-w-[200px]" style={{ color: "#3D4A42" }}>{bien.titre}</span>
+          <span className="truncate max-w-[200px]" style={{ color: "var(--texte-corps)" }}>{bien.titre}</span>
         </nav>
       </div>
 
@@ -87,6 +89,7 @@ export default async function PageDetailLocation({ params }: Props) {
                 latitude={bien.latitude}
                 longitude={bien.longitude}
                 titre={bien.titre}
+                bienId={bien.id}
               />
             </div>
           </div>

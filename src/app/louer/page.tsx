@@ -57,7 +57,7 @@ export default async function PageLouer({ searchParams }: Props) {
   const biens = (data ?? []) as Bien[];
 
   return (
-    <main style={{ background: "#FAF7F0", minHeight: "100vh" }}>
+    <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
 
       <FiltresBar
@@ -72,12 +72,12 @@ export default async function PageLouer({ searchParams }: Props) {
           <div>
             <h1
               className="text-3xl font-normal mb-1"
-              style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+              style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
             >
               Biens à louer au Maroc
             </h1>
-            <p className="text-sm" style={{ color: "#6B6450" }}>
-              <span className="font-semibold" style={{ color: "#0F4C3A" }}>{biens.length}</span>{" "}
+            <p className="text-sm" style={{ color: "var(--texte-chaud)" }}>
+              <span className="font-semibold" style={{ color: "var(--primaire)" }}>{biens.length}</span>{" "}
               bien{biens.length !== 1 ? "s" : ""} disponible{biens.length !== 1 ? "s" : ""}
               {" "}<span style={{ color: "#B4AD97" }}>· Prix en DH/mois</span>
             </p>
@@ -89,17 +89,17 @@ export default async function PageLouer({ searchParams }: Props) {
           <div className="flex flex-col items-center py-28 text-center">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
-              style={{ background: "#F0FAF4" }}
+              style={{ background: "var(--fond-vert-leger)" }}
             >
-              <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.4">
+              <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="1.4">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
             </div>
-            <p className="text-xl font-normal mb-2" style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}>
+            <p className="text-xl font-normal mb-2" style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
               Aucun bien trouvé
             </p>
-            <p className="text-sm max-w-xs" style={{ color: "#9DB8AD" }}>
+            <p className="text-sm max-w-xs" style={{ color: "var(--texte-tertiaire)" }}>
               Essayez d'élargir vos critères ou de changer de ville.
             </p>
           </div>

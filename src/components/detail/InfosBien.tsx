@@ -4,7 +4,7 @@ import type { Bien } from "@/lib/types";
 
 function IcSurface() {
   return (
-    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.6">
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="1.6">
       <path d="M3 3h18v18H3z" />
       <path d="M3 9h18M9 3v18" strokeDasharray="2 2" />
     </svg>
@@ -12,7 +12,7 @@ function IcSurface() {
 }
 function IcChambre() {
   return (
-    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.6">
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="1.6">
       <path d="M3 7v10M21 7v10M3 11h18" />
       <rect x="3" y="7" width="18" height="10" rx="2" />
       <path d="M9 11V9a2 2 0 0 1 4 0v2" />
@@ -21,7 +21,7 @@ function IcChambre() {
 }
 function IcBain() {
   return (
-    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.6">
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="1.6">
       <path d="M9 6a2 2 0 0 1 4 0v9H9V6z" />
       <path d="M3 15h18" />
       <path d="M4 15a7 7 0 0 0 16 0" />
@@ -30,7 +30,7 @@ function IcBain() {
 }
 function IcType() {
   return (
-    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.6">
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="1.6">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
@@ -71,14 +71,14 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         {bien.reference && (
           <span
             className="text-xs font-mono px-2.5 py-1 rounded-lg"
-            style={{ background: "#F0EDE5", color: "#9B9282" }}
+            style={{ background: "var(--bordure-legere)", color: "var(--texte-brun)" }}
           >
             {bien.reference}
           </span>
         )}
         <span
           className="text-xs font-medium px-2.5 py-1 rounded-lg"
-          style={{ background: "#EDF5F0", color: "#146C43" }}
+          style={{ background: "var(--fond-vert-leger)", color: "var(--primaire-clair)" }}
         >
           {bien.type}
         </span>
@@ -89,7 +89,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         className="font-normal leading-tight mb-4"
         style={{
           fontFamily: "var(--font-marcellus), serif",
-          color: "#0F4C3A",
+          color: "var(--primaire)",
           fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
         }}
       >
@@ -97,7 +97,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
       </h1>
 
       {/* ── Localisation ──────────────────────────────────────────────── */}
-      <p className="flex items-center gap-1.5 text-sm mb-6" style={{ color: "#6B7A71" }}>
+      <p className="flex items-center gap-1.5 text-sm mb-6" style={{ color: "var(--texte-secondaire)" }}>
         <IcPin />
         {bien.quartier ? `${bien.quartier}, ` : ""}{bien.ville}
       </p>
@@ -108,16 +108,16 @@ export default function InfosBien({ bien }: { bien: Bien }) {
           className="leading-none"
           style={{
             fontFamily: "var(--font-marcellus), serif",
-            color: "#D4AF37",
+            color: "var(--accent)",
             fontSize: "clamp(2rem, 4vw, 3rem)",
           }}
         >
           {formatPrixBase(bien.prix)}{" "}
-          <span style={{ fontSize: "0.55em", color: "#B8932A" }}>DH</span>
+          <span style={{ fontSize: "0.55em", color: "var(--accent-fort)" }}>DH</span>
           {bien.transaction === "location" && (
             <span
               className="ml-1"
-              style={{ fontSize: "0.4em", color: "#9B9282", fontFamily: "var(--font-outfit), sans-serif", fontWeight: 400 }}
+              style={{ fontSize: "0.4em", color: "var(--texte-brun)", fontFamily: "var(--font-outfit), sans-serif", fontWeight: 400 }}
             >
               /mois
             </span>
@@ -137,23 +137,23 @@ export default function InfosBien({ bien }: { bien: Bien }) {
             key={label}
             className="flex flex-col items-center gap-2.5 px-4 py-5 rounded-2xl"
             style={{
-              background: "#fff",
+              background: "var(--fond-secondaire)",
               border: "1px solid #EDE7D7",
               boxShadow: "0 2px 12px rgba(15,76,58,0.06)",
             }}
           >
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "#F0FAF4" }}
+              style={{ background: "var(--fond-vert-leger)" }}
             >
               {icone}
             </div>
             <div className="text-center">
-              <p className="text-base font-semibold leading-tight" style={{ color: "#0F4C3A" }}>
+              <p className="text-base font-semibold leading-tight" style={{ color: "var(--primaire)" }}>
                 {valeur}
-                {unite && <span className="text-sm font-normal ml-0.5" style={{ color: "#9B9282" }}>{unite}</span>}
+                {unite && <span className="text-sm font-normal ml-0.5" style={{ color: "var(--texte-brun)" }}>{unite}</span>}
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "#9B9282" }}>{label}</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--texte-brun)" }}>{label}</p>
             </div>
           </div>
         ))}
@@ -167,7 +167,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         <section className="mb-12">
           <h2
             className="text-xl font-normal mb-5"
-            style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+            style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
           >
             Description
           </h2>
@@ -185,7 +185,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         <section className="mb-10">
           <h2
             className="text-xl font-normal mb-6"
-            style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+            style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
           >
             Équipements & prestations
           </h2>
@@ -194,7 +194,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
               <div key={e} className="flex items-center gap-3">
                 <span
                   className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "#EDF5F0", color: "#146C43" }}
+                  style={{ background: "var(--fond-vert-leger)", color: "var(--primaire-clair)" }}
                 >
                   <IcCheck />
                 </span>

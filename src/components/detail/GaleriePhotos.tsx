@@ -75,7 +75,7 @@ function Lightbox({
             onClick={onClose}
             aria-label="Fermer la galerie"
             className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-colors"
-            style={{ background: "rgba(255,255,255,0.1)", color: "#fff" }}
+            style={{ background: "rgba(255,255,255,0.1)", color: "var(--fond-secondaire)" }}
           >
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -101,7 +101,7 @@ function Lightbox({
               onClick={precedent}
               aria-label="Photo précédente"
               className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105"
-              style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
+              style={{ background: "rgba(255,255,255,0.12)", color: "var(--fond-secondaire)" }}
             >
               <svg width="19" height="19" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="15 18 9 12 15 6" />
@@ -112,7 +112,7 @@ function Lightbox({
               onClick={suivant}
               aria-label="Photo suivante"
               className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105"
-              style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
+              style={{ background: "rgba(255,255,255,0.12)", color: "var(--fond-secondaire)" }}
             >
               <svg width="19" height="19" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="9 18 15 12 9 6" />
@@ -162,8 +162,8 @@ function Badges({ transaction, verifie }: { transaction: string; verifie: boolea
         className="text-xs font-semibold px-3 py-1.5 rounded-full w-fit"
         style={
           transaction === "location"
-            ? { background: "#D4AF37", color: "#0F4C3A" }
-            : { background: "#0F4C3A", color: "#fff" }
+            ? { background: "var(--accent)", color: "var(--primaire)" }
+            : { background: "var(--primaire)", color: "var(--fond-secondaire)" }
         }
       >
         {transaction === "location" ? "À louer" : "À vendre"}
@@ -171,7 +171,7 @@ function Badges({ transaction, verifie }: { transaction: string; verifie: boolea
       {verifie && (
         <span
           className="text-xs font-medium px-3 py-1.5 rounded-full w-fit flex items-center gap-1.5"
-          style={{ background: "rgba(255,255,255,0.92)", color: "#146C43", backdropFilter: "blur(4px)" }}
+          style={{ background: "rgba(255,255,255,0.92)", color: "var(--primaire-clair)", backdropFilter: "blur(4px)" }}
         >
           <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
             <polyline points="20 6 9 17 4 12" />
@@ -187,7 +187,7 @@ function Badges({ transaction, verifie }: { transaction: string; verifie: boolea
 
 function Placeholder() {
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-3" style={{ background: "#EDE7D7" }}>
+    <div className="flex flex-col items-center justify-center h-full gap-3" style={{ background: "var(--bordure)" }}>
       <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#C2BBA3" strokeWidth="1.2">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
         <polyline points="9 22 9 12 15 12 15 22" />
@@ -233,7 +233,7 @@ function CarrouselMobile({
             onClick={() => setIndex((i) => (i - 1 + photos.length) % photos.length)}
             aria-label="Photo précédente"
             className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-            style={{ background: "rgba(255,255,255,0.88)", color: "#0F4C3A" }}
+            style={{ background: "rgba(255,255,255,0.88)", color: "var(--primaire)" }}
           >
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <polyline points="15 18 9 12 15 6" />
@@ -244,7 +244,7 @@ function CarrouselMobile({
             onClick={() => setIndex((i) => (i + 1) % photos.length)}
             aria-label="Photo suivante"
             className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-            style={{ background: "rgba(255,255,255,0.88)", color: "#0F4C3A" }}
+            style={{ background: "rgba(255,255,255,0.88)", color: "var(--primaire)" }}
           >
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <polyline points="9 18 15 12 9 6" />
@@ -254,7 +254,7 @@ function CarrouselMobile({
       )}
 
       <div className="absolute bottom-3 right-3 flex items-center gap-2">
-        <span className="text-xs px-2.5 py-1 rounded-full tabular-nums" style={{ background: "rgba(0,0,0,0.5)", color: "#fff" }}>
+        <span className="text-xs px-2.5 py-1 rounded-full tabular-nums" style={{ background: "rgba(0,0,0,0.5)", color: "var(--fond-secondaire)" }}>
           {index + 1} / {photos.length}
         </span>
       </div>
@@ -384,7 +384,7 @@ function BoutonVoirPhotos({ count, onClick }: { count: number; onClick: () => vo
       className="absolute bottom-4 right-4 flex items-center gap-2 text-xs font-semibold px-4 py-2.5 rounded-full z-10 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-px"
       style={{
         background: "rgba(255,255,255,0.93)",
-        color: "#0F4C3A",
+        color: "var(--primaire)",
         boxShadow: "0 2px 16px rgba(0,0,0,0.18)",
         backdropFilter: "blur(6px)",
       }}

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function PageEstimer() {
   return (
-    <main style={{ background: "#FAF7F0", minHeight: "100vh" }}>
+    <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
       <WizardEstimation />
     </main>

@@ -2,6 +2,7 @@ import Logo from "@/components/Logo";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import MenuUtilisateur from "./MenuUtilisateur";
+import ToggleTheme from "@/components/ui/ToggleTheme";
 
 export default async function Navbar() {
   // Lecture de la session côté serveur — pas de flash non-authentifié
@@ -11,7 +12,6 @@ export default async function Navbar() {
   // Récupère le profil pour le nom et l'avatar
   let nomComplet: string | null = null;
   let avatarUrl: string | null = null;
-
   let role: string | null = null;
 
   if (user) {
@@ -27,15 +27,19 @@ export default async function Navbar() {
 
   return (
     <header
-      className="sticky top-0 z-50 bg-white"
-      style={{ boxShadow: "0 1px 6px rgba(15,76,58,0.08)", borderBottom: "1px solid #E8E2D2" }}
+      className="sticky top-0 z-50"
+      style={{
+        background: "var(--fond-secondaire)",
+        boxShadow: "0 1px 6px rgba(15,76,58,0.08)",
+        borderBottom: "1px solid var(--bordure)",
+      }}
     >
       <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
         <Link href="/" style={{ textDecoration: "none" }}>
           <Logo />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm" style={{ color: "#3D4A42" }}>
+        <nav className="hidden md:flex items-center gap-8 text-sm" style={{ color: "var(--texte-corps)" }}>
           <Link href="/acheter" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
             Acheter
           </Link>
@@ -45,7 +49,7 @@ export default async function Navbar() {
           <Link href="/neuf" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
             Neuf
           </Link>
-          <Link href="/estimer" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "#146C43" }}>
+          <Link href="/estimer" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "var(--primaire-clair)" }}>
             Estimer
           </Link>
           <Link href="/carte" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
@@ -53,14 +57,17 @@ export default async function Navbar() {
           </Link>
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Bouton jour/nuit */}
+          <ToggleTheme />
+
           {user ? (
             <>
               {/* Bouton publier un bien — visible connecté */}
               <Link
                 href="/publier"
                 className="hidden sm:inline-block text-sm px-4 py-2 rounded-lg font-semibold transition-opacity hover:opacity-90"
-                style={{ background: "#D4AF37", color: "#0F4C3A", textDecoration: "none" }}
+                style={{ background: "var(--accent)", color: "var(--texte-sur-accent)", textDecoration: "none" }}
               >
                 Publier un bien
               </Link>
@@ -76,15 +83,15 @@ export default async function Navbar() {
             <>
               <Link
                 href="/connexion"
-                className="text-sm px-4 py-2 rounded-lg border transition-colors hover:bg-gray-50"
-                style={{ borderColor: "#0F4C3A", color: "#0F4C3A", textDecoration: "none" }}
+                className="text-sm px-4 py-2 rounded-lg border transition-opacity hover:opacity-80"
+                style={{ borderColor: "var(--bordure-action)", color: "var(--bordure-action)", textDecoration: "none" }}
               >
                 Se connecter
               </Link>
               <Link
                 href="/publier"
                 className="hidden sm:inline-block text-sm px-4 py-2 rounded-lg font-semibold transition-opacity hover:opacity-90"
-                style={{ background: "#D4AF37", color: "#0F4C3A", textDecoration: "none" }}
+                style={{ background: "var(--accent)", color: "var(--texte-sur-accent)", textDecoration: "none" }}
               >
                 Publier un bien
               </Link>

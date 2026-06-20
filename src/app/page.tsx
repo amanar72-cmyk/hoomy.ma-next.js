@@ -5,6 +5,7 @@ import BiensVedette from "@/components/home/BiensVedette";
 import SectionVilles from "@/components/home/SectionVilles";
 import PourquoiHoomy from "@/components/home/PourquoiHoomy";
 import Footer from "@/components/home/Footer";
+import { SeparateurZellige } from "@/components/ui/MotifZellige";
 import type { Bien } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +20,11 @@ export default async function Accueil() {
   const biens = (data ?? []) as Bien[];
 
   return (
-    <main style={{ background: "#FAF7F0", minHeight: "100vh" }}>
+    <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
       <HeroSection />
       <BiensVedette biens={biens} />
+      <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
       <SectionVilles />
       <PourquoiHoomy />
       <Footer />

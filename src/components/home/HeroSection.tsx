@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { KhataM } from "@/components/ui/MotifZellige";
 
 const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
 const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
@@ -27,26 +28,36 @@ export default function HeroSection() {
   }
 
   const selectStyle = {
-    borderColor: "#E0DAC8",
-    color: "#0F4C3A",
-    background: "#fff",
+    borderColor: "var(--bordure-chaude)",
+    color: "var(--primaire)",
+    background: "var(--fond-secondaire)",
   };
 
   return (
     <section
-      className="relative px-6 py-20 text-center"
+      className="relative px-6 py-20 text-center overflow-hidden"
       style={{ background: "linear-gradient(135deg, #0F4C3A 0%, #1a6b4a 50%, #146C43 100%)" }}
     >
-      <p className="text-xs tracking-widest mb-4" style={{ color: "#D4AF37", letterSpacing: "0.2em" }}>
+      {/* Filigrane zellige — khatam en coins, desktop uniquement, jamais sur le contenu */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none select-none" aria-hidden="true">
+        <div className="hidden md:block" style={{ position: "absolute", top: -85, right: -75 }}>
+          <KhataM size={240} couleur="var(--accent)" opacite={0.07} epais={1.4} avecRosette />
+        </div>
+        <div className="hidden md:block" style={{ position: "absolute", bottom: -65, left: -60 }}>
+          <KhataM size={170} couleur="var(--accent)" opacite={0.05} epais={1.4} avecRosette />
+        </div>
+      </div>
+
+      <p className="text-xs tracking-widest mb-4" style={{ color: "var(--accent)", letterSpacing: "0.2em" }}>
         IMMOBILIER PREMIUM · MAROC
       </p>
 
       <h1
         className="text-4xl md:text-5xl font-normal mb-5 leading-tight"
-        style={{ fontFamily: "var(--font-marcellus), serif", color: "#fff" }}
+        style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--fond-secondaire)" }}
       >
         Trouvez le bien idéal<br />
-        <span style={{ color: "#D4AF37", fontStyle: "italic" }}>au Maroc</span>
+        <span style={{ color: "var(--accent)", fontStyle: "italic" }}>au Maroc</span>
       </h1>
 
       <p className="text-base mb-10 max-w-xl mx-auto leading-relaxed" style={{ color: "#C9D5CF" }}>
@@ -57,7 +68,7 @@ export default function HeroSection() {
       {/* Barre de recherche */}
       <div
         className="rounded-2xl p-5 max-w-3xl mx-auto text-left"
-        style={{ background: "#fff", boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}
+        style={{ background: "var(--fond-secondaire)", boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}
       >
         {/* Toggle Acheter / Louer */}
         <div className="inline-flex mb-5 rounded-full p-1" style={{ background: "#F2ECDD" }}>
@@ -68,8 +79,8 @@ export default function HeroSection() {
               className="px-6 py-2 rounded-full text-sm font-medium transition-all cursor-pointer"
               style={
                 mode === m
-                  ? { background: "#0F4C3A", color: "#fff" }
-                  : { color: "#0F4C3A" }
+                  ? { background: "var(--primaire)", color: "var(--fond-secondaire)" }
+                  : { color: "var(--primaire)" }
               }
             >
               {m === "vente" ? "Acheter" : "Louer"}
@@ -137,7 +148,7 @@ export default function HeroSection() {
           <button
             onClick={rechercher}
             className="px-8 py-3 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 cursor-pointer"
-            style={{ background: "#D4AF37", color: "#0F4C3A" }}
+            style={{ background: "var(--accent)", color: "var(--primaire)" }}
           >
             Rechercher
           </button>
@@ -145,11 +156,11 @@ export default function HeroSection() {
       </div>
 
       {/* Tags tendances */}
-      <div className="mt-6 text-xs" style={{ color: "#9DB8AD" }}>
+      <div className="mt-6 text-xs" style={{ color: "var(--texte-tertiaire)" }}>
         Tendances :{" "}
         {TENDANCES.map((v, i) => (
           <span key={v}>
-            <Link href={`/acheter?ville=${v}`} style={{ color: "#D4AF37", textDecoration: "none" }} className="hover:underline">
+            <Link href={`/acheter?ville=${v}`} style={{ color: "var(--accent)", textDecoration: "none" }} className="hover:underline">
               {v}
             </Link>
             {i < TENDANCES.length - 1 && <span className="mx-1.5">·</span>}

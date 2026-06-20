@@ -29,14 +29,14 @@ export default function TriSelect({ tri, paramsActifs }: Props) {
 
   return (
     <div className="flex items-center gap-2">
-      <label className="text-sm whitespace-nowrap" style={{ color: "#6B6450" }}>
+      <label className="text-sm whitespace-nowrap" style={{ color: "var(--texte-chaud)" }}>
         Trier par :
       </label>
       <select
         value={tri}
         onChange={(e) => changerTri(e.target.value)}
         className="border rounded-lg px-3 py-2 text-sm focus:outline-none appearance-none cursor-pointer"
-        style={{ borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" }}
+        style={{ borderColor: "var(--bordure-chaude)", color: "var(--primaire)", background: "var(--fond-secondaire)" }}
       >
         {OPTIONS.map((opt) => (
           <option key={opt.valeur} value={opt.valeur}>

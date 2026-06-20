@@ -64,7 +64,7 @@ export default function FormulaireInscription() {
     }
   }
 
-  const inp: React.CSSProperties = { borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" };
+  const inp: React.CSSProperties = { borderColor: "var(--bordure-chaude)", color: "var(--primaire)", background: "var(--fond-secondaire)" };
 
   if (succes) {
     return (
@@ -73,19 +73,19 @@ export default function FormulaireInscription() {
         <div className="w-full max-w-md text-center">
           <div className="flex justify-center mb-8"><Logo size={40} /></div>
           <div className="rounded-2xl p-10"
-            style={{ background: "#fff", boxShadow: "0 4px 32px rgba(15,76,58,0.10)" }}>
+            style={{ background: "var(--fond-secondaire)", boxShadow: "0 4px 32px rgba(15,76,58,0.10)" }}>
             <div className="text-5xl mb-5">📬</div>
             <h2 className="text-2xl font-normal mb-3"
-              style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}>
+              style={{ fontFamily: "var(--font-marcellus),serif", color: "var(--primaire)" }}>
               Vérifiez votre email
             </h2>
-            <p className="text-sm leading-relaxed mb-6" style={{ color: "#6B6450" }}>
+            <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--texte-chaud)" }}>
               Un lien de confirmation a été envoyé à{" "}
-              <strong style={{ color: "#0F4C3A" }}>{email}</strong>.
+              <strong style={{ color: "var(--primaire)" }}>{email}</strong>.
               Cliquez dessus pour activer votre compte.
             </p>
             <Link href="/connexion" className="text-sm font-medium hover:underline"
-              style={{ color: "#146C43", textDecoration: "none" }}>
+              style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>
               Retour à la connexion
             </Link>
           </div>
@@ -103,18 +103,18 @@ export default function FormulaireInscription() {
         </div>
 
         <div className="rounded-2xl p-8"
-          style={{ background: "#fff", boxShadow: "0 4px 32px rgba(15,76,58,0.10)" }}>
+          style={{ background: "var(--fond-secondaire)", boxShadow: "0 4px 32px rgba(15,76,58,0.10)" }}>
           <h1 className="text-2xl font-normal mb-1 text-center"
-            style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}>
+            style={{ fontFamily: "var(--font-marcellus),serif", color: "var(--primaire)" }}>
             Créer un compte
           </h1>
-          <p className="text-sm text-center mb-7" style={{ color: "#9DB8AD" }}>
+          <p className="text-sm text-center mb-7" style={{ color: "var(--texte-tertiaire)" }}>
             HOOMY.MA · Gratuit
           </p>
 
           {erreur && (
             <div className="mb-5 px-4 py-3 rounded-lg text-sm border"
-              style={{ background: "#FEF2F2", color: "#991B1B", borderColor: "#FECACA" }}>
+              style={{ background: "#FEF2F2", color: "var(--erreur-texte)", borderColor: "#FECACA" }}>
               {erreur}
             </div>
           )}
@@ -154,9 +154,9 @@ export default function FormulaireInscription() {
               <input type="password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)}
                 autoComplete="new-password" placeholder="••••••••"
                 className="w-full border rounded-xl px-4 py-3 text-sm"
-                style={{ ...inp, borderColor: confirmation && confirmation !== motDePasse ? "#FECACA" : "#E0DAC8" }} />
+                style={{ ...inp, borderColor: confirmation && confirmation !== motDePasse ? "#FECACA" : "var(--bordure-chaude)" }} />
               {confirmation && confirmation !== motDePasse && (
-                <p className="text-xs mt-1" style={{ color: "#DC2626" }}>
+                <p className="text-xs mt-1" style={{ color: "var(--erreur)" }}>
                   Les mots de passe ne correspondent pas.
                 </p>
               )}
@@ -164,14 +164,14 @@ export default function FormulaireInscription() {
 
             <button type="button" onClick={creerCompte} disabled={chargement}
               className="w-full py-3 rounded-xl text-sm font-semibold hover:opacity-90 mt-1 cursor-pointer disabled:opacity-60"
-              style={{ background: "#D4AF37", color: "#0F4C3A" }}>
+              style={{ background: "var(--accent)", color: "var(--primaire)" }}>
               {chargement ? "Création en cours…" : "Créer mon compte"}
             </button>
           </div>
 
           <p className="text-center text-sm mt-6" style={{ color: "#888" }}>
             Déjà un compte ?{" "}
-            <Link href="/connexion" style={{ color: "#146C43", textDecoration: "none" }}
+            <Link href="/connexion" style={{ color: "var(--primaire-clair)", textDecoration: "none" }}
               className="font-medium hover:underline">
               Se connecter
             </Link>

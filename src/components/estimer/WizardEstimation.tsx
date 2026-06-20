@@ -152,14 +152,14 @@ function BarreProgression({ etape }: { etape: number }) {
         />
       </div>
       <div className="mt-3 flex items-center justify-between">
-        <p className="text-xs" style={{ color: "#9DB8AD" }}>
+        <p className="text-xs" style={{ color: "var(--texte-tertiaire)" }}>
           Étape{" "}
-          <span className="font-semibold" style={{ color: "#0F4C3A" }}>
+          <span className="font-semibold" style={{ color: "var(--primaire)" }}>
             {etape}
           </span>{" "}
           sur 6
         </p>
-        <p className="text-xs font-medium" style={{ color: "#9DB8AD" }}>
+        <p className="text-xs font-medium" style={{ color: "var(--texte-tertiaire)" }}>
           {ETAPES_LABELS[etape - 1]}
         </p>
       </div>
@@ -186,12 +186,12 @@ function CarteChoix({
         large ? "p-7" : "p-5"
       }`}
       style={{
-        borderColor: selectionne ? "#0F4C3A" : "#EDE7D7",
-        background: selectionne ? "#F0FAF4" : "#fff",
+        borderColor: selectionne ? "var(--primaire)" : "var(--bordure)",
+        background: selectionne ? "var(--fond-vert-leger)" : "var(--fond-secondaire)",
         boxShadow: selectionne
           ? "0 0 0 3px rgba(15,76,58,0.08)"
           : "0 2px 8px rgba(15,76,58,0.04)",
-        color: selectionne ? "#0F4C3A" : "#4A5A50",
+        color: selectionne ? "var(--primaire)" : "#4A5A50",
       }}
     >
       {children}
@@ -214,7 +214,7 @@ function Compteur({
 }) {
   return (
     <div className="flex items-center justify-between py-4" style={{ borderBottom: "1px solid #F0EDE5" }}>
-      <span className="text-base font-medium" style={{ color: "#1a2822" }}>
+      <span className="text-base font-medium" style={{ color: "var(--texte-principal)" }}>
         {label}
       </span>
       <div className="flex items-center gap-5">
@@ -223,14 +223,14 @@ function Compteur({
           onClick={() => onChange(Math.max(min, valeur - 1))}
           disabled={valeur <= min}
           className="w-9 h-9 rounded-full flex items-center justify-center text-xl font-light transition-colors disabled:opacity-25"
-          style={{ border: "1.5px solid #EDE7D7", color: "#0F4C3A" }}
+          style={{ border: "1.5px solid #EDE7D7", color: "var(--primaire)" }}
           aria-label={`Diminuer ${label}`}
         >
           −
         </button>
         <span
           className="w-6 text-center text-xl font-semibold tabular-nums"
-          style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+          style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
         >
           {valeur}
         </span>
@@ -239,7 +239,7 @@ function Compteur({
           onClick={() => onChange(Math.min(max, valeur + 1))}
           disabled={valeur >= max}
           className="w-9 h-9 rounded-full flex items-center justify-center text-xl font-light transition-colors disabled:opacity-25"
-          style={{ border: "1.5px solid #EDE7D7", color: "#0F4C3A" }}
+          style={{ border: "1.5px solid #EDE7D7", color: "var(--primaire)" }}
           aria-label={`Augmenter ${label}`}
         >
           +
@@ -266,7 +266,7 @@ function ChampTexte({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium" style={{ color: "#3D4A42" }}>
+      <label className="text-sm font-medium" style={{ color: "var(--texte-corps)" }}>
         {label}
       </label>
       <input
@@ -279,15 +279,15 @@ function ChampTexte({
         style={{
           height: 48,
           border: "1.5px solid #EDE7D7",
-          color: "#1a2822",
-          background: "#fff",
+          color: "var(--texte-principal)",
+          background: "var(--fond-secondaire)",
         }}
         onFocus={(e) => {
-          e.target.style.borderColor = "#0F4C3A";
+          e.target.style.borderColor = "var(--primaire)";
           e.target.style.boxShadow = "0 0 0 3px rgba(15,76,58,0.08)";
         }}
         onBlur={(e) => {
-          e.target.style.borderColor = "#EDE7D7";
+          e.target.style.borderColor = "var(--bordure)";
           e.target.style.boxShadow = "none";
         }}
       />
@@ -478,11 +478,11 @@ export default function WizardEstimation() {
             <div>
               <h2
                 className="text-2xl font-normal mb-1"
-                style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
               >
                 Que souhaitez-vous faire ?
               </h2>
-              <p className="text-sm" style={{ color: "#6B7A71" }}>
+              <p className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
                 Le type de transaction détermine la méthode d'estimation.
               </p>
             </div>
@@ -500,7 +500,7 @@ export default function WizardEstimation() {
                 <span className="text-lg font-semibold" style={{ fontFamily: "var(--font-marcellus), serif" }}>
                   Je veux vendre
                 </span>
-                <span className="text-xs text-center" style={{ color: "#9DB8AD" }}>
+                <span className="text-xs text-center" style={{ color: "var(--texte-tertiaire)" }}>
                   Estimez la valeur de vente de votre bien
                 </span>
               </CarteChoix>
@@ -516,7 +516,7 @@ export default function WizardEstimation() {
                 <span className="text-lg font-semibold" style={{ fontFamily: "var(--font-marcellus), serif" }}>
                   Je veux louer
                 </span>
-                <span className="text-xs text-center" style={{ color: "#9DB8AD" }}>
+                <span className="text-xs text-center" style={{ color: "var(--texte-tertiaire)" }}>
                   Estimez le loyer mensuel de votre bien
                 </span>
               </CarteChoix>
@@ -530,11 +530,11 @@ export default function WizardEstimation() {
             <div>
               <h2
                 className="text-2xl font-normal mb-1"
-                style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
               >
                 Quel type de bien estimez-vous ?
               </h2>
-              <p className="text-sm" style={{ color: "#6B7A71" }}>
+              <p className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
                 Chaque type de bien a ses propres critères de valorisation.
               </p>
             </div>
@@ -559,17 +559,17 @@ export default function WizardEstimation() {
             <div>
               <h2
                 className="text-2xl font-normal mb-1"
-                style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
               >
                 Où se situe votre bien ?
               </h2>
-              <p className="text-sm" style={{ color: "#6B7A71" }}>
+              <p className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
                 La localisation est le facteur de prix le plus important.
               </p>
             </div>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium" style={{ color: "#3D4A42" }}>
+                <label className="text-sm font-medium" style={{ color: "var(--texte-corps)" }}>
                   Ville <span style={{ color: "#B91C1C" }}>*</span>
                 </label>
                 <select
@@ -578,9 +578,9 @@ export default function WizardEstimation() {
                   className="w-full rounded-xl px-4 text-base outline-none appearance-none cursor-pointer"
                   style={{
                     height: 48,
-                    border: `1.5px solid ${donnees.ville ? "#0F4C3A" : "#EDE7D7"}`,
-                    color: donnees.ville ? "#1a2822" : "#B4AD97",
-                    background: "#fff",
+                    border: `1.5px solid ${donnees.ville ? "var(--primaire)" : "var(--bordure)"}`,
+                    color: donnees.ville ? "var(--texte-principal)" : "#B4AD97",
+                    background: "var(--fond-secondaire)",
                     backgroundImage:
                       "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%239DB8AD' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
                     backgroundRepeat: "no-repeat",
@@ -595,9 +595,9 @@ export default function WizardEstimation() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium" style={{ color: "#3D4A42" }}>
+                <label className="text-sm font-medium" style={{ color: "var(--texte-corps)" }}>
                   Quartier{" "}
-                  <span className="font-normal text-xs" style={{ color: "#9DB8AD" }}>
+                  <span className="font-normal text-xs" style={{ color: "var(--texte-tertiaire)" }}>
                     (optionnel, améliore la précision)
                   </span>
                 </label>
@@ -610,15 +610,15 @@ export default function WizardEstimation() {
                   style={{
                     height: 48,
                     border: "1.5px solid #EDE7D7",
-                    color: "#1a2822",
-                    background: "#fff",
+                    color: "var(--texte-principal)",
+                    background: "var(--fond-secondaire)",
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = "#0F4C3A";
+                    e.target.style.borderColor = "var(--primaire)";
                     e.target.style.boxShadow = "0 0 0 3px rgba(15,76,58,0.08)";
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = "#EDE7D7";
+                    e.target.style.borderColor = "var(--bordure)";
                     e.target.style.boxShadow = "none";
                   }}
                 />
@@ -633,18 +633,18 @@ export default function WizardEstimation() {
             <div>
               <h2
                 className="text-2xl font-normal mb-1"
-                style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
               >
                 Surface et pièces
               </h2>
-              <p className="text-sm" style={{ color: "#6B7A71" }}>
+              <p className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
                 La surface est la base du calcul d'estimation.
               </p>
             </div>
 
             {/* Surface */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: "#3D4A42" }}>
+              <label className="text-sm font-medium" style={{ color: "var(--texte-corps)" }}>
                 Surface habitable <span style={{ color: "#B91C1C" }}>*</span>
               </label>
               <div className="relative">
@@ -659,22 +659,22 @@ export default function WizardEstimation() {
                   style={{
                     height: 56,
                     border: "1.5px solid #EDE7D7",
-                    color: "#1a2822",
-                    background: "#fff",
+                    color: "var(--texte-principal)",
+                    background: "var(--fond-secondaire)",
                     fontSize: "1.1rem",
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = "#0F4C3A";
+                    e.target.style.borderColor = "var(--primaire)";
                     e.target.style.boxShadow = "0 0 0 3px rgba(15,76,58,0.08)";
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = "#EDE7D7";
+                    e.target.style.borderColor = "var(--bordure)";
                     e.target.style.boxShadow = "none";
                   }}
                 />
                 <span
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none"
-                  style={{ color: "#9DB8AD" }}
+                  style={{ color: "var(--texte-tertiaire)" }}
                 >
                   m²
                 </span>
@@ -684,7 +684,7 @@ export default function WizardEstimation() {
             {/* Compteurs */}
             <div
               className="rounded-2xl px-5 py-1"
-              style={{ background: "#FAF7F0", border: "1px solid #EDE7D7" }}
+              style={{ background: "var(--fond-principal)", border: "1px solid #EDE7D7" }}
             >
               <Compteur
                 label="Chambres"
@@ -711,18 +711,18 @@ export default function WizardEstimation() {
             <div>
               <h2
                 className="text-2xl font-normal mb-1"
-                style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
               >
                 État et équipements
               </h2>
-              <p className="text-sm" style={{ color: "#6B7A71" }}>
+              <p className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
                 Ces critères ajustent la valorisation de votre bien.
               </p>
             </div>
 
             {/* État du bien */}
             <div>
-              <p className="text-sm font-semibold mb-3" style={{ color: "#3D4A42" }}>
+              <p className="text-sm font-semibold mb-3" style={{ color: "var(--texte-corps)" }}>
                 État du bien <span style={{ color: "#B91C1C" }}>*</span>
               </p>
               <div className="grid grid-cols-3 gap-3">
@@ -737,15 +737,15 @@ export default function WizardEstimation() {
                     onClick={() => maj("etat", e.id)}
                     className="flex flex-col items-center gap-1 rounded-xl py-4 border-2 transition-all cursor-pointer"
                     style={{
-                      borderColor: donnees.etat === e.id ? "#0F4C3A" : "#EDE7D7",
-                      background: donnees.etat === e.id ? "#F0FAF4" : "#fff",
-                      color: donnees.etat === e.id ? "#0F4C3A" : "#4A5A50",
+                      borderColor: donnees.etat === e.id ? "var(--primaire)" : "var(--bordure)",
+                      background: donnees.etat === e.id ? "var(--fond-vert-leger)" : "var(--fond-secondaire)",
+                      color: donnees.etat === e.id ? "var(--primaire)" : "#4A5A50",
                     }}
                   >
                     <span className="text-sm font-semibold">{e.label}</span>
                     <span
                       className="text-xs"
-                      style={{ color: donnees.etat === e.id ? "#146C43" : "#B4AD97" }}
+                      style={{ color: donnees.etat === e.id ? "var(--primaire-clair)" : "#B4AD97" }}
                     >
                       {e.desc}
                     </span>
@@ -757,7 +757,7 @@ export default function WizardEstimation() {
             {/* Étage (seulement pour appartement) */}
             {estAppartement && (
               <div>
-                <p className="text-sm font-semibold mb-3" style={{ color: "#3D4A42" }}>
+                <p className="text-sm font-semibold mb-3" style={{ color: "var(--texte-corps)" }}>
                   Étage
                 </p>
                 <div className="grid grid-cols-3 gap-3">
@@ -772,15 +772,15 @@ export default function WizardEstimation() {
                       onClick={() => maj("etage", e.id)}
                       className="flex flex-col items-center gap-1 rounded-xl py-4 border-2 transition-all cursor-pointer"
                       style={{
-                        borderColor: donnees.etage === e.id ? "#0F4C3A" : "#EDE7D7",
-                        background: donnees.etage === e.id ? "#F0FAF4" : "#fff",
-                        color: donnees.etage === e.id ? "#0F4C3A" : "#4A5A50",
+                        borderColor: donnees.etage === e.id ? "var(--primaire)" : "var(--bordure)",
+                        background: donnees.etage === e.id ? "var(--fond-vert-leger)" : "var(--fond-secondaire)",
+                        color: donnees.etage === e.id ? "var(--primaire)" : "#4A5A50",
                       }}
                     >
                       <span className="text-xs font-semibold text-center leading-tight">{e.label}</span>
                       <span
                         className="text-xs"
-                        style={{ color: donnees.etage === e.id ? "#146C43" : "#B4AD97" }}
+                        style={{ color: donnees.etage === e.id ? "var(--primaire-clair)" : "#B4AD97" }}
                       >
                         {e.desc}
                       </span>
@@ -792,9 +792,9 @@ export default function WizardEstimation() {
 
             {/* Équipements */}
             <div>
-              <p className="text-sm font-semibold mb-3" style={{ color: "#3D4A42" }}>
+              <p className="text-sm font-semibold mb-3" style={{ color: "var(--texte-corps)" }}>
                 Équipements valorisants{" "}
-                <span className="font-normal text-xs" style={{ color: "#9DB8AD" }}>
+                <span className="font-normal text-xs" style={{ color: "var(--texte-tertiaire)" }}>
                   (sélectionnez tout ce qui s'applique)
                 </span>
               </p>
@@ -808,16 +808,16 @@ export default function WizardEstimation() {
                       onClick={() => toggleEquipement(eq.id)}
                       className="flex items-center gap-3 rounded-xl px-4 py-3 border-2 transition-all text-left cursor-pointer"
                       style={{
-                        borderColor: actif ? "#0F4C3A" : "#EDE7D7",
-                        background: actif ? "#F0FAF4" : "#fff",
-                        color: actif ? "#0F4C3A" : "#4A5A50",
+                        borderColor: actif ? "var(--primaire)" : "var(--bordure)",
+                        background: actif ? "var(--fond-vert-leger)" : "var(--fond-secondaire)",
+                        color: actif ? "var(--primaire)" : "#4A5A50",
                       }}
                     >
                       <div
                         className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
                         style={{
-                          background: actif ? "#0F4C3A" : "transparent",
-                          border: `1.5px solid ${actif ? "#0F4C3A" : "#C4BFAE"}`,
+                          background: actif ? "var(--primaire)" : "transparent",
+                          border: `1.5px solid ${actif ? "var(--primaire)" : "var(--texte-pale)"}`,
                         }}
                       >
                         {actif && (
@@ -846,14 +846,14 @@ export default function WizardEstimation() {
             >
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: "#0F4C3A" }}
+                style={{ background: "var(--primaire)" }}
               >
                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2.5">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </div>
               <div>
-                <p className="text-base font-semibold" style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}>
+                <p className="text-base font-semibold" style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
                   Créez votre compte pour découvrir l'estimation de votre bien
                 </p>
                 <p className="text-xs mt-1" style={{ color: "#6B9E7A" }}>
@@ -881,7 +881,7 @@ export default function WizardEstimation() {
               />
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium" style={{ color: "#3D4A42" }}>
+                <label className="text-sm font-medium" style={{ color: "var(--texte-corps)" }}>
                   Téléphone
                 </label>
                 <ChampTelephone
@@ -900,9 +900,9 @@ export default function WizardEstimation() {
               />
             </div>
 
-            <p className="text-xs" style={{ color: "#9DB8AD" }}>
+            <p className="text-xs" style={{ color: "var(--texte-tertiaire)" }}>
               Déjà un compte ?{" "}
-              <Link href="/connexion" className="font-medium hover:underline" style={{ color: "#0F4C3A" }}>
+              <Link href="/connexion" className="font-medium hover:underline" style={{ color: "var(--primaire)" }}>
                 Se connecter
               </Link>
             </p>
@@ -921,7 +921,7 @@ export default function WizardEstimation() {
       <div className="min-h-[calc(100vh-80px)] flex items-start justify-center py-12 px-4">
         <div
           className="w-full max-w-xl rounded-3xl overflow-hidden text-center"
-          style={{ background: "#fff", boxShadow: "0 8px 40px rgba(15,76,58,0.12)" }}
+          style={{ background: "var(--fond-secondaire)", boxShadow: "0 8px 40px rgba(15,76,58,0.12)" }}
         >
           <div
             className="px-8 py-10"
@@ -952,15 +952,15 @@ export default function WizardEstimation() {
             </p>
           </div>
           <div className="p-8">
-            <p className="text-sm mb-6" style={{ color: "#6B7A71" }}>
+            <p className="text-sm mb-6" style={{ color: "var(--texte-secondaire)" }}>
               Un conseiller HOOMY spécialisé dans votre secteur vous contactera dans les{" "}
-              <strong style={{ color: "#0F4C3A" }}>24 heures</strong> pour vous fournir une estimation précise et personnalisée.
+              <strong style={{ color: "var(--primaire)" }}>24 heures</strong> pour vous fournir une estimation précise et personnalisée.
             </p>
             <div
               className="rounded-2xl p-5 mb-6 text-left"
-              style={{ background: "#FAF7F0", border: "1px solid #EDE7D7" }}
+              style={{ background: "var(--fond-principal)", border: "1px solid #EDE7D7" }}
             >
-              <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: "#9DB8AD" }}>
+              <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: "var(--texte-tertiaire)" }}>
                 Récapitulatif de votre demande
               </p>
               <div className="grid grid-cols-2 gap-2 text-sm">
@@ -971,8 +971,8 @@ export default function WizardEstimation() {
                   ["Pièces", `${donnees.chambres} ch. · ${donnees.sallesBain} SDB`],
                 ].map(([k, v]) => (
                   <div key={k}>
-                    <span style={{ color: "#9DB8AD" }}>{k}</span>
-                    <p className="font-medium mt-0.5" style={{ color: "#1a2822" }}>{v}</p>
+                    <span style={{ color: "var(--texte-tertiaire)" }}>{k}</span>
+                    <p className="font-medium mt-0.5" style={{ color: "var(--texte-principal)" }}>{v}</p>
                   </div>
                 ))}
               </div>
@@ -980,7 +980,7 @@ export default function WizardEstimation() {
             <Link
               href="/"
               className="inline-flex items-center gap-2 text-sm font-medium"
-              style={{ color: "#0F4C3A" }}
+              style={{ color: "var(--primaire)" }}
             >
               ← Retour à l'accueil
             </Link>
@@ -1003,7 +1003,7 @@ export default function WizardEstimation() {
       <div className="min-h-[calc(100vh-80px)] flex items-start justify-center py-12 px-4">
         <div
           className="w-full max-w-2xl rounded-3xl overflow-hidden"
-          style={{ background: "#fff", boxShadow: "0 8px 40px rgba(15,76,58,0.14)" }}
+          style={{ background: "var(--fond-secondaire)", boxShadow: "0 8px 40px rgba(15,76,58,0.14)" }}
         >
           {/* En-tête résultat */}
           <div
@@ -1015,7 +1015,7 @@ export default function WizardEstimation() {
                 className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{ background: "rgba(212,175,55,0.25)", border: "1.5px solid rgba(212,175,55,0.5)" }}
               >
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#D4AF37" strokeWidth="2.5">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" strokeWidth="2.5">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
@@ -1038,7 +1038,7 @@ export default function WizardEstimation() {
             {/* Fourchette haute + basse */}
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-xs mb-1" style={{ color: "#9DB8AD" }}>Estimation basse</p>
+                <p className="text-xs mb-1" style={{ color: "var(--texte-tertiaire)" }}>Estimation basse</p>
                 <p className="text-lg font-semibold" style={{ color: "#4A5A50" }}>
                   {formatPrix(r.basse)}
                   {donnees.transaction === "location" && (
@@ -1047,7 +1047,7 @@ export default function WizardEstimation() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs mb-1" style={{ color: "#9DB8AD" }}>Estimation haute</p>
+                <p className="text-xs mb-1" style={{ color: "var(--texte-tertiaire)" }}>Estimation haute</p>
                 <p className="text-lg font-semibold" style={{ color: "#4A5A50" }}>
                   {formatPrix(r.haute)}
                   {donnees.transaction === "location" && (
@@ -1067,7 +1067,7 @@ export default function WizardEstimation() {
                 className="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-white"
                 style={{
                   left: `clamp(8px, calc(${pct}% - 10px), calc(100% - 18px))`,
-                  background: "#D4AF37",
+                  background: "var(--accent)",
                   boxShadow: "0 2px 8px rgba(212,175,55,0.45)",
                 }}
               />
@@ -1089,7 +1089,7 @@ export default function WizardEstimation() {
                 style={{
                   fontFamily: "var(--font-marcellus), serif",
                   fontSize: "clamp(1.8rem, 5vw, 2.6rem)",
-                  color: "#D4AF37",
+                  color: "var(--accent)",
                 }}
               >
                 {formatPrix(r.moyenne)}
@@ -1110,9 +1110,9 @@ export default function WizardEstimation() {
             {/* Récapitulatif */}
             <div
               className="rounded-2xl p-5 mb-6"
-              style={{ background: "#FAF7F0", border: "1px solid #EDE7D7" }}
+              style={{ background: "var(--fond-principal)", border: "1px solid #EDE7D7" }}
             >
-              <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "#9DB8AD" }}>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--texte-tertiaire)" }}>
                 Récapitulatif de l'estimation
               </p>
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -1127,8 +1127,8 @@ export default function WizardEstimation() {
                   ...(recapEquipements ? [["Équipements", recapEquipements]] : []),
                 ].map(([k, v]) => (
                   <div key={k} className={k === "Localisation" || k === "Équipements" ? "col-span-2" : ""}>
-                    <span className="text-xs" style={{ color: "#9DB8AD" }}>{k}</span>
-                    <p className="font-medium mt-0.5" style={{ color: "#1a2822" }}>{v}</p>
+                    <span className="text-xs" style={{ color: "var(--texte-tertiaire)" }}>{k}</span>
+                    <p className="font-medium mt-0.5" style={{ color: "var(--texte-principal)" }}>{v}</p>
                   </div>
                 ))}
               </div>
@@ -1137,7 +1137,7 @@ export default function WizardEstimation() {
             {/* Disclaimer */}
             <p
               className="text-xs leading-relaxed mb-6 flex gap-2"
-              style={{ color: "#9DB8AD" }}
+              style={{ color: "var(--texte-tertiaire)" }}
             >
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5">
                 <circle cx="12" cy="12" r="10" />
@@ -1145,7 +1145,7 @@ export default function WizardEstimation() {
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
               Estimation indicative basée sur les prix du marché dans la zone{" "}
-              <strong style={{ color: "#6B7A71" }}>{r.zone}</strong>. Pour une estimation précise et gratuite,
+              <strong style={{ color: "var(--texte-secondaire)" }}>{r.zone}</strong>. Pour une estimation précise et gratuite,
               un conseiller HOOMY peut visiter votre bien.
             </p>
 
@@ -1154,7 +1154,7 @@ export default function WizardEstimation() {
               <Link
                 href={`/publier?ville=${encodeURIComponent(donnees.ville)}&type=${encodeURIComponent(donnees.typeBien)}&transaction=${donnees.transaction}`}
                 className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold transition-colors"
-                style={{ background: "#0F4C3A", color: "#fff" }}
+                style={{ background: "var(--primaire)", color: "var(--fond-secondaire)" }}
               >
                 <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path d="M12 5v14M5 12l7-7 7 7" />
@@ -1165,7 +1165,7 @@ export default function WizardEstimation() {
               {contactRecu ? (
                 <div
                   className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium"
-                  style={{ background: "#F0FAF4", color: "#0F4C3A", border: "1.5px solid #C8E6D4" }}
+                  style={{ background: "var(--fond-vert-leger)", color: "var(--primaire)", border: "1.5px solid #C8E6D4" }}
                 >
                   <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="20 6 9 17 4 12" />
@@ -1218,7 +1218,7 @@ export default function WizardEstimation() {
         >
           <p
             className="text-xs font-semibold tracking-widest uppercase mb-2"
-            style={{ color: "#D4AF37", letterSpacing: "0.15em" }}
+            style={{ color: "var(--accent)", letterSpacing: "0.15em" }}
           >
             HOOMY.MA
           </p>
@@ -1234,7 +1234,7 @@ export default function WizardEstimation() {
         </div>
 
         {/* Zone blanche : barre + contenu + nav */}
-        <div style={{ background: "#fff" }}>
+        <div style={{ background: "var(--fond-secondaire)" }}>
           <BarreProgression etape={etape} />
 
           {/* Contenu de l'étape */}
@@ -1276,7 +1276,7 @@ export default function WizardEstimation() {
               className="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all disabled:opacity-60"
               style={{
                 background: chargement ? "#6B9E7A" : "linear-gradient(135deg, #0F4C3A 0%, #146C43 100%)",
-                color: "#fff",
+                color: "var(--fond-secondaire)",
                 boxShadow: chargement ? "none" : "0 4px 14px rgba(15,76,58,0.3)",
               }}
             >

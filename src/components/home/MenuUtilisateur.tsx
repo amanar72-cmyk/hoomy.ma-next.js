@@ -40,7 +40,7 @@ const itemMenuStyle = {
   gap: 10,
   padding: "10px 16px",
   fontSize: 14,
-  color: "#3D4A42",
+  color: "var(--texte-corps)",
   textDecoration: "none",
   borderRadius: 8,
   transition: "background 0.12s",
@@ -82,7 +82,7 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: 
       <button
         onClick={() => setOuvert((o) => !o)}
         className="flex items-center gap-2 cursor-pointer rounded-xl px-2 py-1 transition-colors hover:bg-gray-50"
-        style={{ border: "1px solid #E8E2D2", background: "#fff" }}
+        style={{ border: "1px solid #E8E2D2", background: "var(--fond-secondaire)" }}
         aria-label="Menu utilisateur"
         aria-expanded={ouvert}
       >
@@ -96,18 +96,18 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: 
         ) : (
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
-            style={{ background: "#0F4C3A", color: "#D4AF37" }}
+            style={{ background: "var(--primaire)", color: "var(--accent)" }}
           >
             {ini}
           </div>
         )}
         {/* Nom tronqué sur desktop */}
-        <span className="hidden sm:block text-sm max-w-24 truncate" style={{ color: "#0F4C3A" }}>
+        <span className="hidden sm:block text-sm max-w-24 truncate" style={{ color: "var(--primaire)" }}>
           {nomComplet?.split(" ")[0] ?? email?.split("@")[0]}
         </span>
         {/* Chevron */}
         <svg
-          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9DB8AD"
+          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--texte-tertiaire)"
           strokeWidth="2" strokeLinecap="round"
           style={{ transform: ouvert ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
         >
@@ -120,7 +120,7 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: 
         <div
           className="absolute right-0 mt-2 rounded-2xl overflow-hidden"
           style={{
-            background: "#fff",
+            background: "var(--fond-secondaire)",
             boxShadow: "0 8px 32px rgba(15,76,58,0.14)",
             border: "1px solid #E8E2D2",
             minWidth: 220,
@@ -129,10 +129,10 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: 
         >
           {/* En-tête du menu */}
           <div className="px-4 py-3" style={{ borderBottom: "1px solid #F0EAD8" }}>
-            <p className="text-sm font-medium truncate" style={{ color: "#0F4C3A" }}>
+            <p className="text-sm font-medium truncate" style={{ color: "var(--primaire)" }}>
               {nomComplet ?? "Utilisateur"}
             </p>
-            <p className="text-xs truncate mt-0.5" style={{ color: "#9DB8AD" }}>
+            <p className="text-xs truncate mt-0.5" style={{ color: "var(--texte-tertiaire)" }}>
               {email}
             </p>
           </div>
@@ -197,7 +197,7 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: 
 
             <button
               onClick={seDeconnecter}
-              style={{ ...itemMenuStyle, color: "#DC2626" }}
+              style={{ ...itemMenuStyle, color: "var(--erreur)" }}
               className="hover:bg-red-50 w-full flex"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}>

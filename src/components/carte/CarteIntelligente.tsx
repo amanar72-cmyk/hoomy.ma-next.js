@@ -10,13 +10,13 @@ const CarteMapbox = dynamic(() => import("./CarteMapboxIntelligente"), {
   loading: () => (
     <div
       className="flex flex-col items-center justify-center h-full gap-4"
-      style={{ background: "#EDE7D7" }}
+      style={{ background: "var(--bordure)" }}
     >
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9DB8AD" strokeWidth="1.5">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--texte-tertiaire)" strokeWidth="1.5">
         <circle cx="12" cy="12" r="10" />
         <path d="M12 2a10 10 0 0 1 0 20" strokeDasharray="4 4" />
       </svg>
-      <p style={{ color: "#9DB8AD", fontFamily: "var(--font-outfit, sans-serif)", fontSize: 14 }}>
+      <p style={{ color: "var(--texte-tertiaire)", fontFamily: "var(--font-outfit, sans-serif)", fontSize: 14 }}>
         Chargement de la carte…
       </p>
     </div>
@@ -45,42 +45,36 @@ export default function CarteIntelligente() {
       });
   }, []);
 
-  if (chargement) {
-    return (
-      <div
-        className="flex items-center justify-center h-full"
-        style={{ background: "#EDE7D7" }}
-      >
-        <p style={{ color: "#9DB8AD", fontFamily: "var(--font-outfit, sans-serif)", fontSize: 14 }}>
-          Chargement des quartiers…
-        </p>
-      </div>
-    );
-  }
-
-  if (erreur) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
-        <p style={{ color: "#DC2626", fontSize: 14 }}>{erreur}</p>
-        <p style={{ color: "#9DB8AD", fontSize: 13 }}>
-          Contactez un conseiller HOOMY pour obtenir les prix de votre quartier.
-        </p>
-      </div>
-    );
-  }
-
-  if (quartiers.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
-        <p style={{ color: "#9DB8AD", fontSize: 14 }}>
-          Aucun quartier disponible pour le moment.
-        </p>
-        <p style={{ color: "#C4BFAE", fontSize: 12 }}>
-          La base de données des quartiers est en cours de constitution.
-        </p>
-      </div>
-    );
-  }
-
-  return <CarteMapbox quartiers={quartiers} />;
+  return (
+    <div style={{ width: "100%", height: "100%" }}>
+      {chargement ? (
+        <div
+          className="flex items-center justify-center h-full"
+          style={{ background: "var(--bordure)" }}
+        >
+          <p style={{ color: "var(--texte-tertiaire)", fontFamily: "var(--font-outfit, sans-serif)", fontSize: 14 }}>
+            Chargement des quartiers…
+          </p>
+        </div>
+      ) : erreur ? (
+        <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
+          <p style={{ color: "var(--erreur)", fontSize: 14 }}>{erreur}</p>
+          <p style={{ color: "var(--texte-tertiaire)", fontSize: 13 }}>
+            Contactez un conseiller HOOMY pour obtenir les prix de votre quartier.
+          </p>
+        </div>
+      ) : quartiers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
+          <p style={{ color: "var(--texte-tertiaire)", fontSize: 14 }}>
+            Aucun quartier disponible pour le moment.
+          </p>
+          <p style={{ color: "var(--texte-pale)", fontSize: 12 }}>
+            La base de données des quartiers est en cours de constitution.
+          </p>
+        </div>
+      ) : (
+        <CarteMapbox quartiers={quartiers} />
+      )}
+    </div>
+  );
 }

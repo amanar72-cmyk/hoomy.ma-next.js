@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Bien } from "@/lib/types";
+import { trackEvenement } from "@/lib/tracking/track";
+import { useComparateur } from "@/lib/comparateur/ComparateurContext";
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
@@ -16,8 +18,8 @@ function IcCoeur({ plein }: { plein: boolean }) {
   return (
     <svg
       width="16" height="16" viewBox="0 0 24 24"
-      fill={plein ? "#D4AF37" : "none"}
-      stroke={plein ? "#D4AF37" : "rgba(15,76,58,0.6)"}
+      fill={plein ? "var(--accent)" : "none"}
+      stroke={plein ? "var(--accent)" : "rgba(15,76,58,0.6)"}
       strokeWidth="2"
     >
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -105,21 +107,43 @@ function PlaceholderPhoto() {
 
 export default function CarteAnnonce({ bien }: { bien: Bien }) {
   const [favori, setFavori] = useState(false);
+  const { biens: biensCompares, ajouter, supprimer, estSelectionne } = useComparateur();
+  const selectionne = estSelectionne(bien.id);
+  const maxAtteint = !selectionne && biensCompares.length >= 4;
+
   const nbPhotos = bien.photos?.length ?? 0;
   const chemin = cheminBien(bien);
   const prixBase = bien.prix.toLocaleString("fr-FR");
+
+  function toggleComparateur(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (selectionne) {
+      supprimer(bien.id);
+    } else if (!maxAtteint) {
+      ajouter({
+        id: bien.id,
+        titre: bien.titre,
+        photo: bien.photos?.[0] ?? null,
+        prix: bien.prix,
+        transaction: bien.transaction,
+        slug: bien.slug ?? bien.id,
+      });
+    }
+  }
 
   return (
     <article
       className="group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_56px_rgba(15,76,58,0.15)]"
       style={{
-        background: "#fff",
+        background: "var(--fond-secondaire)",
         border: "1px solid #EDE7D7",
         boxShadow: "0 2px 16px rgba(15,76,58,0.07)",
       }}
     >
       <Link
         href={chemin}
+        onClick={() => { void trackEvenement(bien.id, "clic"); }}
         className="flex flex-col flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C3A] focus-visible:ring-offset-2 rounded-2xl"
         style={{ textDecoration: "none", color: "inherit" }}
       >
@@ -149,8 +173,8 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
               className="text-xs font-semibold px-2.5 py-1 rounded-full w-fit leading-none"
               style={
                 bien.transaction === "location"
-                  ? { background: "#D4AF37", color: "#0F4C3A" }
-                  : { background: "#0F4C3A", color: "#fff" }
+                  ? { background: "var(--accent)", color: "var(--primaire)" }
+                  : { background: "var(--primaire)", color: "var(--fond-secondaire)" }
               }
             >
               {bien.transaction === "location" ? "À louer" : "À vendre"}
@@ -161,7 +185,7 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
                 className="text-xs font-medium px-2.5 py-1 rounded-full w-fit flex items-center gap-1 leading-none"
                 style={{
                   background: "rgba(255,255,255,0.93)",
-                  color: "#146C43",
+                  color: "var(--primaire-clair)",
                   backdropFilter: "blur(6px)",
                 }}
               >
@@ -175,7 +199,7 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
           {nbPhotos > 1 && (
             <div
               className="absolute bottom-3 left-3 flex items-center gap-1 text-xs px-2 py-1 rounded-full pointer-events-none"
-              style={{ background: "rgba(0,0,0,0.48)", color: "#fff", backdropFilter: "blur(4px)" }}
+              style={{ background: "rgba(0,0,0,0.48)", color: "var(--fond-secondaire)", backdropFilter: "blur(4px)" }}
             >
               <IcCamera />
               <span className="tabular-nums">{nbPhotos}</span>
@@ -193,28 +217,28 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
               className="leading-tight"
               style={{
                 fontFamily: "var(--font-marcellus), serif",
-                color: "#0F4C3A",
+                color: "var(--primaire)",
                 fontSize: "1.2rem",
               }}
             >
               {prixBase}
             </span>
-            <span className="text-sm font-medium" style={{ color: "#0F4C3A" }}>DH</span>
+            <span className="text-sm font-medium" style={{ color: "var(--primaire)" }}>DH</span>
             {bien.transaction === "location" && (
-              <span className="text-xs ml-0.5" style={{ color: "#9DB8AD" }}>/mois</span>
+              <span className="text-xs ml-0.5" style={{ color: "var(--texte-tertiaire)" }}>/mois</span>
             )}
           </div>
 
           {/* Titre */}
           <p
             className="text-sm font-medium leading-snug line-clamp-2 mb-2.5"
-            style={{ color: "#1a2822" }}
+            style={{ color: "var(--texte-principal)" }}
           >
             {bien.titre}
           </p>
 
           {/* Localisation */}
-          <p className="flex items-center gap-1.5 text-xs mb-4" style={{ color: "#6B7A71" }}>
+          <p className="flex items-center gap-1.5 text-xs mb-4" style={{ color: "var(--texte-secondaire)" }}>
             <IcPin />
             <span className="truncate">
               {bien.quartier ? `${bien.quartier}, ` : ""}{bien.ville}
@@ -222,11 +246,11 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
           </p>
 
           {/* Séparateur */}
-          <div style={{ height: 1, background: "#F0EDE5", marginBottom: 12 }} />
+          <div style={{ height: 1, background: "var(--bordure-legere)", marginBottom: 12 }} />
 
           {/* Specs + référence */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3.5 text-xs" style={{ color: "#6B7A71" }}>
+            <div className="flex items-center gap-3.5 text-xs" style={{ color: "var(--texte-secondaire)" }}>
               <span className="flex items-center gap-1">
                 <IcSurface />
                 {bien.surface}&thinsp;m²
@@ -244,7 +268,7 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
             {bien.reference && (
               <span
                 className="text-xs tabular-nums flex-shrink-0 ml-2"
-                style={{ color: "#C4BFAE", fontFamily: "ui-monospace, monospace" }}
+                style={{ color: "var(--texte-pale)", fontFamily: "ui-monospace, monospace" }}
               >
                 {bien.reference}
               </span>
@@ -253,6 +277,52 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
 
         </div>
       </Link>
+
+      {/* ── Toggle comparaison (hors du Link, bas de carte) ── */}
+      <button
+        type="button"
+        onClick={toggleComparateur}
+        disabled={maxAtteint}
+        title={
+          selectionne
+            ? "Retirer de la comparaison"
+            : maxAtteint
+            ? "Maximum 4 biens atteint"
+            : "Ajouter à la comparaison"
+        }
+        className="w-full flex items-center gap-2 px-5 py-2.5 text-xs transition-colors cursor-pointer disabled:cursor-not-allowed"
+        style={{
+          borderTop: "1px solid #F0EDE5",
+          background: selectionne ? "var(--fond-vert-leger)" : "transparent",
+          color: selectionne ? "var(--primaire-clair)" : maxAtteint ? "var(--texte-pale)" : "var(--texte-tertiaire)",
+          textAlign: "left",
+        }}
+      >
+        {/* Checkbox visuelle */}
+        <span
+          style={{
+            width: 15,
+            height: 15,
+            borderRadius: 4,
+            border: `1.5px solid ${selectionne ? "var(--primaire-clair)" : "var(--texte-pale)"}`,
+            background: selectionne ? "var(--primaire-clair)" : "transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            transition: "all 0.15s",
+          }}
+        >
+          {selectionne && (
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--fond-secondaire)" strokeWidth="3.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </span>
+        <span style={{ fontWeight: selectionne ? 600 : 400 }}>
+          {selectionne ? "Sélectionné pour comparer" : maxAtteint ? "Maximum 4 biens" : "Comparer"}
+        </span>
+      </button>
 
       {/* ── Bouton cœur (hors du Link, z-index élevé) ── */}
       <button
