@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import "mapbox-gl/dist/mapbox-gl.css";
+import mapboxgl from "mapbox-gl";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { calculerEstimation } from "@/lib/estimer/calcul";
 import type { ResultatEstimation } from "@/lib/estimer/calcul";
+import { chargerQuartiersGeo, trouverQuartierProche } from "@/lib/estimer/quartierProche";
+import type { QuartierGeo } from "@/lib/estimer/quartierProche";
 import type { User } from "@supabase/supabase-js";
 
 const ChampTelephone = dynamic(
@@ -22,8 +26,11 @@ type EtageBien = "rdc" | "intermediaire" | "dernier";
 interface DonneesWizard {
   transaction: Transaction | "";
   typeBien: string;
+  latitude: number | null;
+  longitude: number | null;
   ville: string;
   quartier: string;
+  adresseComplete: string;
   surface: string;
   chambres: number;
   sallesBain: number;
@@ -39,8 +46,11 @@ interface DonneesWizard {
 const DONNEES_VIDES: DonneesWizard = {
   transaction: "",
   typeBien: "",
+  latitude: null,
+  longitude: null,
   ville: "",
   quartier: "",
+  adresseComplete: "",
   surface: "",
   chambres: 2,
   sallesBain: 1,
@@ -312,6 +322,308 @@ function AlerteErreur({ message }: { message: string }) {
   );
 }
 
+// ─── Carte Mapbox interactive — étape 3 ──────────────────────────────────────
+
+const TOKEN_MAPBOX = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+
+const SVG_PIN =
+  `<svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">` +
+  `<path d="M18 0C8.059 0 0 8.059 0 18C0 28.941 18 48 18 48C18 48 36 28.941 36 18C36 8.059 27.941 0 18 0Z" fill="#0F4C3A"/>` +
+  `<circle cx="18" cy="18" r="9" fill="#D4AF37"/>` +
+  `<circle cx="18" cy="18" r="4.5" fill="#0F4C3A"/>` +
+  `</svg>`;
+
+type PositionGeo = { lat: number; lng: number; ville: string; quartier: string; adresseComplete: string; quartierDetecte: boolean };
+type SuggestionGeo = { id: string; text: string; place_name: string; center: [number, number] };
+
+function matcherVille(texte: string): string {
+  const t = texte.toLowerCase();
+  const ALIAS: Record<string, string> = {
+    casablanca: "Casablanca", "dar el beida": "Casablanca",
+    marrakech: "Marrakech", marrakesh: "Marrakech",
+    rabat: "Rabat", "temara": "Rabat",
+    tanger: "Tanger", tangier: "Tanger", "tetouan": "Tanger",
+    agadir: "Agadir",
+    fès: "Fès", fes: "Fès", fez: "Fès",
+  };
+  for (const [alias, ville] of Object.entries(ALIAS)) {
+    if (t.includes(alias)) return ville;
+  }
+  return "";
+}
+
+function parseFeatureGeo(f: Record<string, unknown>): { ville: string; quartier: string; adresseComplete: string } {
+  const adresseComplete = (f.place_name as string) ?? "";
+  let ville = "";
+  let quartier = "";
+  const placeTypes = (f.place_type as string[]) ?? [];
+  if (placeTypes.includes("place")) {
+    const v = matcherVille((f.text as string) ?? "");
+    if (v) ville = v;
+  }
+  const ctx = (f.context as Array<{ id: string; text: string }>) ?? [];
+  for (const c of ctx) {
+    const id = c.id ?? "";
+    if ((id.startsWith("place.") || id.startsWith("locality.")) && !ville) {
+      const v = matcherVille(c.text ?? "");
+      if (v) ville = v;
+    }
+    if ((id.startsWith("neighborhood.") || id.startsWith("district.")) && !quartier) {
+      quartier = c.text ?? "";
+    }
+  }
+  return { ville, quartier, adresseComplete };
+}
+
+function CarteLocalisationEtape({
+  positionInitiale,
+  onPosition,
+}: {
+  positionInitiale: PositionGeo | null;
+  onPosition: (pos: PositionGeo) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const onPositionRef = useRef(onPosition);
+  const quartiersRef = useRef<QuartierGeo[]>([]);
+  const [rechercheTexte, setRechercheTexte] = useState("");
+  const [suggestions, setSuggestions] = useState<SuggestionGeo[]>([]);
+  const [suggestionVisible, setSuggestionVisible] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Garde la référence à jour sans re-créer la carte
+  useEffect(() => { onPositionRef.current = onPosition; });
+
+  // Chargement des quartiers Supabase au montage — une seule fois, erreur silencieuse
+  useEffect(() => {
+    chargerQuartiersGeo().then((q) => { quartiersRef.current = q; });
+  }, []);
+
+  // Initialisation de la carte (une seule fois)
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    mapboxgl.accessToken = TOKEN_MAPBOX;
+
+    const centreInit: [number, number] = positionInitiale
+      ? [positionInitiale.lng, positionInitiale.lat]
+      : [-6.0, 31.5];
+    const zoomInit = positionInitiale ? 14 : 5.5;
+
+    const map = new mapboxgl.Map({
+      container: containerRef.current,
+      style: "mapbox://styles/mapbox/streets-v12",
+      center: centreInit,
+      zoom: zoomInit,
+      attributionControl: false,
+    });
+
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "bottom-right");
+    mapRef.current = map;
+
+    // Marqueur draggable — SVG premium
+    const elPin = document.createElement("div");
+    elPin.innerHTML = SVG_PIN;
+    elPin.style.cssText = "cursor:grab;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.28));";
+    elPin.addEventListener("mousedown", () => { elPin.style.cursor = "grabbing"; });
+    elPin.addEventListener("mouseup", () => { elPin.style.cursor = "grab"; });
+
+    const marker = new mapboxgl.Marker({ element: elPin, draggable: true, anchor: "bottom" });
+    if (positionInitiale) {
+      marker.setLngLat([positionInitiale.lng, positionInitiale.lat]).addTo(map);
+    }
+    markerRef.current = marker;
+
+    // Reverse geocoding (défini dans l'effet pour accéder aux refs stables)
+    async function reverseGeocode(lat: number, lng: number) {
+      try {
+        const url =
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json` +
+          `?access_token=${TOKEN_MAPBOX}&language=fr&types=address,neighborhood,place&country=MA`;
+        const json = await (await fetch(url)).json();
+        const feature = json.features?.[0];
+        const parsed = feature
+          ? parseFeatureGeo(feature as Record<string, unknown>)
+          : { ville: "", quartier: "", adresseComplete: "" };
+
+        // Enrichir avec le quartier le plus proche de notre base de données
+        const quartierBDD = trouverQuartierProche(lat, lng, quartiersRef.current);
+
+        onPositionRef.current({
+          lat,
+          lng,
+          ...parsed,
+          // Le quartier Supabase est prioritaire (données alignées avec grille_prix)
+          quartier: quartierBDD?.nom ?? parsed.quartier,
+          quartierDetecte: !!quartierBDD,
+        });
+      } catch { /* erreur réseau silencieuse */ }
+    }
+
+    // Clic sur la carte → pose le marqueur
+    map.on("click", (e) => {
+      marker.setLngLat(e.lngLat).addTo(map);
+      reverseGeocode(e.lngLat.lat, e.lngLat.lng);
+    });
+
+    // Fin de glissement → reverse geocode
+    marker.on("dragend", () => {
+      const pos = marker.getLngLat();
+      reverseGeocode(pos.lat, pos.lng);
+    });
+
+    // Masquer la frontière du Sahara
+    map.on("load", () => {
+      if (map.getLayer("admin-0-boundary-disputed")) {
+        map.setLayoutProperty("admin-0-boundary-disputed", "visibility", "none");
+      }
+    });
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markerRef.current = null;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Forward geocoding — recherche avec debounce
+  async function rechercherSuggestions(texte: string) {
+    if (!texte || texte.length < 3) { setSuggestions([]); setSuggestionVisible(false); return; }
+    try {
+      const url =
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(texte)}.json` +
+        `?access_token=${TOKEN_MAPBOX}&language=fr&country=MA&autocomplete=true&limit=5` +
+        `&types=address,neighborhood,place,locality`;
+      const json = await (await fetch(url)).json();
+      const res: SuggestionGeo[] = (json.features ?? []).map((f: Record<string, unknown>) => ({
+        id: f.id as string,
+        text: f.text as string,
+        place_name: f.place_name as string,
+        center: f.center as [number, number],
+      }));
+      setSuggestions(res);
+      setSuggestionVisible(res.length > 0);
+    } catch { setSuggestions([]); }
+  }
+
+  function handleRechercheChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setRechercheTexte(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => rechercherSuggestions(val), 380);
+  }
+
+  function choisirSuggestion(s: SuggestionGeo) {
+    setSuggestionVisible(false);
+    setRechercheTexte(s.place_name);
+    const [lng, lat] = s.center;
+    if (mapRef.current && markerRef.current) {
+      mapRef.current.flyTo({ center: [lng, lat], zoom: 15, duration: 1000 });
+      markerRef.current.setLngLat([lng, lat]).addTo(mapRef.current);
+      const parsedGeo = parseFeatureGeo({ place_name: s.place_name, text: s.text, place_type: [], context: [] });
+      const quartierBDD = trouverQuartierProche(lat, lng, quartiersRef.current);
+      onPositionRef.current({
+        lat,
+        lng,
+        ...parsedGeo,
+        quartier: quartierBDD?.nom ?? parsedGeo.quartier,
+        quartierDetecte: !!quartierBDD,
+      });
+    }
+  }
+
+  const inputBaseStyle: React.CSSProperties = {
+    width: "100%",
+    height: 44,
+    borderRadius: 10,
+    border: "1.5px solid var(--bordure)",
+    padding: "0 12px 0 36px",
+    fontSize: 13,
+    background: "var(--fond-secondaire)",
+    color: "var(--texte-principal)",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  return (
+    <div>
+      {/* Barre de recherche d'adresse */}
+      <div style={{ position: "relative", marginBottom: 8 }}>
+        <div style={{ position: "relative" }}>
+          <svg
+            style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+            width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--texte-tertiaire)" strokeWidth="2"
+          >
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            value={rechercheTexte}
+            onChange={handleRechercheChange}
+            onFocus={() => suggestions.length > 0 && setSuggestionVisible(true)}
+            onBlur={() => setTimeout(() => setSuggestionVisible(false), 180)}
+            placeholder="Rechercher une adresse au Maroc…"
+            style={inputBaseStyle}
+          />
+        </div>
+
+        {/* Dropdown suggestions */}
+        {suggestionVisible && suggestions.length > 0 && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+            zIndex: 50, background: "var(--fond-secondaire)",
+            border: "1px solid var(--bordure)", borderRadius: 12,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.13)", overflow: "hidden",
+          }}>
+            {suggestions.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onMouseDown={() => choisirSuggestion(s)}
+                style={{
+                  display: "flex", alignItems: "flex-start", gap: 10,
+                  width: "100%", padding: "9px 14px",
+                  border: "none", background: "transparent",
+                  cursor: "pointer", textAlign: "left",
+                  borderBottom: "1px solid var(--bordure-legere)",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--fond-vert-leger)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+              >
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="2" style={{ flexShrink: 0, marginTop: 2 }}>
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: "var(--texte-principal)", lineHeight: 1.3 }}>{s.text}</div>
+                  <div style={{ fontSize: 11, color: "var(--texte-tertiaire)", marginTop: 1 }}>{s.place_name}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Conteneur de la carte */}
+      <div
+        ref={containerRef}
+        style={{
+          height: 360,
+          borderRadius: 14,
+          overflow: "hidden",
+          border: "1.5px solid var(--bordure)",
+        }}
+      />
+
+      {/* Instruction */}
+      <p style={{ fontSize: 12, color: "var(--texte-tertiaire)", textAlign: "center", marginTop: 8 }}>
+        Cliquez sur la carte ou déplacez l'épingle pour localiser votre bien
+      </p>
+    </div>
+  );
+}
+
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export default function WizardEstimation() {
@@ -323,6 +635,7 @@ export default function WizardEstimation() {
   const [afficherResultat, setAfficherResultat] = useState(false);
   const [resultat, setResultat] = useState<ResultatEstimation | null | "non_couverte">(null);
   const [contactRecu, setContactRecu] = useState(false);
+  const [quartierDetecteNom, setQuartierDetecteNom] = useState<string | null>(null);
 
   // Vérification de l'auth au montage
   useEffect(() => {
@@ -397,6 +710,8 @@ export default function WizardEstimation() {
         user_id: user.id,
         ville: donnees.ville,
         quartier: donnees.quartier || null,
+        latitude: donnees.latitude,
+        longitude: donnees.longitude,
         type_bien: donnees.typeBien,
         transaction: donnees.transaction,
         surface: parseFloat(donnees.surface),
@@ -564,10 +879,66 @@ export default function WizardEstimation() {
                 Où se situe votre bien ?
               </h2>
               <p className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
-                La localisation est le facteur de prix le plus important.
+                Placez l'épingle sur votre bien — l'adresse se remplit automatiquement.
               </p>
             </div>
-            <div className="flex flex-col gap-4">
+
+            {/* Carte Mapbox interactive */}
+            <CarteLocalisationEtape
+              positionInitiale={
+                donnees.latitude && donnees.longitude
+                  ? {
+                      lat: donnees.latitude,
+                      lng: donnees.longitude,
+                      ville: donnees.ville,
+                      quartier: donnees.quartier,
+                      adresseComplete: donnees.adresseComplete,
+                      quartierDetecte: false,
+                    }
+                  : null
+              }
+              onPosition={(pos) => {
+                setDonnees((d) => ({
+                  ...d,
+                  latitude: pos.lat,
+                  longitude: pos.lng,
+                  ville: pos.ville || d.ville,
+                  quartier: pos.quartier || d.quartier,
+                  adresseComplete: pos.adresseComplete,
+                }));
+                setQuartierDetecteNom(pos.quartierDetecte && pos.quartier ? pos.quartier : null);
+                setErreur("");
+              }}
+            />
+
+            {/* Champs auto-remplis mais modifiables */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Adresse */}
+              <div className="sm:col-span-2 flex flex-col gap-1.5">
+                <label className="text-sm font-medium" style={{ color: "var(--texte-corps)" }}>
+                  Adresse{" "}
+                  <span className="font-normal text-xs" style={{ color: "var(--texte-tertiaire)" }}>
+                    (auto-remplie par la carte)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={donnees.adresseComplete}
+                  onChange={(e) => maj("adresseComplete", e.target.value)}
+                  placeholder="Placez d'abord l'épingle sur la carte…"
+                  className="w-full rounded-xl px-4 text-sm outline-none transition-all"
+                  style={{
+                    height: 44,
+                    border: "1.5px solid var(--bordure)",
+                    color: "var(--texte-principal)",
+                    background: "var(--fond-secondaire)",
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = "var(--primaire)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "var(--bordure)"; }}
+                />
+              </div>
+
+              {/* Ville */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium" style={{ color: "var(--texte-corps)" }}>
                   Ville <span style={{ color: "#B91C1C" }}>*</span>
@@ -575,51 +946,78 @@ export default function WizardEstimation() {
                 <select
                   value={donnees.ville}
                   onChange={(e) => maj("ville", e.target.value)}
-                  className="w-full rounded-xl px-4 text-base outline-none appearance-none cursor-pointer"
+                  className="w-full rounded-xl px-4 text-sm outline-none appearance-none cursor-pointer"
                   style={{
-                    height: 48,
+                    height: 44,
                     border: `1.5px solid ${donnees.ville ? "var(--primaire)" : "var(--bordure)"}`,
-                    color: donnees.ville ? "var(--texte-principal)" : "#B4AD97",
+                    color: donnees.ville ? "var(--texte-principal)" : "var(--texte-pale)",
                     background: "var(--fond-secondaire)",
                     backgroundImage:
                       "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%239DB8AD' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
                     backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 14px center",
+                    backgroundPosition: "right 12px center",
                   }}
                 >
                   <option value="">Sélectionnez une ville</option>
-                  {VILLES.map((v) => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
+                  {VILLES.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
 
+              {/* Quartier */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium" style={{ color: "var(--texte-corps)" }}>
-                  Quartier{" "}
-                  <span className="font-normal text-xs" style={{ color: "var(--texte-tertiaire)" }}>
-                    (optionnel, améliore la précision)
-                  </span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium" style={{ color: "var(--texte-corps)" }}>
+                    Quartier{" "}
+                    <span className="font-normal text-xs" style={{ color: "var(--texte-tertiaire)" }}>
+                      (optionnel)
+                    </span>
+                  </label>
+                  {/* Badge discret : quartier auto-détecté depuis notre BDD */}
+                  {quartierDetecteNom && donnees.quartier === quartierDetecteNom && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontSize: 10,
+                        fontWeight: 500,
+                        color: "var(--primaire)",
+                        background: "var(--fond-vert-leger)",
+                        border: "1px solid rgba(15,76,58,0.18)",
+                        borderRadius: 20,
+                        padding: "2px 8px",
+                      }}
+                    >
+                      <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <circle cx="12" cy="10" r="3" />
+                        <path d="M12 2a8 8 0 0 0-8 8c0 5.6 8 12 8 12s8-6.4 8-12a8 8 0 0 0-8-8z" />
+                      </svg>
+                      Détecté automatiquement
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={donnees.quartier}
-                  onChange={(e) => maj("quartier", e.target.value)}
+                  onChange={(e) => {
+                    maj("quartier", e.target.value);
+                    // Efface le badge dès que l'utilisateur modifie manuellement
+                    if (e.target.value !== quartierDetecteNom) setQuartierDetecteNom(null);
+                  }}
                   placeholder="Ex : Maarif, Guéliz, Agdal…"
-                  className="w-full rounded-xl px-4 text-base outline-none transition-all"
+                  className="w-full rounded-xl px-4 text-sm outline-none transition-all"
                   style={{
-                    height: 48,
-                    border: "1.5px solid #EDE7D7",
+                    height: 44,
+                    border: `1.5px solid ${quartierDetecteNom && donnees.quartier === quartierDetecteNom ? "var(--primaire-clair)" : "var(--bordure)"}`,
                     color: "var(--texte-principal)",
                     background: "var(--fond-secondaire)",
                   }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "var(--primaire)";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(15,76,58,0.08)";
-                  }}
+                  onFocus={(e) => { e.target.style.borderColor = "var(--primaire)"; }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = "var(--bordure)";
-                    e.target.style.boxShadow = "none";
+                    e.target.style.borderColor =
+                      quartierDetecteNom && donnees.quartier === quartierDetecteNom
+                        ? "var(--primaire-clair)"
+                        : "var(--bordure)";
                   }}
                 />
               </div>

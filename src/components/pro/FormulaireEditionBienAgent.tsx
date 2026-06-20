@@ -9,6 +9,7 @@ import {
   type DonneesModificationBienAgent,
 } from "@/app/pro/biens/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
+import { appliquerWatermark } from "@/lib/images/watermark";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -145,9 +146,15 @@ export default function FormulaireEditionBienAgent({
 
     for (const fichier of liste) {
       const chemin = `${agentId}/${Date.now()}-${fichier.name.replace(/\s+/g, "_")}`;
+      let aUploader: File | Blob = fichier;
+      try {
+        aUploader = await appliquerWatermark(fichier);
+      } catch (err) {
+        console.warn("[HOOMY] Watermark échoué, upload original :", err);
+      }
       const { data, error } = await supabase.storage
         .from("biens")
-        .upload(chemin, fichier, { upsert: false });
+        .upload(chemin, aUploader, { upsert: false });
 
       if (error) {
         setErreur(`Erreur upload "${fichier.name}" : ${error.message}`);

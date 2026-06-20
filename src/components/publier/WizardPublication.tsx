@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { publierBien } from "@/app/publier/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
+import { appliquerWatermark } from "@/lib/images/watermark";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -325,7 +326,13 @@ export default function WizardPublication({ userId }: { userId: string }) {
       setUploadsProgression((prev) => ({ ...prev, [id]: 0 }));
 
       const chemin = `${userId}/${Date.now()}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      const { data, error } = await supabase.storage.from("biens").upload(chemin, fichier);
+      let aUploader: File | Blob = fichier;
+      try {
+        aUploader = await appliquerWatermark(fichier);
+      } catch (err) {
+        console.warn("[HOOMY] Watermark échoué, upload original :", err);
+      }
+      const { data, error } = await supabase.storage.from("biens").upload(chemin, aUploader);
 
       if (error) {
         setErreurUpload(`Erreur lors de l'upload de "${fichier.name}" : ${error.message}`);
