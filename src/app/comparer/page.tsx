@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Navbar from "@/components/home/Navbar";
 import PageComparateurClient from "./PageComparateurClient";
 
 export const metadata = {
@@ -10,11 +11,10 @@ function Chargement() {
   return (
     <div
       style={{
-        minHeight: "100vh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "var(--fond-principal)",
+        minHeight: "60vh",
       }}
     >
       <p style={{ color: "var(--texte-tertiaire)", fontFamily: "var(--font-outfit, sans-serif)" }}>
@@ -26,8 +26,11 @@ function Chargement() {
 
 export default function PageComparer() {
   return (
-    <Suspense fallback={<Chargement />}>
-      <PageComparateurClient />
-    </Suspense>
+    <div style={{ minHeight: "100vh", background: "var(--fond-principal)" }}>
+      <Navbar />
+      <Suspense fallback={<Chargement />}>
+        <PageComparateurClient />
+      </Suspense>
+    </div>
   );
 }

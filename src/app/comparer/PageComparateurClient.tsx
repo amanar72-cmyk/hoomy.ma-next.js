@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Bien } from "@/lib/types";
-import Navbar from "@/components/home/Navbar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -282,25 +281,19 @@ export default function PageComparateurClient() {
   // ── États de chargement / erreur ───────────────────────────────────────────
   if (chargement) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--fond-principal)" }}>
-        <Navbar />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-          <p style={{ color: "var(--texte-tertiaire)", fontFamily: "var(--font-outfit, sans-serif)" }}>Chargement…</p>
-        </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+        <p style={{ color: "var(--texte-tertiaire)", fontFamily: "var(--font-outfit, sans-serif)" }}>Chargement…</p>
       </div>
     );
   }
 
   if (erreur || biens.length < 2) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--fond-principal)" }}>
-        <Navbar />
-        <div style={{ maxWidth: 480, margin: "80px auto", textAlign: "center", padding: "0 24px" }}>
-          <p style={{ color: "var(--erreur)", marginBottom: 16 }}>{erreur ?? "Sélectionnez au moins 2 biens pour comparer."}</p>
-          <Link href="/acheter" style={{ color: "var(--primaire)", textDecoration: "underline" }}>
-            Parcourir les annonces
-          </Link>
-        </div>
+      <div style={{ maxWidth: 480, margin: "80px auto", textAlign: "center", padding: "0 24px" }}>
+        <p style={{ color: "var(--erreur)", marginBottom: 16 }}>{erreur ?? "Sélectionnez au moins 2 biens pour comparer."}</p>
+        <Link href="/acheter" style={{ color: "var(--primaire)", textDecoration: "underline" }}>
+          Parcourir les annonces
+        </Link>
       </div>
     );
   }
@@ -329,10 +322,7 @@ export default function PageComparateurClient() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--fond-principal)" }}>
-      <Navbar />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
         {/* ── En-tête ──────────────────────────────────────────────────────── */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 28 }}>
@@ -802,6 +792,5 @@ export default function PageComparateurClient() {
         </div>
 
       </div>
-    </div>
   );
 }
