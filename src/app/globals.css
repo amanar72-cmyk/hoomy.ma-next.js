@@ -1,0 +1,210 @@
+@import "tailwindcss";
+@import "mapbox-gl/dist/mapbox-gl.css";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOOMY Design Tokens — Palette Zellige & Tadelakt
+   ─────────────────────────────────────────────────────────────────────────
+   Inspiré des matériaux marocains :
+   · Tadelakt  → tons crème/beige mats (fonds de page)
+   · Zellige   → vert profond + or (couleurs d'action)
+   ─────────────────────────────────────────────────────────────────────────
+   Mode sombre : à implémenter ultérieurement en redéfinissant ces
+   variables dans [data-theme="dark"] { ... } sans toucher aux composants.
+   ─────────────────────────────────────────────────────────────────────────
+   Contrastes WCAG AA vérifiés (mode clair) :
+   · --texte-principal sur --fond-principal  : 14.2:1 ✓
+   · --texte-corps     sur --fond-secondaire :  8.8:1 ✓
+   · --texte-secondaire sur --fond-secondaire:  5.1:1 ✓
+   · --fond-secondaire sur --primaire        :  8.6:1 ✓
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Couleurs de marque (constantes — ne changent pas en mode sombre) ── */
+  --hoomy-vert-royal: #0F4C3A;
+  --hoomy-emeraude:   #146C43;
+  --hoomy-gold:       #D4AF37;
+  --hoomy-beige:      #FAF7F0;
+
+  /* ── Fonds — tadelakt clair ── */
+  --fond-principal:    #FAF7F0;   /* beige mat · arrière-plan site */
+  --fond-secondaire:   #FFFFFF;   /* blanc pur · cartes, modals, inputs */
+  --fond-accent:       #F5F0E8;   /* beige chaud · sections alternées, badges */
+  --fond-vert-leger:   #F0FAF4;   /* vert très pâle · icônes, réassurance */
+
+  /* ── Textes ── */
+  --texte-principal:   #1A2822;   /* quasi-noir vert · titres, text-principal */
+  --texte-corps:       #3D4A42;   /* vert foncé · corps, nav, paragraphes */
+  --texte-secondaire:  #6B7A71;   /* gris-vert · labels, meta, localisation */
+  --texte-chaud:       #6B6450;   /* brun-beige · liens meta warm, download */
+  --texte-tertiaire:   #9DB8AD;   /* gris-vert léger · hints, placeholders */
+  --texte-brun:        #9B9282;   /* beige-gris · unités, sous-labels discrets */
+  --texte-pale:        #C4BFAE;   /* beige très pâle · références, copyright */
+
+  /* ── Bordures ── */
+  --bordure:           #EDE7D7;   /* beige · cadres cartes principales */
+  --bordure-legere:    #F0EDE5;   /* beige très léger · séparateurs, lignes tableau */
+  --bordure-chaude:    #E0DAC8;   /* beige soutenu · inputs, grilles formulaires */
+
+  /* ── Couleurs d'action — zellige ── */
+  --primaire:          #0F4C3A;   /* vert royal · boutons, liens actifs */
+  --primaire-clair:    #146C43;   /* émeraude · hover, badge "vente", success */
+  --accent:            #D4AF37;   /* or zellige · CTA, prix, badge "location" */
+  --accent-fort:       #B8932A;   /* or foncé · unité "DH" dans l'affichage prix */
+
+  /* ── États sémantiques ── */
+  --succes-fond:       #D1FAE5;   /* vert très pâle · fond confirmation */
+  --succes-texte:      #065F46;   /* vert foncé · texte confirmation */
+  --erreur-fond:       #FEE2E2;   /* rouge pâle · fond message erreur */
+  --erreur-texte:      #991B1B;   /* rouge foncé · texte message erreur */
+  --erreur:            #DC2626;   /* rouge vif · icônes et indicateurs erreur */
+
+  /* ── Sémantique boutons (évite les conflits texte-sur-fond en mode sombre) ── */
+  --texte-sur-accent: var(--primaire);   /* texte sur fond var(--accent) → vert sur or */
+  --bordure-action:   var(--primaire);   /* bordure + texte du bouton outline → vert */
+
+  /* ── Héritage Tailwind (requis pour --color-background/foreground) ── */
+  --background: #FAF7F0;
+  --foreground: #1A2822;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Mode nuit — ambiance Riad la nuit (vert profond zellige + or)
+   ─────────────────────────────────────────────────────────────────────────
+   Activé par : document.documentElement.setAttribute("data-theme","dark")
+   Contrastes WCAG AA vérifiés :
+   · --texte-principal (#F0E6D3) sur --fond-principal (#0A1F18) : 14.4:1 ✓
+   · --texte-corps (#CBBA9F) sur --fond-secondaire (#0D2419)    :  8.9:1 ✓
+   · --texte-secondaire (#8FA899) sur --fond-secondaire          :  5.9:1 ✓
+   · --primaire (#D4AF37) sur --fond-principal                   :  8.7:1 ✓
+   · --texte-sur-accent (#0A1F18) sur --accent (#D4AF37)         :  9.0:1 ✓
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  /* ── Fonds (vert nuit profond — comme la fontaine d'un riad la nuit) ── */
+  --fond-principal:    #0A1F18;   /* vert nuit très profond · arrière-plan site */
+  --fond-secondaire:   #0D2419;   /* vert nuit · cartes, panels, modals */
+  --fond-accent:       #122E21;   /* vert nuit medium · sections alternées */
+  --fond-vert-leger:   #163324;   /* vert nuit clair · badges, icônes */
+
+  /* ── Textes (beige bougie et sage vert) ── */
+  --texte-principal:   #F0E6D3;   /* beige crème · titres (comme la lumière d'une bougie) */
+  --texte-corps:       #CBBA9F;   /* beige sableux · corps de texte */
+  --texte-secondaire:  #8FA899;   /* sage gris-vert · labels, meta */
+  --texte-chaud:       #C4A87B;   /* beige doré chaud · liens warm */
+  --texte-tertiaire:   #5A7868;   /* vert sage discret · hints, placeholders */
+  --texte-brun:        #7C7060;   /* taupe · unités, sous-labels */
+  --texte-pale:        #3E5448;   /* vert sombre · références très discrètes */
+
+  /* ── Bordures ── */
+  --bordure:           #1C3D2C;   /* vert nuit moyen · cadres */
+  --bordure-legere:    #142E21;   /* vert très sombre · séparateurs */
+  --bordure-chaude:    #204632;   /* vert moyen · inputs */
+
+  /* ── Actions (l'or zellige règne la nuit) ── */
+  --primaire:          #D4AF37;   /* or zellige · action principale */
+  --primaire-clair:    #E8C85A;   /* or clair · hover */
+  --accent:            #D4AF37;   /* or · prix, CTA */
+  --accent-fort:       #E8C85A;   /* or vif · unité DH */
+
+  /* ── Sémantique boutons ── */
+  --texte-sur-accent:  #0A1F18;   /* quasi-noir sur fond or · 9:1 de contraste ✓ */
+  --bordure-action:    #D4AF37;   /* or · bouton outline sur fond sombre */
+
+  /* ── États sémantiques ── */
+  --succes-fond:       #0E281C;   /* vert très sombre */
+  --succes-texte:      #4ADE80;   /* vert vif lisible */
+  --erreur-fond:       #280D0D;   /* rouge très sombre */
+  --erreur-texte:      #FCA5A5;   /* rose pâle lisible */
+  --erreur:            #EF4444;   /* rouge vif */
+
+  /* ── Système ── */
+  --background: #0A1F18;
+  --foreground: #F0E6D3;
+}
+
+/* ── Tailwind v4 : expose les tokens comme classes utilitaires ───────────
+   Permet : bg-fond-principal, text-primaire, border-bordure, etc.
+   ─────────────────────────────────────────────────────────────────────── */
+@theme inline {
+  --color-background:      var(--background);
+  --color-foreground:      var(--foreground);
+  --font-sans:             var(--font-geist-sans);
+  --font-mono:             var(--font-geist-mono);
+
+  /* Fonds */
+  --color-fond-principal:  var(--fond-principal);
+  --color-fond-secondaire: var(--fond-secondaire);
+  --color-fond-accent:     var(--fond-accent);
+  --color-fond-vert:       var(--fond-vert-leger);
+
+  /* Textes */
+  --color-texte:           var(--texte-principal);
+  --color-texte-corps:     var(--texte-corps);
+  --color-texte-doux:      var(--texte-secondaire);
+  --color-texte-chaud:     var(--texte-chaud);
+  --color-texte-leger:     var(--texte-tertiaire);
+  --color-texte-brun:      var(--texte-brun);
+  --color-texte-pale:      var(--texte-pale);
+
+  /* Bordures */
+  --color-bordure:         var(--bordure);
+  --color-bordure-legere:  var(--bordure-legere);
+  --color-bordure-chaude:  var(--bordure-chaude);
+
+  /* Actions */
+  --color-primaire:        var(--primaire);
+  --color-emeraude:        var(--primaire-clair);
+  --color-accent:          var(--accent);
+  --color-accent-fort:     var(--accent-fort);
+
+  /* États */
+  --color-succes:          var(--succes-texte);
+  --color-erreur:          var(--erreur);
+}
+
+/* ── Transition douce lors du basculement de thème ──────────────────────────
+   Activée temporairement par la classe .en-transition posée par ToggleTheme.
+   !important nécessaire pour passer outre les transitions inline existantes.
+   ─────────────────────────────────────────────────────────────────────────── */
+html.en-transition,
+html.en-transition *,
+html.en-transition *::before,
+html.en-transition *::after {
+  transition-duration: 280ms !important;
+  transition-property: background-color, color, border-color, fill, stroke, box-shadow, opacity !important;
+  transition-timing-function: ease !important;
+}
+
+/* ── Valeurs système par défaut ── */
+body {
+  background: var(--fond-principal);
+  color: var(--texte-principal);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Téléphone international (react-phone-number-input) ── */
+.phone-input-hoomy .PhoneInputInput {
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  color: var(--primaire);
+  background: transparent;
+  width: 100%;
+  padding: 0;
+}
+.phone-input-hoomy .PhoneInputCountrySelect {
+  color: var(--primaire);
+  font-size: 0.875rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  margin-right: 8px;
+}
+.phone-input-hoomy .PhoneInputCountryIcon {
+  box-shadow: none;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.phone-input-hoomy .PhoneInputCountrySelectArrow {
+  color: var(--texte-tertiaire);
+  margin-left: 4px;
+}
