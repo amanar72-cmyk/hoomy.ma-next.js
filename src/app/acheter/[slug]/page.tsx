@@ -11,6 +11,7 @@ import CarteContact from "@/components/detail/CarteContact";
 import CarteLocalisation from "@/components/detail/CarteLocalisation";
 import BiensSimiliaires from "@/components/detail/BiensSimiliaires";
 import TrackVue from "@/components/tracking/TrackVue";
+import BarreMobileContact from "@/components/detail/BarreMobileContact";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,7 @@ export default async function PageDetailAchat({ params }: Props) {
       </div>
 
       {/* ── Layout 2 colonnes : galerie+contenu gauche / carte droite ──────── */}
-      <div className="max-w-7xl mx-auto px-6 pt-4 pb-16">
+      <div className="max-w-7xl mx-auto px-6 pt-4 pb-24 lg:pb-16">
         <div className="flex gap-8">
 
           {/* Colonne gauche — galerie + infos */}
@@ -83,7 +84,8 @@ export default async function PageDetailAchat({ params }: Props) {
               transaction={bien.transaction}
               verifie={bien.verifie}
             />
-            <div className="mt-10">
+
+            <div className="mt-4 lg:mt-10">
               <InfosBien bien={bien} />
               <CarteLocalisation
                 latitude={bien.latitude}
@@ -111,18 +113,16 @@ export default async function PageDetailAchat({ params }: Props) {
 
         </div>
 
-        {/* Carte contact mobile — sous la galerie */}
-        <div className="lg:hidden mt-6">
-          <CarteContact
-            prix={bien.prix}
-            transaction={bien.transaction}
-            titre={bien.titre}
-            chemin={`acheter/${slug}`}
-            bienId={bien.id}
-            agentId={bien.agent_id ?? null}
-            slug={slug}
-          />
-        </div>
+        {/* Barre d'action flottante mobile */}
+        <BarreMobileContact
+          prix={bien.prix}
+          transaction={bien.transaction}
+          titre={bien.titre}
+          reference={bien.reference ?? null}
+          ville={bien.ville}
+          bienId={bien.id}
+          agentId={bien.agent_id ?? null}
+        />
       </div>
 
       {/* ── Biens similaires ─────────────────────────────────────────────── */}

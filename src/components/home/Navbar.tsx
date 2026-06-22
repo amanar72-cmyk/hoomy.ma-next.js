@@ -1,4 +1,3 @@
-import Logo from "@/components/Logo";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import MenuUtilisateur from "./MenuUtilisateur";
@@ -36,7 +35,9 @@ export default async function Navbar() {
     >
       <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
         <Link href="/" style={{ textDecoration: "none" }}>
-          <Logo />
+          <span style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)", fontSize: 21, letterSpacing: 2 }}>
+            HOOMY<span style={{ color: "var(--accent)" }}>.MA</span>
+          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm" style={{ color: "var(--texte-corps)" }}>

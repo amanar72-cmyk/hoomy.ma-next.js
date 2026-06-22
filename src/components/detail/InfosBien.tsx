@@ -1,49 +1,27 @@
+import Link from "next/link";
 import type { Bien } from "@/lib/types";
+import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
 
-// ── Icônes SVG inline ─────────────────────────────────────────────────────────
+// ── Emoji dynamique selon le type de bien ─────────────────────────────────────
+function emojiBien(type: string): string {
+  const t = type.toLowerCase();
+  if (t.includes("villa")) return "🏡";
+  if (t.includes("riad")) return "🏯";
+  if (t.includes("bureau") || t.includes("local")) return "🏢";
+  if (t.includes("terrain")) return "🌿";
+  if (t.includes("studio")) return "🛋️";
+  return "🏠";
+}
 
-function IcSurface() {
-  return (
-    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="1.6">
-      <path d="M3 3h18v18H3z" />
-      <path d="M3 9h18M9 3v18" strokeDasharray="2 2" />
-    </svg>
-  );
-}
-function IcChambre() {
-  return (
-    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="1.6">
-      <path d="M3 7v10M21 7v10M3 11h18" />
-      <rect x="3" y="7" width="18" height="10" rx="2" />
-      <path d="M9 11V9a2 2 0 0 1 4 0v2" />
-    </svg>
-  );
-}
-function IcBain() {
-  return (
-    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="1.6">
-      <path d="M9 6a2 2 0 0 1 4 0v9H9V6z" />
-      <path d="M3 15h18" />
-      <path d="M4 15a7 7 0 0 0 16 0" />
-    </svg>
-  );
-}
-function IcType() {
-  return (
-    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--primaire)" strokeWidth="1.6">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
 function IcPin() {
   return (
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
       <circle cx="12" cy="10" r="3" />
     </svg>
   );
 }
+
 function IcCheck() {
   return (
     <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
@@ -52,16 +30,12 @@ function IcCheck() {
   );
 }
 
-// ── Formatage ─────────────────────────────────────────────────────────────────
-
-function formatPrixBase(prix: number) {
-  return prix.toLocaleString("fr-FR");
-}
-
 // ── Composant ─────────────────────────────────────────────────────────────────
 
 export default function InfosBien({ bien }: { bien: Bien }) {
   const equipements = (bien.equipements ?? []) as string[];
+  const estVente = bien.transaction !== "location";
+  const frais = estVente ? calculerFraisAcquisition(bien.prix) : null;
 
   return (
     <div>
@@ -82,6 +56,14 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         >
           {bien.type}
         </span>
+        {bien.verifie && (
+          <span
+            className="text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1"
+            style={{ background: "#E8F5EE", color: "var(--primaire-clair)" }}
+          >
+            ✅ Bien vérifié
+          </span>
+        )}
       </div>
 
       {/* ── Titre ─────────────────────────────────────────────────────── */}
@@ -102,8 +84,8 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         {bien.quartier ? `${bien.quartier}, ` : ""}{bien.ville}
       </p>
 
-      {/* ── Prix ──────────────────────────────────────────────────────── */}
-      <div className="mb-8">
+      {/* ── Prix — masqué sur mobile (visible dans la barre flottante) ── */}
+      <div className="hidden lg:block mb-8">
         <p
           className="leading-none"
           style={{
@@ -112,9 +94,9 @@ export default function InfosBien({ bien }: { bien: Bien }) {
             fontSize: "clamp(2rem, 4vw, 3rem)",
           }}
         >
-          {formatPrixBase(bien.prix)}{" "}
+          {bien.prix.toLocaleString("fr-FR")}{" "}
           <span style={{ fontSize: "0.55em", color: "var(--accent-fort)" }}>DH</span>
-          {bien.transaction === "location" && (
+          {!estVente && (
             <span
               className="ml-1"
               style={{ fontSize: "0.4em", color: "var(--texte-brun)", fontFamily: "var(--font-outfit), sans-serif", fontWeight: 400 }}
@@ -125,70 +107,87 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         </p>
       </div>
 
-      {/* ── Stats cartes ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
-        {[
-          { icone: <IcSurface />, valeur: `${bien.surface}`, unite: "m²",          label: "Surface" },
-          { icone: <IcChambre />, valeur: `${bien.chambres}`, unite: "",            label: bien.chambres > 1 ? "Chambres" : "Chambre" },
-          { icone: <IcBain />,    valeur: `${bien.salles_bain}`, unite: "",         label: bien.salles_bain > 1 ? "Salles de bain" : "Salle de bain" },
-          { icone: <IcType />,    valeur: bien.type, unite: "",                     label: "Type" },
-        ].map(({ icone, valeur, unite, label }) => (
+      {/* ── Caractéristiques — style emoji moderne ────────────────────── */}
+      <div className="flex flex-wrap gap-3 mb-10">
+        {bien.surface > 0 && (
           <div
-            key={label}
-            className="flex flex-col items-center gap-2.5 px-4 py-5 rounded-2xl"
-            style={{
-              background: "var(--fond-secondaire)",
-              border: "1px solid #EDE7D7",
-              boxShadow: "0 2px 12px rgba(15,76,58,0.06)",
-            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
+            style={{ background: "var(--fond-secondaire)", border: "1px solid #EDE7D7" }}
           >
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "var(--fond-vert-leger)" }}
-            >
-              {icone}
-            </div>
-            <div className="text-center">
-              <p className="text-base font-semibold leading-tight" style={{ color: "var(--primaire)" }}>
-                {valeur}
-                {unite && <span className="text-sm font-normal ml-0.5" style={{ color: "var(--texte-brun)" }}>{unite}</span>}
+            <span className="text-xl leading-none">📐</span>
+            <div>
+              <p className="text-sm font-semibold leading-none" style={{ color: "var(--primaire)" }}>
+                {bien.surface} m²
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--texte-brun)" }}>{label}</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--texte-brun)" }}>Surface</p>
             </div>
           </div>
-        ))}
+        )}
+        {bien.chambres > 0 && (
+          <div
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
+            style={{ background: "var(--fond-secondaire)", border: "1px solid #EDE7D7" }}
+          >
+            <span className="text-xl leading-none">🛏️</span>
+            <div>
+              <p className="text-sm font-semibold leading-none" style={{ color: "var(--primaire)" }}>
+                {bien.chambres}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--texte-brun)" }}>
+                {bien.chambres > 1 ? "Chambres" : "Chambre"}
+              </p>
+            </div>
+          </div>
+        )}
+        {bien.salles_bain > 0 && (
+          <div
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
+            style={{ background: "var(--fond-secondaire)", border: "1px solid #EDE7D7" }}
+          >
+            <span className="text-xl leading-none">🚿</span>
+            <div>
+              <p className="text-sm font-semibold leading-none" style={{ color: "var(--primaire)" }}>
+                {bien.salles_bain}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--texte-brun)" }}>
+                {bien.salles_bain > 1 ? "Salles de bain" : "Salle de bain"}
+              </p>
+            </div>
+          </div>
+        )}
+        <div
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
+          style={{ background: "var(--fond-secondaire)", border: "1px solid #EDE7D7" }}
+        >
+          <span className="text-xl leading-none">{emojiBien(bien.type)}</span>
+          <div>
+            <p className="text-sm font-semibold leading-none" style={{ color: "var(--primaire)" }}>
+              {bien.type}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--texte-brun)" }}>Type</p>
+          </div>
+        </div>
       </div>
 
-      {/* ── Séparateur gold ───────────────────────────────────────────── */}
+      {/* ── Séparateur ────────────────────────────────────────────────── */}
       <div className="mb-10" style={{ height: 1, background: "linear-gradient(to right, #D4AF37, transparent)" }} />
 
       {/* ── Description ───────────────────────────────────────────────── */}
-      {/* langue centralisée ici — changer "fr" → "ar" quand le switch FR/AR existera.
-          En arabe : affichage RTL avec description_ar, fallback sur description FR. */}
       {(() => {
-        const langue: string = "fr"; // → "ar" quand le switch de langue existera
-        const texte =
-          langue === "ar" && bien.description_ar
-            ? bien.description_ar
-            : bien.description;
+        const langue: string = "fr";
+        const texte = langue === "ar" && bien.description_ar ? bien.description_ar : bien.description;
         const estAr = langue === "ar" && Boolean(bien.description_ar);
         if (!texte) return null;
         return (
           <section className="mb-12">
-            <h2
-              className="text-xl font-normal mb-5"
-              style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
-            >
+            <h2 className="text-xl font-normal mb-5"
+              style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
               Description
             </h2>
             <p
               className="leading-8 whitespace-pre-line"
               dir={estAr ? "rtl" : "ltr"}
-              style={{
-                color: "#4B5563",
-                fontSize: "0.9375rem",
-                fontFamily: estAr ? "serif" : undefined,
-              }}
+              style={{ color: "#4B5563", fontSize: "0.9375rem", fontFamily: estAr ? "serif" : undefined }}
             >
               {texte}
             </p>
@@ -198,11 +197,9 @@ export default function InfosBien({ bien }: { bien: Bien }) {
 
       {/* ── Équipements ───────────────────────────────────────────────── */}
       {equipements.length > 0 && (
-        <section className="mb-10">
-          <h2
-            className="text-xl font-normal mb-6"
-            style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
-          >
+        <section className="mb-12">
+          <h2 className="text-xl font-normal mb-6"
+            style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
             Équipements & prestations
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
@@ -220,6 +217,128 @@ export default function InfosBien({ bien }: { bien: Bien }) {
           </div>
         </section>
       )}
+
+      {/* ── Estimation des frais — vente uniquement ───────────────────── */}
+      {estVente && frais && (
+        <section className="mb-10">
+          <h2 className="text-xl font-normal mb-5"
+            style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
+            💰 Estimation du coût total
+          </h2>
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{ border: "1px solid #EDE7D7", background: "var(--fond-secondaire)" }}
+          >
+            {/* Prix du bien */}
+            <div
+              className="flex items-center justify-between px-5 py-4"
+              style={{ borderBottom: "1px solid #EDE7D7" }}
+            >
+              <span className="text-sm" style={{ color: "var(--texte-corps)" }}>Prix du bien</span>
+              <span className="text-sm font-semibold" style={{ color: "var(--primaire)" }}>
+                {formaterDH(bien.prix)}
+              </span>
+            </div>
+
+            {/* Droits d'enregistrement */}
+            <div
+              className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: "1px solid #F5F0E8", background: "var(--fond-principal)" }}
+            >
+              <span className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
+                Droits d'enregistrement <span className="text-xs opacity-60">(4%)</span>
+              </span>
+              <span className="text-sm" style={{ color: "var(--texte-corps)" }}>
+                {formaterDH(frais.droits)}
+              </span>
+            </div>
+
+            {/* Conservation foncière */}
+            <div
+              className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: "1px solid #F5F0E8", background: "var(--fond-principal)" }}
+            >
+              <span className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
+                Conservation foncière <span className="text-xs opacity-60">(1,5%)</span>
+              </span>
+              <span className="text-sm" style={{ color: "var(--texte-corps)" }}>
+                {formaterDH(frais.conservation)}
+              </span>
+            </div>
+
+            {/* Honoraires notaire */}
+            <div
+              className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: "1px solid #F5F0E8", background: "var(--fond-principal)" }}
+            >
+              <span className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
+                Honoraires notaire TTC
+              </span>
+              <span className="text-sm" style={{ color: "var(--texte-corps)" }}>
+                {formaterDH(frais.honorairesTTC)}
+              </span>
+            </div>
+
+            {/* Frais divers */}
+            <div
+              className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: "1px solid #EDE7D7", background: "var(--fond-principal)" }}
+            >
+              <span className="text-sm" style={{ color: "var(--texte-secondaire)" }}>
+                Timbres & frais divers
+              </span>
+              <span className="text-sm" style={{ color: "var(--texte-corps)" }}>
+                {formaterDH(frais.fraisDivers)}
+              </span>
+            </div>
+
+            {/* Total */}
+            <div className="flex items-center justify-between px-5 py-4">
+              <span className="text-sm font-semibold" style={{ color: "var(--primaire)" }}>
+                Coût total estimé
+              </span>
+              <span
+                className="text-base font-bold"
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--accent)" }}
+              >
+                {formaterDH(frais.coutTotal)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 mt-3 px-1">
+            <span className="text-xs mt-0.5 flex-shrink-0">ℹ️</span>
+            <p className="text-xs leading-relaxed" style={{ color: "var(--texte-tertiaire)" }}>
+              Estimation indicative basée sur les barèmes en vigueur au Maroc. Les frais réels peuvent
+              varier. Consultez un notaire pour un calcul précis.{" "}
+              <Link href={`/frais-acquisition?prix=${bien.prix}`}
+                className="underline underline-offset-2 hover:opacity-70"
+                style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>
+                Voir le détail complet →
+              </Link>
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* ── Honoraires de commercialisation ───────────────────────────── */}
+      <section
+        className="mb-10 rounded-2xl px-5 py-4 flex items-start gap-3"
+        style={{ background: "var(--fond-accent)", border: "1px solid #EDE7D7" }}
+      >
+        <span className="text-xl flex-shrink-0 mt-0.5">🤝</span>
+        <div>
+          <p className="text-sm font-semibold mb-1" style={{ color: "var(--primaire)" }}>
+            Commercialisé par HOOMY.MA
+          </p>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--texte-secondaire)" }}>
+            Ce bien est présenté par nos conseillers immobiliers. Des honoraires de mise
+            en relation peuvent s'appliquer selon les conditions convenues lors de votre
+            prise de contact. N'hésitez pas à nous contacter pour en savoir plus.
+          </p>
+        </div>
+      </section>
+
     </div>
   );
 }

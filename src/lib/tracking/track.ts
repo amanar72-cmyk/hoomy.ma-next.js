@@ -29,11 +29,11 @@ export async function trackEvenement(
 
     const supabase = createClient();
 
-    // Récupérer l'utilisateur connecté (cache Supabase — rapide)
+    // Récupérer l'utilisateur connecté depuis le cache local (pas de requête réseau)
     let visiteurId: string | null = null;
     try {
-      const { data } = await supabase.auth.getUser();
-      visiteurId = data.user?.id ?? null;
+      const { data } = await supabase.auth.getSession();
+      visiteurId = data.session?.user?.id ?? null;
     } catch {
       // Auth indisponible — on continue sans visiteur_id
     }

@@ -31,7 +31,9 @@ export function useUser() {
       setProfil(data ?? null);
     }
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // getSession() lit depuis le cache localStorage — aucune requête réseau
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user ?? null;
       setUser(user);
       if (user) {
         chargerProfil(user.id).finally(() => setChargement(false));

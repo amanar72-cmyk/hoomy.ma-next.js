@@ -90,6 +90,7 @@ export default function MapboxLocalisation({
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) return;
     if (!containerRef.current || mapRef.current) return;
 
     const pos = decalerPosition(latitude, longitude, bienId);
@@ -172,7 +173,12 @@ export default function MapboxLocalisation({
 
     return () => {
       observer.disconnect();
-      map.remove();
+      try {
+        map.remove();
+      } catch {
+        // Mapbox peut lever une exception lors du démontage si une requête async
+        // (map-sessions, telemetry) se termine après la destruction de la carte
+      }
       mapRef.current = null;
     };
   }, [latitude, longitude, bienId, langue]);
