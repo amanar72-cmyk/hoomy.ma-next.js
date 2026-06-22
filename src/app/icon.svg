@@ -1,0 +1,21 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fond vert HOOMY avec coins arrondis -->
+  <rect width="64" height="64" rx="12" fill="#0F4C3A"/>
+
+  <!-- Toit doré en chevron — stroke épais pour lisibilité à 16 px -->
+  <path
+    d="M12 27 L32 11 L52 27"
+    fill="none"
+    stroke="#D4AF37"
+    stroke-width="5.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Lettre H : pilier gauche -->
+  <rect x="13" y="30" width="10" height="24" rx="2" fill="#FAF7F0"/>
+  <!-- Lettre H : pilier droit -->
+  <rect x="41" y="30" width="10" height="24" rx="2" fill="#FAF7F0"/>
+  <!-- Lettre H : barre centrale -->
+  <rect x="13" y="39" width="38" height="8" rx="2" fill="#FAF7F0"/>
+</svg>

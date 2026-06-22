@@ -5,6 +5,7 @@ import "./globals.css";
 import BulleChatConditionnelle from "@/components/chat/BulleChatConditionnelle";
 import { ComparateurProvider } from "@/lib/comparateur/ComparateurContext";
 import BarreComparateur from "@/components/comparateur/BarreComparateur";
+import SplashScreen from "@/components/ui/SplashScreen";
 
 const marcellus = Marcellus({ subsets: ["latin"], weight: "400", variable: "--font-marcellus" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -19,9 +20,10 @@ export const metadata: Metadata = {
 const SCRIPT_ANTI_FLASH = `(function(){try{var c=document.cookie.match(/(?:^|; )hoomy_theme=([^;]*)/);var t=c?c[1]:null;if(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)t='dark';if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})()`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Lecture du thème côté serveur — évite le flash pour les visites suivantes
+  // Lecture des cookies côté serveur — évite le flash de thème et le double splash
   const cookieStore = await cookies();
   const theme = cookieStore.get("hoomy_theme")?.value === "dark" ? "dark" : "light";
+  const splashDeja = !!cookieStore.get("splash_vu")?.value;
 
   return (
     // suppressHydrationWarning : évite l'erreur React si le script inline
@@ -36,6 +38,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         style={{ margin: 0, fontFamily: "var(--font-outfit), sans-serif", background: "var(--fond-principal)", color: "var(--texte-principal)" }}
       >
         <ComparateurProvider>
+          {/* Splash affiché uniquement à la première visite de session (cookie "splash_vu" absent) */}
+          <SplashScreen splashDeja={splashDeja} />
           {children}
           <BulleChatConditionnelle />
           <BarreComparateur />
