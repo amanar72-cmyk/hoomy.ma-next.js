@@ -366,16 +366,6 @@ function CarrouselDesktop({
         </button>
       )}
 
-      {/* Compteur "2–3 / 7" */}
-      <div className="absolute bottom-4 left-4 pointer-events-none">
-        <span
-          className="text-xs px-2.5 py-1 rounded-full tabular-nums"
-          style={{ background: "rgba(0,0,0,0.48)", color: "#fff" }}
-        >
-          {debut + 1}–{Math.min(debut + PAR_PAGE, photos.length)}&thinsp;/&thinsp;{photos.length}
-        </span>
-      </div>
-
       {/* Bouton "Voir les X photos" */}
       <BoutonVoirPhotos count={photos.length} onClick={() => onOpen(0)} />
     </div>
@@ -438,11 +428,6 @@ function CarrouselMobile({
         </>
       )}
 
-      <div className="absolute bottom-3 right-3">
-        <span className="text-xs px-2.5 py-1 rounded-full tabular-nums" style={{ background: "rgba(0,0,0,0.5)", color: "#fff" }}>
-          {index + 1}&thinsp;/&thinsp;{photos.length || 1}
-        </span>
-      </div>
     </div>
   );
 }

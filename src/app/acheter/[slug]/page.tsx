@@ -131,6 +131,9 @@ export default async function PageDetailAchat({ params }: Props) {
         type={bien.type}
         transaction={bien.transaction}
         idExclu={bien.id}
+        quartier={bien.quartier}
+        prix={bien.prix}
+        chambres={bien.chambres}
       />
 
       <Footer />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import MenuUtilisateur from "./MenuUtilisateur";
 import ToggleTheme from "@/components/ui/ToggleTheme";
+import NavbarShell from "./NavbarShell";
 
 export default async function Navbar() {
   // Lecture de la session côté serveur — pas de flash non-authentifié
@@ -25,8 +26,8 @@ export default async function Navbar() {
   }
 
   return (
+    <NavbarShell>
     <header
-      className="sticky top-0 z-50"
       style={{
         background: "var(--fond-secondaire)",
         boxShadow: "0 1px 6px rgba(15,76,58,0.08)",
@@ -52,9 +53,6 @@ export default async function Navbar() {
           </Link>
           <Link href="/estimer" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "var(--primaire-clair)" }}>
             Estimer
-          </Link>
-          <Link href="/frais-acquisition" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
-            Frais
           </Link>
           <Link href="/simulateur-credit" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
             Crédit
@@ -107,5 +105,6 @@ export default async function Navbar() {
         </div>
       </div>
     </header>
+    </NavbarShell>
   );
 }

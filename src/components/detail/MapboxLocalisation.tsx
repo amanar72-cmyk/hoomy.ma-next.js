@@ -2,18 +2,19 @@
 
 import "mapbox-gl/dist/mapbox-gl.css";
 import mapboxgl from "mapbox-gl";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
+// ── Styles Mapbox ─────────────────────────────────────────────────────────────
+const STYLE_CLAIR     = "mapbox://styles/mapbox/streets-v12";
+const STYLE_SOMBRE    = "mapbox://styles/mapbox/dark-v11";
+const STYLE_SATELLITE = "mapbox://styles/mapbox/satellite-streets-v12";
+
 // ── Langue des labels ─────────────────────────────────────────────────────────
-// Centraliser ici : passer "ar" suffit pour basculer en arabe côté carte.
-// Quand un contexte de langue global existera, il pourra alimenter la prop.
 export type LangueMapbox = "fr" | "ar" | "en" | "es";
 
 function appliquerLangue(map: mapboxgl.Map, langue: LangueMapbox) {
-  // Parcourt toutes les couches symbol et remplace name → name_LANGUE avec
-  // coalesce vers name en fallback (évite les tuiles sans traduction).
   const expression: mapboxgl.Expression = [
     "coalesce",
     ["get", `name_${langue}`],
@@ -27,12 +28,12 @@ function appliquerLangue(map: mapboxgl.Map, langue: LangueMapbox) {
 }
 
 // ── Position décalée (150–250 m, déterministe par UUID) ───────────────────────
-function decalerPosition(lat: number, lng: number, bienId: string): { lat: number; lng: number } {
+function decalerPosition(lat: number, lng: number, bienId: string) {
   const hex = bienId.replace(/-/g, "");
-  const angleSeed = parseInt(hex.slice(0, 8), 16);
+  const angleSeed    = parseInt(hex.slice(0, 8), 16);
   const distanceSeed = parseInt(hex.slice(8, 16), 16);
-  const angle = (angleSeed / 0xffffffff) * 2 * Math.PI;
-  const distanceM = 150 + (distanceSeed / 0xffffffff) * 100;
+  const angle      = (angleSeed / 0xffffffff) * 2 * Math.PI;
+  const distanceM  = 150 + (distanceSeed / 0xffffffff) * 100;
   const R = 6371000;
   const dLat = (distanceM / R) * (180 / Math.PI) * Math.cos(angle);
   const dLng =
@@ -42,15 +43,15 @@ function decalerPosition(lat: number, lng: number, bienId: string): { lat: numbe
   return { lat: lat + dLat, lng: lng + dLng };
 }
 
-// ── GeoJSON cercle de ~350 m ───────────────────────────────────────────────────
+// ── GeoJSON cercle de protection (~350 m) ─────────────────────────────────────
 function cercleGeoJSON(lat: number, lng: number, rayonM: number) {
   const N = 64;
   const R = 6371000;
   const coords: [number, number][] = [];
   for (let i = 0; i < N; i++) {
     const angle = (i * 2 * Math.PI) / N;
-    const dLat = (rayonM / R) * (180 / Math.PI) * Math.cos(angle);
-    const dLng =
+    const dLat  = (rayonM / R) * (180 / Math.PI) * Math.cos(angle);
+    const dLng  =
       (rayonM / (R * Math.cos((lat * Math.PI) / 180))) *
       (180 / Math.PI) *
       Math.sin(angle);
@@ -64,8 +65,9 @@ function cercleGeoJSON(lat: number, lng: number, rayonM: number) {
   };
 }
 
-// ── Couleurs du cercle selon le thème ─────────────────────────────────────────
-function couleursTheme(sombre: boolean) {
+// ── Couleurs du cercle selon thème + mode ─────────────────────────────────────
+function couleursTheme(sombre: boolean, satellite: boolean) {
+  if (satellite) return { fill: "#D4AF37", fillOpacity: 0.20, border: "#D4AF37" };
   return sombre
     ? { fill: "#D4AF37", fillOpacity: 0.10, border: "#D4AF37" }
     : { fill: "#146C43", fillOpacity: 0.15, border: "#0F4C3A" };
@@ -73,13 +75,34 @@ function couleursTheme(sombre: boolean) {
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 type Props = {
-  latitude: number;
+  latitude:  number;
   longitude: number;
-  titre: string;
-  bienId: string;
-  langue?: LangueMapbox; // "fr" par défaut, passer "ar" quand le switch FR/AR existera
+  titre:     string;
+  bienId:    string;
+  langue?:   LangueMapbox;
 };
 
+// ── Icônes SVG inline ─────────────────────────────────────────────────────────
+function IcSatellite() {
+  return (
+    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
+    </svg>
+  );
+}
+
+function IcPlan() {
+  return (
+    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+      <line x1="8" y1="2" x2="8" y2="18" />
+      <line x1="16" y1="6" x2="16" y2="22" />
+    </svg>
+  );
+}
+
+// ── Composant ─────────────────────────────────────────────────────────────────
 export default function MapboxLocalisation({
   latitude,
   longitude,
@@ -87,7 +110,28 @@ export default function MapboxLocalisation({
   langue = "fr",
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef       = useRef<mapboxgl.Map | null>(null);
+
+  // État satellite partagé entre React (rendu du bouton) et les callbacks Mapbox (ref)
+  const [satellite, setSatellite] = useState(false);
+  const satelliteRef = useRef(false);
+
+  // ── Bascule satellite / plan ───────────────────────────────────────────────
+  const basculerSatellite = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const actif = !satelliteRef.current;
+    satelliteRef.current = actif;
+    setSatellite(actif);
+    map.setStyle(
+      actif
+        ? STYLE_SATELLITE
+        : document.documentElement.getAttribute("data-theme") === "dark"
+        ? STYLE_SOMBRE
+        : STYLE_CLAIR
+    );
+    // Les couches sont réajoutées automatiquement via l'événement "style.load"
+  }, []);
 
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) return;
@@ -97,40 +141,40 @@ export default function MapboxLocalisation({
     const estSombre = document.documentElement.getAttribute("data-theme") === "dark";
 
     const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: estSombre
-        ? "mapbox://styles/mapbox/dark-v11"
-        : "mapbox://styles/mapbox/streets-v12",
-      center: [pos.lng, pos.lat],
-      zoom: 13,
-      scrollZoom: false,
+      container:        containerRef.current,
+      style:            estSombre ? STYLE_SOMBRE : STYLE_CLAIR,
+      center:           [pos.lng, pos.lat],
+      zoom:             13,
+      scrollZoom:       false,
       attributionControl: false,
     });
 
     mapRef.current = map;
 
-    // ── Ajoute cercle, masque frontière contestée, applique langue ────────────
-    function ajouterCouches(sombre: boolean) {
-      const col = couleursTheme(sombre);
-      const data = cercleGeoJSON(pos.lat, pos.lng, 350);
+    // ── Couches : idempotent, appelé à chaque changement de style ─────────────
+    // NOTE : "style.load" se déclenche AU PREMIER CHARGEMENT et après tout
+    // appel à setStyle() (toggle thème, toggle satellite). C'est le seul
+    // endroit où les couches sont ajoutées — jamais dans "load" — pour éviter
+    // le doublon.
+    function ajouterCouches() {
+      const sombre = document.documentElement.getAttribute("data-theme") === "dark";
+      const col    = couleursTheme(sombre, satelliteRef.current);
+      const data   = cercleGeoJSON(pos.lat, pos.lng, 350);
 
       if (!map.getSource("zone")) {
         map.addSource("zone", { type: "geojson", data });
+      } else {
+        (map.getSource("zone") as mapboxgl.GeoJSONSource).setData(data);
       }
       if (!map.getLayer("zone-fill")) {
         map.addLayer({
-          id: "zone-fill",
-          type: "fill",
-          source: "zone",
+          id: "zone-fill", type: "fill", source: "zone",
           paint: { "fill-color": col.fill, "fill-opacity": col.fillOpacity },
         });
       }
       if (!map.getLayer("zone-border")) {
         map.addLayer({
-          id: "zone-border",
-          type: "line",
-          source: "zone",
-          // Trait continu — pas de line-dasharray
+          id: "zone-border", type: "line", source: "zone",
           paint: { "line-color": col.border, "line-width": 2.5 },
         });
       }
@@ -140,48 +184,91 @@ export default function MapboxLocalisation({
         map.setLayoutProperty("admin-0-boundary-disputed", "visibility", "none");
       }
 
-      // Labels en français (ou la langue choisie)
       appliquerLangue(map, langue);
-
-      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "bottom-right");
     }
 
+    map.on("style.load", ajouterCouches);
+
+    // ── Contrôles UI : ajoutés UNE SEULE FOIS dans "load" ─────────────────────
+    // "load" ne se déclenche qu'au premier chargement (≠ "style.load" qui se
+    // répète à chaque setStyle). C'est donc le seul endroit sûr pour addControl.
     map.on("load", () => {
-      ajouterCouches(document.documentElement.getAttribute("data-theme") === "dark");
-    });
-
-    // Après chaque changement de style (setStyle vide toutes les couches)
-    map.on("style.load", () => {
-      ajouterCouches(document.documentElement.getAttribute("data-theme") === "dark");
-    });
-
-    // Observer les changements de thème pour basculer le style de la carte
-    const observer = new MutationObserver(() => {
-      const sombre = document.documentElement.getAttribute("data-theme") === "dark";
-      map.setStyle(
-        sombre
-          ? "mapbox://styles/mapbox/dark-v11"
-          : "mapbox://styles/mapbox/streets-v12"
+      map.addControl(
+        new mapboxgl.NavigationControl({ showCompass: false }),
+        "bottom-right"
       );
-      // ajouterCouches sera appelé par l'événement style.load qui suit setStyle
+      map.addControl(
+        new mapboxgl.GeolocateControl({
+          positionOptions:    { enableHighAccuracy: true },
+          showAccuracyCircle: false,
+          trackUserLocation:  false,
+          // Pas de crash si l'utilisateur refuse la géolocalisation —
+          // GeolocateControl gère l'erreur en interne sans lever d'exception.
+        }),
+        "bottom-right"
+      );
+    });
+
+    // ── Basculement thème jour/nuit (ignore si satellite actif) ───────────────
+    const observer = new MutationObserver(() => {
+      if (satelliteRef.current) return; // satellite est indépendant du thème
+      const sombre = document.documentElement.getAttribute("data-theme") === "dark";
+      map.setStyle(sombre ? STYLE_SOMBRE : STYLE_CLAIR);
     });
 
     observer.observe(document.documentElement, {
-      attributes: true,
+      attributes:      true,
       attributeFilter: ["data-theme"],
     });
 
     return () => {
       observer.disconnect();
+      satelliteRef.current = false;
       try {
         map.remove();
       } catch {
-        // Mapbox peut lever une exception lors du démontage si une requête async
-        // (map-sessions, telemetry) se termine après la destruction de la carte
+        // Mapbox peut lever si une requête async (telemetry, tuiles) se termine
+        // après la destruction du composant — on ignore silencieusement.
       }
       mapRef.current = null;
     };
   }, [latitude, longitude, bienId, langue]);
 
-  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
+  return (
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+
+      {/* ── Bouton satellite / plan ──────────────────────────────────────── */}
+      <button
+        type="button"
+        onClick={basculerSatellite}
+        title={satellite ? "Vue plan" : "Vue satellite"}
+        style={{
+          position:       "absolute",
+          top:            10,
+          left:           10,
+          zIndex:         1,
+          display:        "flex",
+          alignItems:     "center",
+          gap:            5,
+          padding:        "5px 10px",
+          borderRadius:   8,
+          border:         "none",
+          background:     "rgba(255,255,255,0.93)",
+          color:          "#0F4C3A",
+          fontSize:       12,
+          fontWeight:     600,
+          cursor:         "pointer",
+          boxShadow:      "0 2px 8px rgba(0,0,0,0.18)",
+          backdropFilter: "blur(4px)",
+          fontFamily:     "var(--font-outfit), sans-serif",
+          letterSpacing:  "0.01em",
+          lineHeight:     1,
+        }}
+      >
+        {satellite ? <IcPlan /> : <IcSatellite />}
+        {satellite ? "Plan" : "Satellite"}
+      </button>
+    </div>
+  );
 }

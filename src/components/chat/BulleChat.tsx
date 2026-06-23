@@ -195,25 +195,31 @@ export default function BulleChat() {
         body: JSON.stringify({ messages: msgsPourAPI }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+      const reply: string | null = data?.reply ?? null;
 
-      if (!res.ok || data.erreur) {
-        throw new Error(data.erreur ?? "Erreur inconnue");
-      }
+      // Le message d'erreur vient toujours de l'API (déjà localisé et safe)
+      // — on ne propage jamais d'erreur technique brute au visiteur
+      const contenu =
+        reply ??
+        (data?.erreur && typeof data.erreur === "string" && data.erreur.length < 300
+          ? data.erreur
+          : "Je rencontre une difficulté momentanée. Veuillez réessayer ou contactez un conseiller HOOMY.");
 
       setMessages([
         ...histoireMaj,
-        { id: `a-${Date.now()}`, role: "assistant", content: data.reply },
+        { id: `a-${Date.now()}`, role: "assistant", content: contenu },
       ]);
-    } catch (err) {
-      const texteErreur =
-        err instanceof Error && err.message.length < 300
-          ? err.message
-          : "Je rencontre une difficulté technique. Veuillez réessayer dans quelques instants.";
-
+    } catch {
+      // Erreur réseau ou JSON invalide — message fixe, jamais de détail technique
       setMessages([
         ...histoireMaj,
-        { id: `e-${Date.now()}`, role: "assistant", content: texteErreur },
+        {
+          id: `e-${Date.now()}`,
+          role: "assistant",
+          content:
+            "Je rencontre une difficulté momentanée. Veuillez réessayer ou contactez un conseiller HOOMY.",
+        },
       ]);
     } finally {
       setChargement(false);
