@@ -124,29 +124,6 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         {bien.quartier ? `${bien.quartier}, ` : ""}{bien.ville}
       </p>
 
-      {/* ── Prix — masqué sur mobile (visible dans la barre flottante) ── */}
-      <div className="hidden lg:block mb-8">
-        <p
-          className="leading-none"
-          style={{
-            fontFamily: "var(--font-marcellus), serif",
-            color: "var(--accent)",
-            fontSize: "clamp(2rem, 4vw, 3rem)",
-          }}
-        >
-          {bien.prix.toLocaleString("fr-FR")}{" "}
-          <span style={{ fontSize: "0.55em", color: "var(--accent-fort)" }}>DH</span>
-          {!estVente && (
-            <span
-              className="ml-1"
-              style={{ fontSize: "0.4em", color: "var(--texte-brun)", fontFamily: "var(--font-outfit), sans-serif", fontWeight: 400 }}
-            >
-              /mois
-            </span>
-          )}
-        </p>
-      </div>
-
       {/* ── Caractéristiques — style emoji moderne ────────────────────── */}
       <div className="flex flex-wrap gap-3 mb-10">
         {bien.surface > 0 && (

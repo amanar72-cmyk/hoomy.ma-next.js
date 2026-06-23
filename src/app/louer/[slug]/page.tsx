@@ -72,33 +72,32 @@ export default async function PageDetailLocation({ params }: Props) {
         </nav>
       </div>
 
-      {/* ── Layout 2 colonnes : galerie+contenu gauche / carte droite ──────── */}
-      <div className="max-w-7xl mx-auto px-6 pt-4 pb-24 lg:pb-16">
-        <div className="flex gap-8">
+      {/* ── Galerie pleine largeur ──────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-6 pt-4">
+        <GaleriePhotos
+          photos={bien.photos ?? []}
+          titre={bien.titre}
+          transaction={bien.transaction}
+          verifie={bien.verifie}
+        />
+      </div>
 
-          {/* Colonne gauche — galerie + infos */}
+      {/* ── Layout 2 colonnes : contenu gauche / carte droite ──────────────── */}
+      <div className="max-w-7xl mx-auto px-6 pt-8 pb-24 lg:pb-16">
+        <div className="flex gap-8 items-start">
+
+          {/* Colonne gauche — infos + carte localisation */}
           <div className="flex-1 min-w-0">
-            <GaleriePhotos
-              photos={bien.photos ?? []}
+            <InfosBien bien={bien} />
+            <CarteLocalisation
+              latitude={bien.latitude}
+              longitude={bien.longitude}
               titre={bien.titre}
-              transaction={bien.transaction}
-              verifie={bien.verifie}
+              bienId={bien.id}
             />
-
-            <div className="mt-4 lg:mt-10">
-              <InfosBien bien={bien} />
-              <CarteLocalisation
-                latitude={bien.latitude}
-                longitude={bien.longitude}
-                titre={bien.titre}
-                bienId={bien.id}
-              />
-            </div>
           </div>
 
-          {/* Colonne droite — carte contact (desktop) */}
-          {/* La colonne s'étire sur toute la hauteur (flex stretch par défaut)
-              pour que le sticky top-6 à l'intérieur fonctionne jusqu'en bas */}
+          {/* Colonne droite — carte contact sticky (desktop) */}
           <div className="hidden lg:block w-[340px] flex-shrink-0">
             <CarteContact
               prix={bien.prix}
