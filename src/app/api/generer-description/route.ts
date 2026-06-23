@@ -5,10 +5,9 @@ import { NextResponse } from "next/server";
 const SYSTEM_PROMPT = `Tu es un rédacteur immobilier pour HOOMY.MA, plateforme premium au Maroc.
 À partir des caractéristiques fournies, rédige une description attractive, professionnelle et vendeuse, en mettant en valeur les atouts RÉELS du bien.
 N'invente JAMAIS de caractéristique non fournie. Si une info est absente, ne la mentionne pas.
-Ton chaleureux et premium, ~3-4 phrases par langue.
-Fournis la description en français (description_fr) ET en arabe standard moderne (description_ar).
+Ton chaleureux et premium, ~3-4 phrases en français.
 Réponds UNIQUEMENT avec un objet JSON valide, sans Markdown ni texte autour.
-Format attendu : {"description_fr":"...","description_ar":"..."}`.trim();
+Format attendu : {"description_fr":"..."}`.trim();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,7 +104,7 @@ export async function POST(req: Request) {
     }
 
     // ── Parsing robuste ──
-    let resultat: { description_fr?: string; description_ar?: string };
+    let resultat: { description_fr?: string };
     try {
       resultat = JSON.parse(extraireJSON(texte));
     } catch {
@@ -116,16 +115,15 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!resultat.description_fr || !resultat.description_ar) {
+    if (!resultat.description_fr) {
       return NextResponse.json(
-        { erreur: "L'IA n'a pas fourni les deux langues. Réessayez." },
+        { erreur: "L'IA n'a pas fourni de description. Réessayez." },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       description_fr: resultat.description_fr.trim(),
-      description_ar: resultat.description_ar.trim(),
     });
   } catch (err) {
     console.error("[generer-description] Erreur inattendue :", err);

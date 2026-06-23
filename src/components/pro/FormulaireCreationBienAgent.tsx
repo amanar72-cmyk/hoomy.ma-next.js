@@ -38,7 +38,6 @@ export default function FormulaireCreationBienAgent() {
   const [typeSelectionne, setTypeSelectionne] = useState("");
   const [transactionSelectionnee, setTransactionSelectionnee] = useState("");
   const [description, setDescription] = useState("");
-  const [descriptionAr, setDescriptionAr] = useState("");
   const [prixSaisi, setPrixSaisi] = useState("");
   const [surfaceSaisie, setSurfaceSaisie] = useState("");
   const [chambresSaisies, setChambresSaisies] = useState("0");
@@ -62,7 +61,6 @@ export default function FormulaireCreationBienAgent() {
     const donnees: DonneesBienAgent = {
       titre: String(fd.get("titre") ?? "").trim(),
       description: description.trim() || null,
-      description_ar: descriptionAr.trim() || null,
       type: typeSelectionne || String(fd.get("type") ?? ""),
       transaction: transactionSelectionnee || String(fd.get("transaction") ?? ""),
       prix: Number(prixSaisi || fd.get("prix")),
@@ -165,12 +163,12 @@ export default function FormulaireCreationBienAgent() {
               chambres={chambresSaisies}
               sallesBain={sallesBainSaisies}
               equipements={equipementsChoisis}
-              onGenere={(fr, ar) => { setDescription(fr); setDescriptionAr(ar); }}
+              onGenere={(fr) => { setDescription(fr); }}
             />
 
             <div>
               <label htmlFor="description" className={labelClass} style={labelStyle}>
-                Description — Français
+                Description
               </label>
               <textarea
                 id="description"
@@ -180,22 +178,6 @@ export default function FormulaireCreationBienAgent() {
                 style={{ ...selStyle, resize: "vertical" }}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass} style={{ ...labelStyle, color: "#6B7A71" }}>
-                عربي — Arabic{" "}
-                <span style={{ color: "#9DB8AD", fontWeight: 400 }}>(généré automatiquement ou à saisir)</span>
-              </label>
-              <textarea
-                rows={4}
-                placeholder="وصف العقار باللغة العربية…"
-                dir="rtl"
-                className={sel}
-                style={{ ...selStyle, resize: "vertical", fontFamily: "serif", lineHeight: "1.9" }}
-                value={descriptionAr}
-                onChange={(e) => setDescriptionAr(e.target.value)}
               />
             </div>
           </div>

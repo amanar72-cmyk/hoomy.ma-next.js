@@ -9,15 +9,20 @@ export default async function PageEditionBien({ params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
 
+  // select("*") évite toute erreur si une colonne optionnelle (ex: statut) n'existe
+  // pas encore dans la DB locale — retourne les colonnes présentes sans planter.
   const { data: bien, error } = await supabase
     .from("biens")
-    .select(
-      "id, reference, titre, description, description_ar, type, transaction, prix, ville, quartier, chambres, salles_bain, surface, equipements, photos, verifie, statut, latitude, longitude"
-    )
+    .select("*")
     .eq("id", id)
     .single();
 
-  if (error || !bien) notFound();
+  // Seule l'absence de ligne mérite un vrai 404 ; une erreur de schéma (colonne
+  // manquante après migration partielle) ne doit pas masquer la page d'édition.
+  if (!bien) {
+    if (error) console.error(`[admin/biens/${id}] Erreur requête :`, error.message);
+    notFound();
+  }
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto">

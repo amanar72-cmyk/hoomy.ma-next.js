@@ -45,7 +45,6 @@ export default function FormulaireCreationBien() {
   // Champs du formulaire — valeurs par défaut
   const [titre, setTitre] = useState("");
   const [description, setDescription] = useState("");
-  const [descriptionAr, setDescriptionAr] = useState("");
   const [type, setType] = useState("Appartement");
   const [transaction, setTransaction] = useState("vente");
   const [prix, setPrix] = useState("");
@@ -114,7 +113,6 @@ export default function FormulaireCreationBien() {
         {
           titre: titre.trim(),
           description: description.trim() || null,
-          description_ar: descriptionAr.trim() || null,
           type,
           transaction,
           prix: prixNum,
@@ -234,32 +232,12 @@ export default function FormulaireCreationBien() {
             chambres={chambres}
             sallesBain={sallesBain}
             equipements={equipements}
-            onGenere={(fr, ar) => { setDescription(fr); setDescriptionAr(ar); }}
+            onGenere={(fr) => { setDescription(fr); }}
           />
 
-          <div>
-            <label className="text-xs font-medium block mb-1.5" style={{ color: "#555" }}>
-              Français
-            </label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-              rows={5} className={cls} style={{ ...inp, resize: "vertical" }}
-              placeholder="Description complète du bien : emplacement, état, atouts…" />
-          </div>
-
-          <div>
-            <label className="text-xs font-medium block mb-1.5" style={{ color: "#555" }}>
-              عربي — Arabic <span style={{ color: "#9DB8AD", fontWeight: 400 }}>(généré automatiquement ou à saisir)</span>
-            </label>
-            <textarea
-              value={descriptionAr}
-              onChange={(e) => setDescriptionAr(e.target.value)}
-              dir="rtl"
-              rows={5}
-              className={cls}
-              style={{ ...inp, resize: "vertical", fontFamily: "serif", lineHeight: "1.9" }}
-              placeholder="وصف العقار باللغة العربية…"
-            />
-          </div>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+            rows={5} className={cls} style={{ ...inp, resize: "vertical" }}
+            placeholder="Description complète du bien : emplacement, état, atouts…" />
         </div>
       </Section>
 

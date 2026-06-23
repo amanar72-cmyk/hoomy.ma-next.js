@@ -19,7 +19,6 @@ export type Bien = {
   photos: string[] | null;
   verifie: boolean;
   cree_le: string;
-  description_ar: string | null;
 };
 
 // Valeurs courantes des filtres de recherche

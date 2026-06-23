@@ -19,7 +19,7 @@ export default async function Accueil() {
       .from("biens")
       .select("*")
       .order("cree_le", { ascending: false })
-      .limit(6),
+      .limit(10),
     supabase
       .from("biens")
       .select("ville")

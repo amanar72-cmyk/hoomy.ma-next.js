@@ -14,7 +14,7 @@ type Props = {
   chambres: string;
   sallesBain: string;
   equipements: string[];
-  onGenere: (fr: string, ar: string) => void;
+  onGenere: (fr: string) => void;
 };
 
 // ─── Icône étincelle ──────────────────────────────────────────────────────────
@@ -62,15 +62,15 @@ export default function BoutonGenerationIA({
         }),
       });
 
-      const data = await res.json() as { description_fr?: string; description_ar?: string; erreur?: string };
+      const data = await res.json() as { description_fr?: string; erreur?: string };
 
       if (!res.ok || data.erreur) {
         setErreur(data.erreur ?? "Erreur lors de la génération.");
         return;
       }
 
-      if (data.description_fr && data.description_ar) {
-        onGenere(data.description_fr, data.description_ar);
+      if (data.description_fr) {
+        onGenere(data.description_fr);
         setErreur(null);
       }
     } catch {
@@ -106,7 +106,7 @@ export default function BoutonGenerationIA({
         ) : (
           <>
             <IcEtincelle />
-            Générer avec l'IA (FR + AR)
+            Générer avec l'IA
           </>
         )}
       </button>

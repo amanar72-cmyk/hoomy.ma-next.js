@@ -15,7 +15,6 @@ type BienComplet = {
   reference: string | null;
   titre: string;
   description: string | null;
-  description_ar: string | null;
   type: string;
   transaction: string;
   prix: number;
@@ -75,7 +74,6 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
   // Champs du formulaire
   const [titre, setTitre] = useState(bien.titre);
   const [description, setDescription] = useState(bien.description ?? "");
-  const [descriptionAr, setDescriptionAr] = useState(bien.description_ar ?? "");
   const [type, setType] = useState(bien.type);
   const [transaction, setTransaction] = useState(bien.transaction);
   const [prix, setPrix] = useState(bien.prix.toString());
@@ -187,7 +185,6 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
       await modifierBien(bien.id, {
         titre: titre.trim(),
         description: description.trim() || null,
-        description_ar: descriptionAr.trim() || null,
         type,
         transaction,
         prix: prixNum,
@@ -321,32 +318,12 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
             chambres={chambres}
             sallesBain={sallesBain}
             equipements={equipements}
-            onGenere={(fr, ar) => { setDescription(fr); setDescriptionAr(ar); }}
+            onGenere={(fr) => { setDescription(fr); }}
           />
 
-          <div>
-            <label className="text-xs font-medium block mb-1.5" style={{ color: "#555" }}>
-              Français
-            </label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-              rows={5} className={cls} style={{ ...inp, resize: "vertical" }}
-              placeholder="Description complète du bien…" />
-          </div>
-
-          <div>
-            <label className="text-xs font-medium block mb-1.5" style={{ color: "#555" }}>
-              عربي — Arabic <span style={{ color: "#9DB8AD", fontWeight: 400 }}>(dir rtl, généré automatiquement ou à saisir)</span>
-            </label>
-            <textarea
-              value={descriptionAr}
-              onChange={(e) => setDescriptionAr(e.target.value)}
-              dir="rtl"
-              rows={5}
-              className={cls}
-              style={{ ...inp, resize: "vertical", fontFamily: "serif", lineHeight: "1.9" }}
-              placeholder="وصف العقار باللغة العربية…"
-            />
-          </div>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+            rows={5} className={cls} style={{ ...inp, resize: "vertical" }}
+            placeholder="Description complète du bien…" />
         </div>
       </Section>
 
