@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
+import { useState, useRef, useCallback, useEffect } from "react";
 
 type Props = {
   photos: string[];
@@ -58,7 +56,6 @@ function Lightbox({
       className="fixed inset-0 z-[200] flex flex-col"
       style={{ background: "rgba(8,12,10,0.97)" }}
     >
-      {/* ── Barre haut ── */}
       <div
         className="flex items-center justify-between px-5 py-4 flex-shrink-0"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
@@ -84,7 +81,6 @@ function Lightbox({
         </div>
       </div>
 
-      {/* ── Image principale ── */}
       <div className="flex-1 flex items-center justify-center relative min-h-0 px-16 py-4">
         <img
           key={index}
@@ -93,7 +89,6 @@ function Lightbox({
           className="max-h-full max-w-full object-contain rounded-xl motion-safe:transition-opacity motion-safe:duration-200"
           draggable={false}
         />
-
         {photos.length > 1 && (
           <>
             <button
@@ -122,7 +117,6 @@ function Lightbox({
         )}
       </div>
 
-      {/* ── Miniatures ── */}
       {photos.length > 1 && (
         <div
           className="flex-shrink-0 py-3 px-4 flex gap-2 overflow-x-auto justify-center"
@@ -197,7 +191,198 @@ function Placeholder() {
   );
 }
 
-// ── Carrousel mobile ──────────────────────────────────────────────────────────
+// ── Bouton "Voir toutes les photos" ──────────────────────────────────────────
+
+function BoutonVoirPhotos({ count, onClick }: { count: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className="absolute bottom-4 right-4 flex items-center gap-2 text-xs font-semibold px-4 py-2.5 rounded-full z-10 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-px"
+      style={{
+        background: "rgba(255,255,255,0.93)",
+        color: "var(--primaire)",
+        boxShadow: "0 2px 16px rgba(0,0,0,0.18)",
+        backdropFilter: "blur(6px)",
+      }}
+    >
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+      Voir les {count} photos
+    </button>
+  );
+}
+
+// ── Carrousel desktop (2 photos côte à côte) ─────────────────────────────────
+
+function CarrouselDesktop({
+  photos,
+  titre,
+  transaction,
+  verifie,
+  onOpen,
+}: {
+  photos: string[];
+  titre: string;
+  transaction: string;
+  verifie: boolean;
+  onOpen: (i: number) => void;
+}) {
+  const [debut, setDebut] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Sur desktop : 2 photos visibles à la fois
+  const PAR_PAGE = 2;
+  const maxDebut = Math.max(0, photos.length - PAR_PAGE);
+
+  function scrollVers(idx: number) {
+    const el = scrollRef.current;
+    if (!el) return;
+    const clamped = Math.max(0, Math.min(idx, maxDebut));
+    setDebut(clamped);
+    // La largeur d'une photo = moitié du conteneur visible
+    el.scrollTo({ left: clamped * (el.clientWidth / PAR_PAGE), behavior: "smooth" });
+  }
+
+  function surScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cellW = el.clientWidth / PAR_PAGE;
+    if (cellW === 0) return;
+    const nouvel = Math.min(Math.round(el.scrollLeft / cellW), maxDebut);
+    if (nouvel !== debut) setDebut(nouvel);
+  }
+
+  // ── 0 photo ──────────────────────────────────────────────────────────────
+  if (photos.length === 0) {
+    return (
+      <div className="hidden md:block relative rounded-2xl overflow-hidden" style={{ height: 480 }}>
+        <Badges transaction={transaction} verifie={verifie} />
+        <Placeholder />
+      </div>
+    );
+  }
+
+  // ── 1 photo → plein écran, pas de flèches ────────────────────────────────
+  if (photos.length === 1) {
+    return (
+      <div
+        className="hidden md:block relative rounded-2xl overflow-hidden cursor-pointer group"
+        style={{ height: 480 }}
+        onClick={() => onOpen(0)}
+      >
+        <img
+          src={photos[0]}
+          alt={titre}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          draggable={false}
+        />
+        <Badges transaction={transaction} verifie={verifie} />
+      </div>
+    );
+  }
+
+  // ── 2+ photos → carrousel horizontal 2-up ────────────────────────────────
+  return (
+    <div className="hidden md:block relative rounded-2xl overflow-hidden" style={{ height: 480 }}>
+      {/*
+        Scrollbar masquée :
+        · scrollbar-width: none   → Firefox
+        · ::-webkit-scrollbar     → Chrome / Safari (via la règle <style> ci-dessous)
+      */}
+      <style>{`.galerie-scroll::-webkit-scrollbar{display:none}`}</style>
+
+      <div
+        ref={scrollRef}
+        className="galerie-scroll flex h-full"
+        style={{ overflowX: "auto", scrollbarWidth: "none" }}
+        onScroll={surScroll}
+      >
+        {photos.map((url, i) => (
+          <div
+            key={i}
+            className="h-full cursor-pointer overflow-hidden group relative"
+            style={{ flex: "0 0 50%" }}
+            onClick={() => onOpen(i)}
+          >
+            <img
+              src={url}
+              alt={`${titre} — photo ${i + 1}`}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              draggable={false}
+            />
+            {/* Filet de séparation entre photos */}
+            {i < photos.length - 1 && (
+              <div
+                className="absolute top-0 right-0 bottom-0"
+                style={{ width: 2, background: "var(--fond-principal)" }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Badges (vente/location + vérifié) */}
+      <Badges transaction={transaction} verifie={verifie} />
+
+      {/* Flèche gauche */}
+      {debut > 0 && (
+        <button
+          type="button"
+          onClick={() => scrollVers(debut - 1)}
+          aria-label="Photos précédentes"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 z-10"
+          style={{
+            background: "rgba(255,255,255,0.92)",
+            color: "var(--primaire)",
+            boxShadow: "0 2px 16px rgba(0,0,0,0.18)",
+          }}
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+      )}
+
+      {/* Flèche droite */}
+      {debut < maxDebut && (
+        <button
+          type="button"
+          onClick={() => scrollVers(debut + 1)}
+          aria-label="Photos suivantes"
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 z-10"
+          style={{
+            background: "rgba(255,255,255,0.92)",
+            color: "var(--primaire)",
+            boxShadow: "0 2px 16px rgba(0,0,0,0.18)",
+          }}
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      )}
+
+      {/* Compteur "2–3 / 7" */}
+      <div className="absolute bottom-4 left-4 pointer-events-none">
+        <span
+          className="text-xs px-2.5 py-1 rounded-full tabular-nums"
+          style={{ background: "rgba(0,0,0,0.48)", color: "#fff" }}
+        >
+          {debut + 1}–{Math.min(debut + PAR_PAGE, photos.length)}&thinsp;/&thinsp;{photos.length}
+        </span>
+      </div>
+
+      {/* Bouton "Voir les X photos" */}
+      <BoutonVoirPhotos count={photos.length} onClick={() => onOpen(0)} />
+    </div>
+  );
+}
+
+// ── Carrousel mobile (1 photo) ────────────────────────────────────────────────
 
 function CarrouselMobile({
   photos,
@@ -253,150 +438,12 @@ function CarrouselMobile({
         </>
       )}
 
-      <div className="absolute bottom-3 right-3 flex items-center gap-2">
-        <span className="text-xs px-2.5 py-1 rounded-full tabular-nums" style={{ background: "rgba(0,0,0,0.5)", color: "var(--fond-secondaire)" }}>
-          {index + 1} / {photos.length}
+      <div className="absolute bottom-3 right-3">
+        <span className="text-xs px-2.5 py-1 rounded-full tabular-nums" style={{ background: "rgba(0,0,0,0.5)", color: "#fff" }}>
+          {index + 1}&thinsp;/&thinsp;{photos.length || 1}
         </span>
       </div>
     </div>
-  );
-}
-
-// ── Mosaïque desktop ──────────────────────────────────────────────────────────
-
-function MosaiqueBien({
-  photos,
-  titre,
-  transaction,
-  verifie,
-  onOpen,
-}: {
-  photos: string[];
-  titre: string;
-  transaction: string;
-  verifie: boolean;
-  onOpen: (i: number) => void;
-}) {
-  // Cas : 0 photo
-  if (photos.length === 0) {
-    return (
-      <div className="hidden md:block relative w-full rounded-2xl overflow-hidden" style={{ height: 520 }}>
-        <Badges transaction={transaction} verifie={verifie} />
-        <Placeholder />
-      </div>
-    );
-  }
-
-  // Cas : 1 seule photo → pleine largeur
-  if (photos.length === 1) {
-    return (
-      <div
-        className="hidden md:block relative w-full rounded-2xl overflow-hidden cursor-pointer group"
-        style={{ height: 520 }}
-        onClick={() => onOpen(0)}
-      >
-        <img src={photos[0]} alt={titre} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-        <Badges transaction={transaction} verifie={verifie} />
-        <BoutonVoirPhotos count={photos.length} onClick={() => onOpen(0)} />
-      </div>
-    );
-  }
-
-  // Cas : 2+ photos → mosaïque
-  const gridPhotos = photos.slice(1, 5); // max 4 photos droite
-  const nbCaches = photos.length > 5 ? photos.length - 5 : 0;
-
-  // Calcul grille droite
-  const nbDroite = gridPhotos.length;
-  let gridCols = "1fr";
-  let gridRows = "1fr";
-  if (nbDroite >= 3) { gridCols = "1fr 1fr"; gridRows = "1fr 1fr"; }
-  else if (nbDroite === 2) { gridCols = "1fr"; gridRows = "1fr 1fr"; }
-
-  return (
-    <div className="hidden md:flex gap-2 relative" style={{ height: 520 }}>
-      {/* ── Photo principale gauche ── */}
-      <div
-        className="relative rounded-2xl overflow-hidden cursor-pointer group flex-shrink-0"
-        style={{ width: gridPhotos.length === 0 ? "100%" : "60%" }}
-        onClick={() => onOpen(0)}
-      >
-        <img
-          src={photos[0]}
-          alt={`${titre} — photo principale`}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
-        <Badges transaction={transaction} verifie={verifie} />
-      </div>
-
-      {/* ── Grille droite ── */}
-      {gridPhotos.length > 0 && (
-        <div
-          className="flex-1 rounded-2xl overflow-hidden"
-          style={{ display: "grid", gap: 8, gridTemplateColumns: gridCols, gridTemplateRows: gridRows }}
-        >
-          {gridPhotos.map((url, i) => {
-            const idxReel = i + 1;
-            const estDernier = i === gridPhotos.length - 1 && nbCaches > 0;
-            // Photo à 3 (index 2) avec seulement 3 photos droite → span 2 cols
-            const span2 = nbDroite === 3 && i === 2;
-
-            return (
-              <div
-                key={url}
-                className="relative overflow-hidden cursor-pointer group"
-                style={{ gridColumn: span2 ? "1 / -1" : undefined }}
-                onClick={() => onOpen(idxReel)}
-              >
-                <img
-                  src={url}
-                  alt={`${titre} — photo ${idxReel + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                {estDernier && (
-                  <div
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-1 cursor-pointer"
-                    style={{ background: "rgba(15,76,58,0.72)", backdropFilter: "blur(2px)" }}
-                  >
-                    <span className="text-3xl font-bold text-white">+{nbCaches}</span>
-                    <span className="text-sm text-white opacity-80">photos</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Bouton "Voir toutes les photos" ── */}
-      <BoutonVoirPhotos count={photos.length} onClick={() => onOpen(0)} />
-    </div>
-  );
-}
-
-// ── Bouton voir toutes les photos ─────────────────────────────────────────────
-
-function BoutonVoirPhotos({ count, onClick }: { count: number; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className="absolute bottom-4 right-4 flex items-center gap-2 text-xs font-semibold px-4 py-2.5 rounded-full z-10 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-px"
-      style={{
-        background: "rgba(255,255,255,0.93)",
-        color: "var(--primaire)",
-        boxShadow: "0 2px 16px rgba(0,0,0,0.18)",
-        backdropFilter: "blur(6px)",
-      }}
-    >
-      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-        <rect x="14" y="14" width="7" height="7" rx="1.5" />
-        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      </svg>
-      Voir les {count} photos
-    </button>
   );
 }
 
@@ -407,8 +454,8 @@ export default function GaleriePhotos({ photos, titre, transaction, verifie }: P
 
   return (
     <>
-      {/* Desktop */}
-      <MosaiqueBien
+      {/* Desktop : carrousel 2-up */}
+      <CarrouselDesktop
         photos={photos}
         titre={titre}
         transaction={transaction}
@@ -416,7 +463,7 @@ export default function GaleriePhotos({ photos, titre, transaction, verifie }: P
         onOpen={setLightboxIndex}
       />
 
-      {/* Mobile */}
+      {/* Mobile : carrousel 1-up */}
       <CarrouselMobile
         photos={photos}
         titre={titre}
@@ -425,7 +472,7 @@ export default function GaleriePhotos({ photos, titre, transaction, verifie }: P
         onOpen={setLightboxIndex}
       />
 
-      {/* Lightbox */}
+      {/* Lightbox plein écran */}
       {lightboxIndex !== null && (
         <Lightbox
           photos={photos.length > 0 ? photos : []}

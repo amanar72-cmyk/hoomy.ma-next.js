@@ -102,7 +102,7 @@ export default function MapboxLocalisation({
         ? "mapbox://styles/mapbox/dark-v11"
         : "mapbox://styles/mapbox/streets-v12",
       center: [pos.lng, pos.lat],
-      zoom: 15,
+      zoom: 13,
       scrollZoom: false,
       attributionControl: false,
     });

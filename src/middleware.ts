@@ -1,46 +1,65 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Chemins qui restent accessibles tels quels sur pro.hoomy.ma (pas de rewrite vers /pro).
-// Nécessaire pour que le redirect de ProLayout vers /connexion (quand non connecté)
-// affiche bien la page de connexion publique plutôt qu'un 404 sur /pro/connexion.
-const EXCLUSIONS_SOUS_DOMAINE = ['/connexion', '/inscription', '/auth'];
+// ─── Constantes ─────────────────────────────────────────────────────────────
+
+// Chemins accessibles sans session sur pro.hoomy.ma (page de connexion, OAuth…)
+const PUBLIQUES_PRO = ['/connexion', '/inscription', '/auth'];
+
+// Rôles considérés comme "back-office agent"
+const ROLES_AGENT = ['agent', 'agence'];
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/** Extrait le hostname sans port (gère x-forwarded-host pour Vercel/proxy). */
+function lireHostname(req: NextRequest): string {
+  const raw =
+    req.headers.get('x-forwarded-host') ||
+    req.headers.get('host') ||
+    req.nextUrl.hostname;
+  return raw.toLowerCase().replace(/:\d+$/, '');
+}
+
+/** Construit une URL de redirection vers le sous-domaine pro. */
+function urlVersPro(req: NextRequest, hostname: string): URL {
+  const url = req.nextUrl.clone();
+  // En local (pro.localhost) on garde le protocol + port actuels
+  if (!hostname.includes('localhost') && !hostname.includes('127.0.0.1')) {
+    url.protocol = 'https:';
+    url.port = '';
+  }
+  // "hoomy.ma" → "pro.hoomy.ma"  |  "www.hoomy.ma" → "pro.hoomy.ma"
+  url.hostname = 'pro.' + hostname.replace(/^www\./, '');
+  url.pathname = '/';
+  url.search = '';
+  return url;
+}
+
+/** Construit une URL de redirection vers le domaine principal. */
+function urlVersPublic(req: NextRequest, hostname: string): URL {
+  const url = req.nextUrl.clone();
+  if (!hostname.includes('localhost') && !hostname.includes('127.0.0.1')) {
+    url.protocol = 'https:';
+    url.port = '';
+  }
+  url.hostname = hostname.replace(/^pro\./, '').replace(/^www\./, '');
+  url.pathname = '/';
+  url.search = '';
+  return url;
+}
+
+// ─── Middleware ──────────────────────────────────────────────────────────────
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const host = request.headers.get('host') ?? '';
+  const hostname = lireHostname(request);
+  const estPro = hostname.startsWith('pro.');
+  const estLocal = hostname === 'localhost' || hostname.startsWith('127.');
 
-  // Réécriture active uniquement si :
-  //   · le host commence par "pro." (pro.hoomy.ma en prod)
-  //   · le chemin n'est pas déjà sous /pro (évite la double réécriture)
-  //   · le chemin n'est pas une page publique d'auth
-  const doitReecrire =
-    host.startsWith('pro.') &&
-    !pathname.startsWith('/pro') &&
-    !EXCLUSIONS_SOUS_DOMAINE.some(
-      (c) => pathname === c || pathname.startsWith(c + '/')
-    );
-
-  // URL cible du rewrite calculée une seule fois
-  const urlRewrite = doitReecrire
-    ? (() => {
-        const u = request.nextUrl.clone();
-        // pro.hoomy.ma/ → /pro  |  pro.hoomy.ma/biens → /pro/biens
-        u.pathname = '/pro' + (pathname === '/' ? '' : pathname);
-        return u;
-      })()
-    : null;
-
-  // Cette fonction crée la bonne réponse selon le contexte (next ou rewrite).
-  // Elle est appelée ici ET dans le callback setAll de Supabase, car ce callback
-  // recrée la réponse pour y attacher les cookies — il faut qu'il recrée la bonne.
-  const creerReponse = (): NextResponse =>
-    urlRewrite
-      ? NextResponse.rewrite(urlRewrite, { request })
-      : NextResponse.next({ request });
-
-  // Réponse courante — peut être réassignée par setAll si Supabase rafraîchit le token
-  let supabaseResponse = creerReponse();
+  // ── Rafraîchissement de session Supabase ─────────────────────────────────
+  // supabaseResponse est la réponse "normale" (NextResponse.next).
+  // Elle DOIT être retournée dans les cas pass-through pour propager les cookies.
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,12 +70,12 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // 1. Injecter les cookies dans la requête entrante (pour la suite du pipeline)
+          // Injecte les nouveaux cookies dans la requête…
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          // 2. Recréer la réponse correcte (next ou rewrite) avec les nouveaux cookies
-          supabaseResponse = creerReponse();
+          // …puis recrée supabaseResponse pour les attacher à la réponse aussi
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
@@ -66,14 +85,78 @@ export async function middleware(request: NextRequest) {
   );
 
   // IMPORTANT : ne pas supprimer — rafraîchit le token de session Supabase
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  return supabaseResponse;
+  // ════════════════════════════════════════════════════════════════════════════
+  // A. DOMAINE PRINCIPAL — hoomy.ma (site public uniquement)
+  // ════════════════════════════════════════════════════════════════════════════
+  if (!estPro) {
+    // Bloquer /admin et /pro en production.
+    // En local (localhost), ces routes restent accessibles directement pour le dev.
+    if (!estLocal && (pathname.startsWith('/admin') || pathname.startsWith('/pro'))) {
+      return NextResponse.redirect(urlVersPro(request, hostname));
+    }
+
+    // Site public : pass-through avec la session Supabase rafraîchie
+    return supabaseResponse;
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // B. SOUS-DOMAINE PRO — pro.hoomy.ma (back-office)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // B1. Routes publiques (connexion, auth OAuth…) → pass-through
+  const estCheminPublic = PUBLIQUES_PRO.some(
+    (p) => pathname === p || pathname.startsWith(p + '/')
+  );
+  if (estCheminPublic) return supabaseResponse;
+
+  // B2. Non connecté → page de connexion du sous-domaine
+  if (!user) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/connexion';
+    return NextResponse.redirect(url);
+  }
+
+  // B3. Chemin déjà sous /admin ou /pro → pass-through
+  // Les layouts (AdminLayout, ProLayout) gèrent leur propre vérification de rôle.
+  // C'est la seconde couche de sécurité — le middleware est la première.
+  if (pathname.startsWith('/admin') || pathname.startsWith('/pro')) {
+    return supabaseResponse;
+  }
+
+  // B4. Chemin inconnu sur pro.hoomy.ma (ex: "/", "/biens", "/acheter"…)
+  // → Interroger le rôle et router vers le bon espace back-office.
+  // Cette requête n'est déclenchée qu'une fois par session (la 1ʳᵉ visite
+  // sur la racine "/" ou un chemin non-backoffice, ex: après un OAuth callback).
+  const { data: profil } = await supabase
+    .from('profils')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  const role = profil?.role ?? '';
+
+  if (role === 'admin') {
+    const dest = request.nextUrl.clone();
+    dest.pathname = '/admin';
+    return NextResponse.redirect(dest);
+  }
+
+  if (ROLES_AGENT.includes(role)) {
+    const dest = request.nextUrl.clone();
+    dest.pathname = '/pro';
+    return NextResponse.redirect(dest);
+  }
+
+  // Rôle client ou inconnu → pas d'accès au back-office, retour au site public
+  return NextResponse.redirect(urlVersPublic(request, hostname));
 }
 
+// ─── Matcher ────────────────────────────────────────────────────────────────
 export const config = {
   matcher: [
-    // Exclut les fichiers statiques et les ressources Next.js internes
+    // Couvre toutes les routes sauf les assets statiques Next.js et les images
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

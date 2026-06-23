@@ -63,12 +63,12 @@ export default function BarreMobileContact({
           style={{
             background: "var(--fond-secondaire)",
             border: "1px solid var(--bordure)",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.14)",
+            boxShadow: "0 6px 28px rgba(0,0,0,0.16)",
           }}
         >
           {/* ── Ligne 1 : ref+ville | PRIX | favoris+partager ── */}
           <div
-            className="grid px-3 pt-3 pb-2"
+            className="grid px-4 pt-4 pb-2.5"
             style={{ gridTemplateColumns: "1fr auto 1fr", gap: "8px", alignItems: "center", borderBottom: "1px solid var(--bordure)" }}
           >
             {/* Gauche : référence + ville */}
@@ -90,7 +90,7 @@ export default function BarreMobileContact({
             <div className="text-center flex-shrink-0">
               <p
                 className="font-semibold leading-none whitespace-nowrap"
-                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--accent)", fontSize: "1.05rem" }}
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--accent)", fontSize: "1.15rem" }}
               >
                 {prixFormate}
               </p>
@@ -136,12 +136,12 @@ export default function BarreMobileContact({
           </div>
 
           {/* ── Ligne 2 : boutons d'action ── */}
-          <div className="flex items-center gap-2 px-3 py-3">
+          <div className="flex items-center gap-2 px-4 py-3.5">
 
             {/* Appeler */}
             <a
               href={`tel:+${telephone}`}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
               style={{ background: "var(--primaire)", color: "var(--fond-secondaire)", textDecoration: "none" }}
             >
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -155,7 +155,7 @@ export default function BarreMobileContact({
               href={`https://wa.me/${telephone}?text=${messageWA}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
               style={{ background: "#25D366", color: "#fff", textDecoration: "none" }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -164,23 +164,25 @@ export default function BarreMobileContact({
               WhatsApp
             </a>
 
-            {/* Financement */}
-            <Link
-              href={`/simulateur-credit?prix=${prix}`}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
-              style={{
-                background: "rgba(212,175,55,0.12)",
-                color: "#9A7A1A",
-                border: "1px solid rgba(212,175,55,0.4)",
-                textDecoration: "none",
-              }}
-            >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <rect x="2" y="5" width="20" height="14" rx="2" />
-                <line x1="2" y1="10" x2="22" y2="10" />
-              </svg>
-              Crédit
-            </Link>
+            {/* Financement — vente uniquement */}
+            {transaction !== "location" && (
+              <Link
+                href={`/simulateur-credit?prix=${prix}`}
+                className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
+                style={{
+                  background: "rgba(212,175,55,0.12)",
+                  color: "#9A7A1A",
+                  border: "1px solid rgba(212,175,55,0.4)",
+                  textDecoration: "none",
+                }}
+              >
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <line x1="2" y1="10" x2="22" y2="10" />
+                </svg>
+                Crédit
+              </Link>
+            )}
 
           </div>
         </div>

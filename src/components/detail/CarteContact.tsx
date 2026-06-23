@@ -41,7 +41,7 @@ export default function CarteContact({ prix, transaction, titre, chemin, bienId,
   return (
     <>
       <div
-        className="rounded-2xl overflow-hidden sticky top-6"
+        className="rounded-2xl overflow-hidden sticky top-[72px]"
         style={{
           background: "var(--fond-secondaire)",
           border: "1px solid #EDE7D7",

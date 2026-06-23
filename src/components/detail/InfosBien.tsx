@@ -172,29 +172,6 @@ export default function InfosBien({ bien }: { bien: Bien }) {
       {/* ── Séparateur ────────────────────────────────────────────────── */}
       <div className="mb-10" style={{ height: 1, background: "linear-gradient(to right, #D4AF37, transparent)" }} />
 
-      {/* ── Description ───────────────────────────────────────────────── */}
-      {(() => {
-        const langue: string = "fr";
-        const texte = langue === "ar" && bien.description_ar ? bien.description_ar : bien.description;
-        const estAr = langue === "ar" && Boolean(bien.description_ar);
-        if (!texte) return null;
-        return (
-          <section className="mb-12">
-            <h2 className="text-xl font-normal mb-5"
-              style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
-              Description
-            </h2>
-            <p
-              className="leading-8 whitespace-pre-line"
-              dir={estAr ? "rtl" : "ltr"}
-              style={{ color: "#4B5563", fontSize: "0.9375rem", fontFamily: estAr ? "serif" : undefined }}
-            >
-              {texte}
-            </p>
-          </section>
-        );
-      })()}
-
       {/* ── Équipements ───────────────────────────────────────────────── */}
       {equipements.length > 0 && (
         <section className="mb-12">
