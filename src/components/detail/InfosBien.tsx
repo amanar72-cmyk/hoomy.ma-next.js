@@ -22,12 +22,52 @@ function IcPin() {
   );
 }
 
-function IcCheck() {
-  return (
-    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
+// ── Emoji par équipement ──────────────────────────────────────────────────────
+const EQUIPEMENT_EMOJIS: Record<string, string> = {
+  "balcon": "🏡",
+  "terrasse": "🏡",
+  "parking": "🚗",
+  "garage": "🚗",
+  "ascenseur": "🛗",
+  "cuisine équipée": "🍳",
+  "cuisine": "🍳",
+  "climatisation": "❄️",
+  "clim": "❄️",
+  "piscine": "🏊",
+  "fibre optique": "📶",
+  "internet": "📶",
+  "wifi": "📶",
+  "sécurité": "🔒",
+  "gardiennage": "🔒",
+  "interphone": "🔒",
+  "proche commerces": "🛍️",
+  "commerces": "🛍️",
+  "cave": "📦",
+  "débarras": "📦",
+  "jardin": "🌿",
+  "espace vert": "🌿",
+  "digicode": "🔐",
+  "double vitrage": "🪟",
+  "parquet": "🪵",
+  "vue mer": "🌊",
+  "vue montagne": "⛰️",
+  "chauffage central": "🔥",
+  "chauffage": "🔥",
+  "cheminée": "🔥",
+  "buanderie": "🧺",
+  "dressing": "👗",
+  "salle de sport": "🏋️",
+  "sport": "🏋️",
+  "conciergerie": "🧑‍💼",
+  "gardien": "🧑‍💼",
+};
+
+function emojiEquipement(nom: string): string {
+  const key = nom.toLowerCase();
+  for (const [k, v] of Object.entries(EQUIPEMENT_EMOJIS)) {
+    if (key.includes(k)) return v;
+  }
+  return "✨";
 }
 
 // ── Composant ─────────────────────────────────────────────────────────────────
@@ -177,18 +217,26 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         <section className="mb-12">
           <h2 className="text-xl font-normal mb-6"
             style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
-            Équipements & prestations
+            Équipements &amp; prestations
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {equipements.map((e) => (
-              <div key={e} className="flex items-center gap-3">
+              <div
+                key={e}
+                className="flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-2xl cursor-default select-none transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D4AF37] hover:shadow-[0_4px_16px_rgba(212,175,55,0.15)]"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #E8E0D0",
+                  boxShadow: "0 1px 4px rgba(15,76,58,0.04)",
+                }}
+              >
+                <span className="text-2xl leading-none">{emojiEquipement(e)}</span>
                 <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "var(--fond-vert-leger)", color: "var(--primaire-clair)" }}
+                  className="text-xs font-medium text-center leading-tight"
+                  style={{ color: "var(--primaire)" }}
                 >
-                  <IcCheck />
+                  {e}
                 </span>
-                <span className="text-sm" style={{ color: "#374151" }}>{e}</span>
               </div>
             ))}
           </div>
