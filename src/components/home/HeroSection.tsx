@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import React from "react";
@@ -98,22 +98,26 @@ export default function HeroSection() {
 
   const [mode, setMode] = useState<Mode>("acheter");
   const [ville, setVille] = useState("");
-  const [quartier, setQuartier] = useState("");
+  const [quartiersChoisis, setQuartiersChoisis] = useState<string[]>([]);
+  const [dropdownOuvert, setDropdownOuvert] = useState(false);
   const [type, setType] = useState("");
   const [budgetIdx, setBudgetIdx] = useState(0);
   const [quartiers, setQuartiers] = useState<string[]>([]);
   const [chargeQ, setChargeQ] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // ── Cascade ville → quartiers ────────────────────────────────────────────────
   useEffect(() => {
     if (!ville) {
       setQuartiers([]);
-      setQuartier("");
+      setQuartiersChoisis([]);
+      setDropdownOuvert(false);
       return;
     }
     let annule = false;
     setChargeQ(true);
-    setQuartier("");
+    setQuartiersChoisis([]);
+    setDropdownOuvert(false);
 
     async function charger() {
       const supabase = createClient();
@@ -134,6 +138,25 @@ export default function HeroSection() {
     return () => { annule = true; };
   }, [ville]);
 
+  // ── Fermer le dropdown sur clic extérieur ─────────────────────────────────
+  useEffect(() => {
+    if (!dropdownOuvert) return;
+    function fermer(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOuvert(false);
+      }
+    }
+    document.addEventListener("mousedown", fermer);
+    return () => document.removeEventListener("mousedown", fermer);
+  }, [dropdownOuvert]);
+
+  // ── Toggle quartier dans la sélection ────────────────────────────────────────
+  function toggleQuartier(q: string) {
+    setQuartiersChoisis((prev) =>
+      prev.includes(q) ? prev.filter((x) => x !== q) : [...prev, q]
+    );
+  }
+
   // ── Changement de mode ────────────────────────────────────────────────────────
   function changerMode(m: Mode) {
     setMode(m);
@@ -146,7 +169,7 @@ export default function HeroSection() {
     e.preventDefault();
     const params = new URLSearchParams();
     if (ville) params.set("ville", ville);
-    if (quartier) params.set("quartier", quartier);
+    if (quartiersChoisis.length > 0) params.set("quartier", quartiersChoisis.join(","));
     if (type) params.set("type", type);
 
     const budgets = mode === "louer" ? BUDGETS_LOCATION : BUDGETS_VENTE;
@@ -276,32 +299,105 @@ export default function HeroSection() {
                 </select>
               </div>
 
-              {/* Secteur — dépend de la ville */}
-              <div>
+              {/* Secteur — multi-sélection avec dropdown */}
+              <div ref={dropdownRef} className="relative">
                 <label
                   className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
                   style={{ color: "var(--texte-tertiaire)" }}
                 >
                   Secteur
                 </label>
-                <select
-                  value={quartier}
-                  onChange={(e) => setQuartier(e.target.value)}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (ville && !chargeQ && quartiers.length > 0) {
+                      setDropdownOuvert((o) => !o);
+                    }
+                  }}
                   disabled={!ville || chargeQ}
-                  className={`${selectCls} disabled:opacity-45 disabled:cursor-not-allowed`}
+                  className={`${selectCls} disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-between gap-1`}
                   style={selectStyle}
                 >
-                  <option value="">
+                  <span className="truncate text-left">
                     {!ville
                       ? "Choisissez d'abord une ville"
                       : chargeQ
                       ? "Chargement…"
-                      : "Tous les secteurs"}
-                  </option>
-                  {quartiers.map((q) => (
-                    <option key={q} value={q}>{q}</option>
-                  ))}
-                </select>
+                      : quartiers.length === 0
+                      ? "Aucun secteur"
+                      : quartiersChoisis.length === 0
+                      ? "Tous les secteurs"
+                      : quartiersChoisis.length === 1
+                      ? quartiersChoisis[0]
+                      : `${quartiersChoisis.length} secteurs`}
+                  </span>
+                  <svg
+                    width="13" height="13" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0"
+                    style={{ transform: dropdownOuvert ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {/* Dropdown avec checkboxes */}
+                {dropdownOuvert && quartiers.length > 0 && (
+                  <div
+                    className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl overflow-hidden"
+                    style={{
+                      background: "var(--fond-secondaire)",
+                      border: "1px solid var(--bordure)",
+                      boxShadow: "0 8px 28px rgba(0,0,0,0.14)",
+                      maxHeight: 228,
+                      overflowY: "auto",
+                    }}
+                  >
+                    {/* Effacer sélection */}
+                    {quartiersChoisis.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setQuartiersChoisis([])}
+                        className="w-full text-left px-3 py-2 text-xs font-semibold"
+                        style={{
+                          color: "var(--primaire-clair)",
+                          borderBottom: "1px solid var(--bordure-legere)",
+                          background: "var(--fond-accent)",
+                        }}
+                      >
+                        ✕ Effacer la sélection ({quartiersChoisis.length})
+                      </button>
+                    )}
+                    {quartiers.map((q) => {
+                      const coche = quartiersChoisis.includes(q);
+                      return (
+                        <label
+                          key={q}
+                          className="flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors"
+                          style={{
+                            background: coche ? "var(--fond-vert-leger)" : undefined,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!coche) (e.currentTarget as HTMLLabelElement).style.background = "var(--fond-accent)";
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLLabelElement).style.background = coche ? "var(--fond-vert-leger)" : "";
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={coche}
+                            onChange={() => toggleQuartier(q)}
+                            className="w-3.5 h-3.5 rounded cursor-pointer"
+                            style={{ accentColor: "var(--primaire)" }}
+                          />
+                          <span className="text-sm leading-none" style={{ color: "var(--texte-corps)" }}>
+                            {q}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Type de bien */}

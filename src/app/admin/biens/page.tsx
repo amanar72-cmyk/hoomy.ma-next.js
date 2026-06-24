@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import TableauAdmin from "@/components/admin/TableauAdmin";
-import BoutonSupprimer from "@/components/admin/BoutonSupprimer";
+import LigneBienAdmin from "@/components/admin/LigneBienAdmin";
 import { verifierBien, deverifierBien } from "@/app/admin/actions";
 
 type SearchParams = Promise<{
@@ -10,11 +10,6 @@ type SearchParams = Promise<{
   verifie?: string;
   q?: string;
 }>;
-
-function formaterPrix(prix: number, transaction: string) {
-  const montant = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${montant} DH/mois` : `${montant} DH`;
-}
 
 export default async function PageAdminBiens({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
@@ -128,88 +123,23 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
         estVide={(biens ?? []).length === 0}
         vide="Aucun bien ne correspond aux filtres"
       >
-        {(biens ?? []).map((b) => {
-          const photo = Array.isArray(b.photos) && b.photos.length > 0 ? b.photos[0] : null;
-          return (
-          <tr key={b.id} style={{ borderBottom: "1px solid #F0EDE5" }}>
-            {/* Photo */}
-            <td className="px-4 py-3">
-              <div className="w-14 h-10 rounded-lg overflow-hidden flex-shrink-0"
-                style={{ background: "#F4F6F5" }}>
-                {photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photo} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-lg">🏠</div>
-                )}
-              </div>
-            </td>
-            <td className="px-4 py-3 text-xs" style={{ color: "#9DB8AD" }}>
-              {b.reference ?? "—"}
-            </td>
-            <td className="px-4 py-3 text-sm max-w-xs">
-              <div className="truncate font-medium" style={{ color: "#3D4A42" }}>{b.titre}</div>
-              <div className="text-xs mt-0.5" style={{ color: "#9DB8AD" }}>
-                {b.quartier ? `${b.quartier}, ` : ""}{b.ville}
-              </div>
-            </td>
-            <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: "#6B7A71" }}>
-              {b.type}
-            </td>
-            <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: "#0F4C3A" }}>
-              {formaterPrix(b.prix, b.transaction)}
-            </td>
-            <td className="px-4 py-3 text-sm" style={{ color: "#6B7A71" }}>{b.ville}</td>
-            <td className="px-4 py-3">
-              <span
-                className="text-xs px-2.5 py-0.5 rounded-full font-medium"
-                style={
-                  b.verifie
-                    ? { background: "#D1FAE5", color: "#065F46" }
-                    : { background: "#FEF3C7", color: "#92400E" }
-                }
-              >
-                {b.verifie ? "Vérifié" : "En attente"}
-              </span>
-            </td>
-            <td className="px-4 py-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Modifier */}
-                <Link
-                  href={`/admin/biens/${b.id}`}
-                  className="text-xs px-3 py-1 rounded-lg font-medium"
-                  style={{ background: "#E8F5ED", color: "#0F4C3A", border: "1px solid #C6E8D4" }}
-                >
-                  Modifier
-                </Link>
-                {/* Vérifier / Dévérifier via form + Server Action */}
-                {b.verifie ? (
-                  <form action={deverifierBien.bind(null, b.id)}>
-                    <button
-                      type="submit"
-                      className="text-xs px-3 py-1 rounded-lg font-medium cursor-pointer"
-                      style={{ background: "#FEF3C7", color: "#92400E", border: "1px solid #FDE68A" }}
-                    >
-                      Dévérifier
-                    </button>
-                  </form>
-                ) : (
-                  <form action={verifierBien.bind(null, b.id)}>
-                    <button
-                      type="submit"
-                      className="text-xs px-3 py-1 rounded-lg font-medium cursor-pointer"
-                      style={{ background: "#D1FAE5", color: "#065F46", border: "1px solid #6EE7B7" }}
-                    >
-                      Vérifier
-                    </button>
-                  </form>
-                )}
-                <BoutonSupprimer id={b.id} titre={b.titre} />
-              </div>
-            </td>
-          </tr>
-          );
-        })}
+        {(biens ?? []).map((b) => (
+          <LigneBienAdmin
+            key={b.id}
+            id={b.id}
+            reference={b.reference ?? null}
+            titre={b.titre}
+            type={b.type}
+            transaction={b.transaction}
+            prix={b.prix}
+            ville={b.ville}
+            quartier={b.quartier ?? null}
+            verifie={b.verifie}
+            photos={Array.isArray(b.photos) ? b.photos : null}
+            verifierFn={verifierBien.bind(null, b.id)}
+            deverifierFn={deverifierBien.bind(null, b.id)}
+          />
+        ))}
       </TableauAdmin>
     </div>
   );

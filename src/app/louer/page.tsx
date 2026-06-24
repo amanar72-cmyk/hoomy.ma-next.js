@@ -21,12 +21,14 @@ export default async function PageLouer({ searchParams }: Props) {
   const sp = await searchParams;
 
   const ville    = str(sp.ville);
-  const quartier = str(sp.quartier);
+  const quartier = str(sp.quartier); // peut être "Agdal,Souissi" (CSV multi-quartier)
   const type     = str(sp.type);
   const prixMin  = str(sp.prixMin);
   const prixMax  = str(sp.prixMax);
   const chambres = str(sp.chambres);
   const tri      = str(sp.tri) || "cree_le_desc";
+
+  const quartiersArr = quartier ? quartier.split(",").map((q) => q.trim()).filter(Boolean) : [];
 
   const filtresActifs: FiltresActifs = { ville, quartier, type, prixMin, prixMax, chambres, tri };
 
@@ -41,8 +43,9 @@ export default async function PageLouer({ searchParams }: Props) {
   // ── Requête Supabase — transaction = "location" ──
   let query = supabase.from("biens").select("*").eq("transaction", "location");
 
-  if (ville)    query = query.eq("ville", ville);
-  if (quartier) query = query.eq("quartier", quartier);
+  if (ville) query = query.eq("ville", ville);
+  if (quartiersArr.length === 1) query = query.eq("quartier", quartiersArr[0]);
+  else if (quartiersArr.length > 1) query = query.in("quartier", quartiersArr);
   if (type)     query = query.eq("type", type);
   if (prixMin)  query = query.gte("prix", Number(prixMin));
   if (prixMax)  query = query.lte("prix", Number(prixMax));
