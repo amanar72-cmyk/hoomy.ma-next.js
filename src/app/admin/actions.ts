@@ -238,6 +238,29 @@ export async function affecterBienAgent(bienId: string, formData: FormData) {
   revalidatePath("/admin/agents");
 }
 
+// ── Statut leads (admin) ──────────────────────────────────────────────────────
+
+const STATUTS_VALIDES_LEAD_ADMIN = ["nouvelle", "confirmee", "realisee", "annulee"] as const;
+
+export async function changerStatutLeadAdmin(leadId: string, statut: string) {
+  if (!(STATUTS_VALIDES_LEAD_ADMIN as readonly string[]).includes(statut)) throw new Error("Statut invalide.");
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié.");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé.");
+
+  const { error } = await supabase
+    .from("demandes_visite")
+    .update({ statut })
+    .eq("id", leadId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/leads");
+  revalidatePath("/admin");
+}
+
 // ── Agents ────────────────────────────────────────────────────────────────────
 
 export async function modifierZonesAgent(agentId: string, zones: string[]) {

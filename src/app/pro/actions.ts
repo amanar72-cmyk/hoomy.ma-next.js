@@ -74,3 +74,31 @@ export async function annulerVisite(demandeId: string) {
   revalidatePath("/pro/demandes");
   revalidatePath("/pro/calendrier");
 }
+
+// ── Changer le statut d'un lead (vue Leads) ───────────────────────────────────
+
+const STATUTS_VALIDES_LEAD = ["nouvelle", "confirmee", "realisee", "annulee"] as const;
+
+export async function changerStatutLead(leadId: string, statut: string) {
+  if (!(STATUTS_VALIDES_LEAD as readonly string[]).includes(statut)) throw new Error("Statut invalide.");
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié.");
+
+  const { data: lead } = await supabase
+    .from("demandes_visite")
+    .select("agent_id")
+    .eq("id", leadId)
+    .single();
+  if (!lead || lead.agent_id !== user.id) throw new Error("Accès refusé.");
+
+  const { error } = await supabase
+    .from("demandes_visite")
+    .update({ statut })
+    .eq("id", leadId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/pro/leads");
+  revalidatePath("/pro/demandes");
+}

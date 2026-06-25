@@ -31,19 +31,8 @@ export default function FormulaireConnexion() {
         return;
       }
 
-      let destination = "/mon-compte";
-      if (authData.user) {
-        const { data: profil } = await supabase
-          .from("profils")
-          .select("role")
-          .eq("id", authData.user.id)
-          .single();
-        const role = profil?.role ?? "acheteur";
-        if (role === "admin") destination = "/admin";
-        else if (role === "agent" || role === "agence") destination = "/pro";
-      }
-
-      router.push(destination);
+      // Sur hoomy.ma tout le monde est traité comme client — pas de redirection BO
+      router.push("/mon-compte");
       router.refresh();
     } catch {
       setErreur("Erreur inattendue — réessayez.");

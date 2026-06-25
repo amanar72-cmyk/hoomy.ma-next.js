@@ -1,104 +1,259 @@
-import { MOCK_LEADS, type Lead } from "@/lib/pro/mockData";
-import BadgeStatut from "@/components/pro/BadgeStatut";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import type { Metadata } from "next";
+import ActionsLead from "@/components/pro/ActionsLead";
+import { changerStatutLead } from "@/app/pro/actions";
 
-const COLONNES: Lead["statut"][] = ["Nouveau", "Qualifié", "En cours", "RDV planifié", "Converti", "Perdu"];
-
-const COULEURS_COL: Record<string, { border: string; header: string }> = {
-  "Nouveau":       { border: "#BFDBFE", header: "#EFF6FF" },
-  "Qualifié":      { border: "#DDD6FE", header: "#F5F3FF" },
-  "En cours":      { border: "#FDE68A", header: "#FFFBEB" },
-  "RDV planifié":  { border: "#99F6E4", header: "#F0FDFA" },
-  "Converti":      { border: "#6EE7B7", header: "#ECFDF5" },
-  "Perdu":         { border: "#FCA5A5", header: "#FEF2F2" },
+export const metadata: Metadata = {
+  title: "Leads — Espace Pro HOOMY.MA",
 };
 
-export default function PageProLeads() {
-  const parStatut = (statut: Lead["statut"]) =>
-    MOCK_LEADS.filter((l) => l.statut === statut);
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type Lead = {
+  id: string;
+  nom_client: string;
+  email_client: string;
+  telephone_client: string | null;
+  date_souhaitee: string | null;
+  message: string | null;
+  statut: string;
+  cree_le: string;
+  biens: {
+    titre: string;
+    reference: string | null;
+    ville: string;
+    transaction: string;
+    photos: string[] | null;
+  } | null;
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const BADGE_STATUT: Record<string, { label: string; bg: string; color: string }> = {
+  nouvelle:  { label: "Nouveau",   bg: "#DBEAFE", color: "#1E40AF" },
+  confirmee: { label: "En cours",  bg: "#FEF3C7", color: "#92400E" },
+  realisee:  { label: "Traité",    bg: "#D1FAE5", color: "#065F46" },
+  annulee:   { label: "Annulé",    bg: "#FEE2E2", color: "#991B1B" },
+};
+
+const ONGLETS = [
+  { key: "",          label: "Tous"     },
+  { key: "nouvelle",  label: "Nouveaux" },
+  { key: "confirmee", label: "En cours" },
+  { key: "realisee",  label: "Traités"  },
+  { key: "annulee",   label: "Annulés"  },
+] as const;
+
+function inférerType(lead: Lead): "Visite" | "Message" {
+  return lead.date_souhaitee ? "Visite" : "Message";
+}
+
+function formaterDate(d: string) {
+  return new Date(d).toLocaleDateString("fr-MA", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// ── searchParams ──────────────────────────────────────────────────────────────
+
+type SearchParams = Promise<{ statut?: string }>;
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
+export default async function PageProLeads({ searchParams }: { searchParams: SearchParams }) {
+  const sp = await searchParams;
+  const filtreStatut = sp.statut ?? "";
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/connexion");
+
+  // Leads des biens affectés à cet agent uniquement
+  let query = supabase
+    .from("demandes_visite")
+    .select(
+      "id, nom_client, email_client, telephone_client, date_souhaitee, message, statut, cree_le, " +
+      "biens(titre, reference, ville, transaction, photos)"
+    )
+    .eq("agent_id", user.id)
+    .order("cree_le", { ascending: false });
+
+  if (filtreStatut) query = query.eq("statut", filtreStatut);
+
+  const { data: leadsRaw } = await query;
+  const leads = (leadsRaw ?? []) as unknown as Lead[];
+
+  // Compteurs par statut (sur tous les leads sans filtre)
+  const { data: tousRaw } = await supabase
+    .from("demandes_visite")
+    .select("statut")
+    .eq("agent_id", user.id);
+  const tous = tousRaw ?? [];
+
+  function compter(s: string) {
+    return s === "" ? tous.length : tous.filter((l) => l.statut === s).length;
+  }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+    <div className="max-w-4xl mx-auto">
+
+      {/* En-tête */}
+      <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-normal mb-1"
-            style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}>
-            Leads
-          </h1>
-          <p className="text-sm" style={{ color: "#9DB8AD" }}>
-            {MOCK_LEADS.length} prospects — données de démonstration
+          <h1 className="text-xl font-semibold mb-0.5" style={{ color: "#111" }}>Leads</h1>
+          <p className="text-sm" style={{ color: "#999" }}>
+            {tous.length} lead{tous.length !== 1 ? "s" : ""} au total
           </p>
         </div>
-        <button type="button"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium cursor-pointer"
-          style={{ background: "#0F4C3A", color: "#fff" }}>
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Nouveau lead
-        </button>
       </div>
 
-      {/* Kanban */}
-      <div className="flex gap-4 overflow-x-auto pb-4" style={{ minHeight: 500 }}>
-        {COLONNES.map((statut) => {
-          const leads = parStatut(statut);
-          const col = COULEURS_COL[statut];
+      {/* Onglets statut */}
+      <div className="flex gap-1 p-1 rounded-2xl mb-6 overflow-x-auto" style={{ background: "#F0F0F0" }}>
+        {ONGLETS.map((o) => {
+          const actif = filtreStatut === o.key;
+          const href = `/pro/leads${o.key ? `?statut=${o.key}` : ""}`;
+          const nb = compter(o.key);
           return (
-            <div key={statut} className="flex-shrink-0 flex flex-col rounded-2xl border"
-              style={{ width: 280, borderColor: col.border, background: "#fff" }}>
-
-              {/* En-tête colonne */}
-              <div className="flex items-center justify-between px-4 py-3 rounded-t-2xl border-b"
-                style={{ background: col.header, borderColor: col.border }}>
-                <div className="flex items-center gap-2">
-                  <BadgeStatut statut={statut} small />
-                </div>
-                <span className="text-xs font-bold"
-                  style={{ color: "#6B7A71" }}>
-                  {leads.length}
+            <Link
+              key={o.key}
+              href={href}
+              className="flex-shrink-0 flex items-center gap-1.5 py-2 px-4 rounded-xl text-sm whitespace-nowrap transition-all"
+              style={{
+                background: actif ? "#fff" : "transparent",
+                color: actif ? "#111" : "#888",
+                boxShadow: actif ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                textDecoration: "none",
+                fontWeight: actif ? 600 : 400,
+              }}
+            >
+              {o.label}
+              {nb > 0 && (
+                <span
+                  className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{
+                    background: actif ? "#111" : "#E0E0E0",
+                    color: actif ? "#fff" : "#888",
+                  }}
+                >
+                  {nb}
                 </span>
-              </div>
-
-              {/* Cartes leads */}
-              <div className="flex flex-col gap-3 p-3 flex-1">
-                {leads.length === 0 && (
-                  <div className="text-center py-8 text-xs" style={{ color: "#C4D8CE" }}>
-                    Aucun lead
-                  </div>
-                )}
-                {leads.map((lead) => (
-                  <div key={lead.id} className="rounded-xl p-3 border cursor-pointer hover:shadow-md transition-shadow"
-                    style={{ background: "#FAFAF8", borderColor: "#F0EDE5" }}>
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                        style={{ background: "#0F4C3A", color: "#D4AF37" }}>
-                        {lead.nom.split(" ").map((w) => w[0]).slice(0, 2).join("")}
-                      </div>
-                      <span className="text-xs" style={{ color: "#C4D8CE" }}>
-                        {new Date(lead.date).toLocaleDateString("fr-MA", { day: "2-digit", month: "short" })}
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium mb-1" style={{ color: "#1f2a24" }}>{lead.nom}</p>
-                    <p className="text-xs mb-1" style={{ color: "#9DB8AD" }}>{lead.type_bien} · {lead.ville}</p>
-                    <p className="text-xs font-medium mb-2" style={{ color: "#0F4C3A" }}>{lead.budget}</p>
-                    {lead.notes && (
-                      <p className="text-xs line-clamp-2" style={{ color: "#6B7A71" }}>{lead.notes}</p>
-                    )}
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t"
-                      style={{ borderColor: "#F0EDE5" }}>
-                      <span className="text-xs" style={{ color: "#C4D8CE" }}>{lead.source}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full"
-                        style={{ background: "#F4F6F5", color: "#6B7A71" }}>
-                        {lead.telephone}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+              )}
+            </Link>
           );
         })}
       </div>
+
+      {/* État vide */}
+      {leads.length === 0 && (
+        <div
+          className="rounded-2xl flex flex-col items-center py-16 text-center"
+          style={{ background: "#fff", border: "1px solid #EBEBEB" }}
+        >
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: "#F5F5F5" }}>
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#BBB" strokeWidth="1.5">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.4 2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold mb-1" style={{ color: "#333" }}>
+            Aucun lead{filtreStatut ? ` dans cette catégorie` : ""}
+          </p>
+          <p className="text-xs" style={{ color: "#999" }}>
+            Les demandes de contact apparaîtront ici.
+          </p>
+        </div>
+      )}
+
+      {/* Liste */}
+      {leads.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {leads.map((lead) => {
+            const badge = BADGE_STATUT[lead.statut] ?? { label: lead.statut, bg: "#F5F5F5", color: "#777" };
+            const type = inférerType(lead);
+            const photo = (lead.biens?.photos as string[] | null)?.[0] ?? null;
+
+            return (
+              <article
+                key={lead.id}
+                className="rounded-2xl overflow-hidden"
+                style={{ background: "#fff", border: "1px solid #EBEBEB" }}
+              >
+                <div className="flex gap-4 p-4">
+                  {/* Photo du bien */}
+                  <div
+                    className="flex-shrink-0 rounded-xl overflow-hidden"
+                    style={{ width: 72, height: 56, background: "#F5F5F5" }}
+                  >
+                    {photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={photo} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#CCC" strokeWidth="1.2">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contenu */}
+                  <div className="flex-1 min-w-0">
+
+                    {/* Bien + badges */}
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      {lead.biens?.reference && (
+                        <span className="text-xs font-mono px-1.5 py-0.5 rounded"
+                          style={{ background: "#F5F5F5", color: "#BBB" }}>
+                          {lead.biens.reference}
+                        </span>
+                      )}
+                      <span className="text-xs font-medium truncate" style={{ color: "#555" }}>
+                        {lead.biens?.titre ?? "Bien non trouvé"}{lead.biens?.ville ? ` · ${lead.biens.ville}` : ""}
+                      </span>
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full ml-auto flex-shrink-0"
+                        style={{ background: badge.bg, color: badge.color }}>
+                        {badge.label}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: "#F5F5F5", color: "#888" }}>
+                        {type}
+                      </span>
+                    </div>
+
+                    {/* Client */}
+                    <p className="text-sm font-semibold mb-0.5" style={{ color: "#111" }}>
+                      {lead.nom_client}
+                    </p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs mb-1.5" style={{ color: "#888" }}>
+                      <span>{lead.email_client}</span>
+                      {lead.telephone_client && <span>{lead.telephone_client}</span>}
+                      <span style={{ color: "#CCC" }}>·</span>
+                      <span>{formaterDate(lead.cree_le)}</span>
+                    </div>
+
+                    {lead.message && (
+                      <p className="text-xs italic line-clamp-1" style={{ color: "#AAA" }}>
+                        &ldquo;{lead.message}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="px-4 pb-3 pt-2" style={{ borderTop: "1px solid #F5F5F5" }}>
+                  <ActionsLead
+                    telephone={lead.telephone_client}
+                    statut={lead.statut}
+                    marquerEnCours={changerStatutLead.bind(null, lead.id, "confirmee")}
+                    marquerTraite={changerStatutLead.bind(null, lead.id, "realisee")}
+                    marquerNouvel={changerStatutLead.bind(null, lead.id, "nouvelle")}
+                  />
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
