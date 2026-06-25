@@ -15,17 +15,17 @@ export default function TableauAdmin({
   return (
     <div
       className="rounded-2xl overflow-hidden"
-      style={{ border: "1px solid #E8E2D2", background: "#fff" }}
+      style={{ border: "1px solid #EBEBEB", background: "#fff" }}
     >
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ background: "#F9F7F2", borderBottom: "1px solid #E8E2D2" }}>
+            <tr style={{ background: "#F9F9F9", borderBottom: "1px solid #EBEBEB" }}>
               {colonnes.map((col) => (
                 <th
                   key={col}
                   className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap"
-                  style={{ color: "#9DB8AD" }}
+                  style={{ color: "#999" }}
                 >
                   {col}
                 </th>
@@ -38,7 +38,7 @@ export default function TableauAdmin({
                 <td
                   colSpan={colonnes.length}
                   className="px-4 py-10 text-center text-sm"
-                  style={{ color: "#B4AD97" }}
+                  style={{ color: "#BBB" }}
                 >
                   {vide}
                 </td>

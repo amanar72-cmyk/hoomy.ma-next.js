@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { creerBienAgent, type DonneesBienAgent } from "@/app/pro/biens/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
+import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 
 const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
-const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
 const EQUIPEMENTS_LISTE = [
   "Parking", "Piscine", "Jardin", "Terrasse", "Balcon", "Ascenseur",
   "Gardien", "Climatisation", "Chauffage central", "Double vitrage",
@@ -193,42 +193,17 @@ export default function FormulaireCreationBienAgent() {
           Localisation
         </h2>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="ville" className={labelClass} style={labelStyle}>
-              Ville *
-            </label>
-            <select
-              id="ville"
-              name="ville"
-              required
-              className={sel}
-              style={selStyle}
-              onChange={(e) => setVilleSelectionnee(e.target.value)}
-            >
-              <option value="">Sélectionner</option>
-              {VILLES.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="quartier" className={labelClass} style={labelStyle}>
-              Quartier
-            </label>
-            <input
-              id="quartier"
-              name="quartier"
-              type="text"
-              placeholder="Ex : Maarif, Guéliz…"
-              className={sel}
-              style={selStyle}
-              value={quartierSaisi}
-              onChange={(e) => setQuartierSaisi(e.target.value)}
-            />
-          </div>
-        </div>
+        <SelecteurVilleQuartier
+          ville={villeSelectionnee}
+          quartier={quartierSaisi}
+          onVilleChange={setVilleSelectionnee}
+          onQuartierChange={setQuartierSaisi}
+          labelCls={labelClass}
+          labelStyle={labelStyle}
+          selectCls={sel}
+          selectStyle={selStyle}
+          villeRequise
+        />
 
         <div className="mt-4">
           <label className={labelClass} style={labelStyle}>
@@ -241,6 +216,7 @@ export default function FormulaireCreationBienAgent() {
             latitude={latitude}
             longitude={longitude}
             ville={villeSelectionnee}
+            quartier={quartierSaisi}
             onChangement={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
           />
         </div>

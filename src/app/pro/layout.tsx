@@ -30,7 +30,7 @@ export default async function ProLayout({ children }: { children: React.ReactNod
   const nom = profil.nom_complet ?? user.email ?? "Professionnel";
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#F4F6F5" }}>
+    <div className="flex min-h-screen" style={{ background: "#F7F7F7" }}>
       <SidebarPro
         nomUtilisateur={nom}
         role={profil.role}
@@ -42,7 +42,7 @@ export default async function ProLayout({ children }: { children: React.ReactNod
           nomUtilisateur={nom}
           role={profil.role}
         />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+        <main className="flex-1 p-5 md:p-7 overflow-auto">
           {children}
         </main>
       </div>

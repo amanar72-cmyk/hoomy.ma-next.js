@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { publierBien } from "@/app/publier/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
+import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import { appliquerWatermark } from "@/lib/images/watermark";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -40,8 +41,6 @@ const ETAPE_LABELS = [
   "Photos",
   "Annonce",
 ];
-
-const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
 
 const TYPES_BIENS = [
   { valeur: "Appartement", icone: "🏢" },
@@ -473,29 +472,17 @@ export default function WizardPublication({ userId }: { userId: string }) {
             </h2>
             <p className="text-sm mb-6" style={{ color: "#9DB8AD" }}>Indiquez la ville et le quartier pour affiner la localisation.</p>
             <div className="flex flex-col gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "#3D4A42" }}>Ville *</label>
-                <select
-                  value={donnees.ville}
-                  onChange={(e) => mettreAJour("ville", e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3 text-sm"
-                  style={{ borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" }}
-                >
-                  <option value="">Sélectionner une ville…</option>
-                  {VILLES.map((v) => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "#3D4A42" }}>Quartier</label>
-                <input
-                  type="text"
-                  value={donnees.quartier}
-                  onChange={(e) => mettreAJour("quartier", e.target.value)}
-                  placeholder="Ex : Gauthier, Guéliz, Souissi…"
-                  className="w-full border rounded-xl px-4 py-3 text-sm"
-                  style={{ borderColor: "#E0DAC8", color: "#1f2a24" }}
-                />
-              </div>
+              <SelecteurVilleQuartier
+                ville={donnees.ville}
+                quartier={donnees.quartier}
+                onVilleChange={(v) => mettreAJour("ville", v)}
+                onQuartierChange={(q) => mettreAJour("quartier", q)}
+                labelCls="block text-sm font-medium mb-1.5"
+                labelStyle={{ color: "#3D4A42" }}
+                selectCls="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
+                selectStyle={{ borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" }}
+                villeRequise
+              />
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: "#3D4A42" }}>
                   Position exacte sur la carte
@@ -507,6 +494,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
                   latitude={donnees.latitude}
                   longitude={donnees.longitude}
                   ville={donnees.ville}
+                  quartier={donnees.quartier}
                   onChangement={(lat, lng) => {
                     mettreAJour("latitude", lat);
                     mettreAJour("longitude", lng);

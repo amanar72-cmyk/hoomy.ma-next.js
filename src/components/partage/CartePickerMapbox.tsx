@@ -19,10 +19,11 @@ type Props = {
   initialLat: number | null;
   initialLng: number | null;
   ville: string;
+  quartier?: string;
   onChange: (lat: number | null, lng: number | null) => void;
 };
 
-export default function CartePickerMapbox({ initialLat, initialLng, ville, onChange }: Props) {
+export default function CartePickerMapbox({ initialLat, initialLng, ville, quartier, onChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
@@ -102,6 +103,44 @@ export default function CartePickerMapbox({ initialLat, initialLng, ville, onCha
       mapRef.current.flyTo({ center: coords, zoom: 13, duration: 900 });
     }
   }, [ville]);
+
+  // Géocodage Mapbox quand le quartier change → centrer + placer marqueur si absent
+  useEffect(() => {
+    if (!quartier || !ville) return;
+    let annule = false;
+
+    async function geocoder() {
+      if (!mapRef.current) return;
+      const token = mapboxgl.accessToken;
+      if (!token) return;
+
+      const q = encodeURIComponent(`${quartier}, ${ville}, Maroc`);
+      try {
+        const resp = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?access_token=${token}&limit=1&country=ma&types=neighborhood,locality,place`
+        );
+        if (annule || !resp.ok) return;
+        const data = (await resp.json()) as { features?: Array<{ center: [number, number] }> };
+        if (annule || !mapRef.current) return;
+        const feature = data.features?.[0];
+        if (feature) {
+          const [lng, lat] = feature.center;
+          mapRef.current.flyTo({ center: [lng, lat], zoom: 15, duration: 1200 });
+          if (!markerRef.current) placerMarqueur(mapRef.current, lng, lat);
+        } else {
+          const coords = VILLES_COORDS[ville];
+          if (coords) mapRef.current.flyTo({ center: coords, zoom: 13, duration: 900 });
+        }
+      } catch {
+        // Géocodage échoué — pas de crash, la carte reste sur la vue actuelle
+      }
+    }
+
+    void geocoder();
+    return () => {
+      annule = true;
+    };
+  }, [quartier, ville]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>

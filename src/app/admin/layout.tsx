@@ -29,16 +29,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#F4F6F5" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#F7F7F7" }}>
       <SidebarAdmin
         nomAdmin={profil.nom_complet ?? user.email ?? "Admin"}
         avatarUrl={profil.avatar_url ?? null}
       />
-      {/* Zone de contenu principale — décalée de la largeur de la sidebar sur desktop */}
-      <main
-        className="flex-1 overflow-auto"
-        style={{ minHeight: "100vh" }}
-      >
+      <main className="flex-1 overflow-auto" style={{ minHeight: "100vh" }}>
         {children}
       </main>
     </div>

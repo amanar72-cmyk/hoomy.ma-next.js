@@ -9,6 +9,7 @@ import {
   type DonneesModificationBienAgent,
 } from "@/app/pro/biens/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
+import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import { appliquerWatermark } from "@/lib/images/watermark";
 
@@ -62,7 +63,6 @@ function Champ({ label, children }: { label: string; children: React.ReactNode }
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
-const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
 const EQUIPEMENTS_LISTE = [
   "Piscine", "Parking", "Terrasse", "Balcon", "Ascenseur", "Gardien",
   "Climatisation", "Chauffage", "Cuisine équipée", "Dressing", "Cave",
@@ -300,26 +300,18 @@ export default function FormulaireEditionBienAgent({
               <option value="location">Location</option>
             </select>
           </Champ>
-          <Champ label="Ville">
-            <select
-              value={ville}
-              onChange={(e) => setVille(e.target.value)}
-              className={cls}
-              style={inp}
-            >
-              {VILLES.map((v) => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </Champ>
-          <Champ label="Quartier">
-            <input
-              type="text"
-              value={quartier}
-              onChange={(e) => setQuartier(e.target.value)}
-              className={cls}
-              style={inp}
-              placeholder="Ex: Maarif, Guéliz…"
+          <div className="col-span-full">
+            <SelecteurVilleQuartier
+              ville={ville}
+              quartier={quartier}
+              onVilleChange={setVille}
+              onQuartierChange={setQuartier}
+              labelCls="text-xs font-medium mb-1.5 block"
+              labelStyle={{ color: "#555" }}
+              selectCls={cls}
+              selectStyle={inp}
             />
-          </Champ>
+          </div>
           <div className="col-span-full">
             <label className="text-xs font-medium block mb-1" style={{ color: "#555" }}>
               Position exacte sur la carte
@@ -331,6 +323,7 @@ export default function FormulaireEditionBienAgent({
               latitude={latitude}
               longitude={longitude}
               ville={ville}
+              quartier={quartier}
               onChangement={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
             />
           </div>

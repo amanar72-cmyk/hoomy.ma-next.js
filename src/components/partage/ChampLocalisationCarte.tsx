@@ -20,10 +20,11 @@ type Props = {
   latitude: number | null;
   longitude: number | null;
   ville: string;
+  quartier?: string;
   onChangement: (lat: number | null, lng: number | null) => void;
 };
 
-export default function ChampLocalisationCarte({ latitude, longitude, ville, onChangement }: Props) {
+export default function ChampLocalisationCarte({ latitude, longitude, ville, quartier, onChangement }: Props) {
   return (
     <div>
       <div
@@ -38,6 +39,7 @@ export default function ChampLocalisationCarte({ latitude, longitude, ville, onC
           initialLat={latitude}
           initialLng={longitude}
           ville={ville}
+          quartier={quartier}
           onChange={onChangement}
         />
       </div>

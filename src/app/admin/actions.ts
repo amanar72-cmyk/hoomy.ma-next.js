@@ -206,6 +206,38 @@ export async function creerBien(
   return { id: bien.id };
 }
 
+// Affectation depuis la fiche bien (formulaire select + submit)
+export async function affecterBienAgent(bienId: string, formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié.");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé.");
+
+  const agentId = (formData.get("agent_id") as string | null)?.trim() || null;
+
+  // Lire le statut actuel pour décider si on le met à jour
+  const { data: bien } = await supabase.from("biens").select("statut").eq("id", bienId).single();
+  const statutActuel = bien?.statut as string | null;
+
+  const updates: Record<string, unknown> = {
+    agent_id: agentId,
+    date_affectation: agentId ? new Date().toISOString() : null,
+  };
+
+  if (["brouillon", "affecte"].includes(statutActuel ?? "")) {
+    updates.statut = agentId ? "affecte" : "brouillon";
+  }
+
+  const { error } = await supabase.from("biens").update(updates).eq("id", bienId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/biens");
+  revalidatePath(`/admin/biens/${bienId}`);
+  revalidatePath("/admin/affectation");
+  revalidatePath("/admin/agents");
+}
+
 // ── Agents ────────────────────────────────────────────────────────────────────
 
 export async function modifierZonesAgent(agentId: string, zones: string[]) {
