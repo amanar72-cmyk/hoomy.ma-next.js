@@ -23,7 +23,7 @@ function genererReference(): string {
 
 function genererSlug(titre: string, ville: string, reference: string): string {
   const base = `${normaliserPourSlug(titre)}-${normaliserPourSlug(ville)}`;
-  const suffixe = reference.toLowerCase().replace("-", "");
+  const suffixe = reference.toLowerCase().replace(/[^a-z0-9-]/g, "");
   return `${base}-${suffixe}`;
 }
 

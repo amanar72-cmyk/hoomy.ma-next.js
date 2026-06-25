@@ -17,9 +17,21 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
+/** Cherche un bien par slug, puis par id (UUID) en fallback. */
+async function fetchBien(slug: string) {
+  const { data: bySlug } = await supabase
+    .from("biens").select("*, agent_id").eq("slug", slug).maybeSingle();
+  if (bySlug) return bySlug;
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+  if (!isUUID) return null;
+  const { data: byId } = await supabase
+    .from("biens").select("*, agent_id").eq("id", slug).maybeSingle();
+  return byId ?? null;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const { data } = await supabase.from("biens").select("titre, ville, prix").eq("slug", slug).single();
+  const { data } = await supabase.from("biens").select("titre, ville, prix").eq("slug", slug).maybeSingle();
   if (!data) return { title: "Bien non trouvé | HOOMY.MA" };
   const titre = `${data.titre} — À louer à ${data.ville} | HOOMY.MA`;
   const description = `${data.titre} à louer à ${data.ville}. Loyer : ${Number(data.prix).toLocaleString("fr-FR")} DH/mois.`;
@@ -45,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PageDetailLocation({ params }: Props) {
   const { slug } = await params;
 
-  const { data } = await supabase.from("biens").select("*, agent_id").eq("slug", slug).single();
+  const data = await fetchBien(slug);
   if (!data) notFound();
 
   const bien = data as Bien & { agent_id: string | null };
