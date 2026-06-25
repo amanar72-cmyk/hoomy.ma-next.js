@@ -6,10 +6,10 @@ import type { Bien } from "@/lib/types";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const LARGEUR_CARTE = 260; // px — compact pour le défilement
-const GAP           = 16;  // px entre cartes
-// ~78 px/s → ≈ 20 s pour 6 cartes (260 + 16 = 276 px/carte)
-const PX_PAR_SEC    = 78;
+const LARGEUR_CARTE = 310; // px — présence visuelle accrue
+const GAP           = 18;  // px entre cartes
+// ~80 px/s → ≈ 20 s pour 6 cartes (310 + 18 = 328 px/carte)
+const PX_PAR_SEC    = 80;
 
 // ── Icône localisation ────────────────────────────────────────────────────────
 

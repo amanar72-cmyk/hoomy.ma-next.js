@@ -82,19 +82,13 @@ export default async function PageDetailAchat({ params }: Props) {
         />
       </div>
 
-      {/* ── Layout 2 colonnes : contenu gauche / carte droite ──────────────── */}
-      <div className="max-w-7xl mx-auto px-6 pt-8 pb-24 lg:pb-16">
+      {/* ── Layout 2 colonnes : infos gauche / prix droit ─────────────────── */}
+      <div className="max-w-7xl mx-auto px-6 pt-8">
         <div className="flex gap-8 items-start">
 
-          {/* Colonne gauche — infos + carte localisation */}
+          {/* Colonne gauche — détails + équipements */}
           <div className="flex-1 min-w-0">
             <InfosBien bien={bien} />
-            <CarteLocalisation
-              latitude={bien.latitude}
-              longitude={bien.longitude}
-              titre={bien.titre}
-              bienId={bien.id}
-            />
           </div>
 
           {/* Colonne droite — carte contact sticky (desktop) */}
@@ -111,18 +105,28 @@ export default async function PageDetailAchat({ params }: Props) {
           </div>
 
         </div>
+      </div>
 
-        {/* Barre d'action flottante mobile */}
-        <BarreMobileContact
-          prix={bien.prix}
-          transaction={bien.transaction}
+      {/* ── Localisation (après les détails et équipements) ───────────────── */}
+      <div className="max-w-7xl mx-auto px-6 pb-24 lg:pb-16">
+        <CarteLocalisation
+          latitude={bien.latitude}
+          longitude={bien.longitude}
           titre={bien.titre}
-          reference={bien.reference ?? null}
-          ville={bien.ville}
           bienId={bien.id}
-          agentId={bien.agent_id ?? null}
         />
       </div>
+
+      {/* Barre d'action flottante mobile */}
+      <BarreMobileContact
+        prix={bien.prix}
+        transaction={bien.transaction}
+        titre={bien.titre}
+        reference={bien.reference ?? null}
+        ville={bien.ville}
+        bienId={bien.id}
+        agentId={bien.agent_id ?? null}
+      />
 
       {/* ── Biens similaires ─────────────────────────────────────────────── */}
       <BiensSimiliaires
