@@ -6,7 +6,6 @@ import { ajouterAgent } from "@/app/admin/agents/actions";
 
 const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
 
-// Import dynamique pour éviter l'accès à window/navigator côté serveur
 const PhoneInput = dynamic(
   () => import("@/components/admin/ChampTelephone"),
   {
@@ -16,13 +15,11 @@ const PhoneInput = dynamic(
         type="tel"
         placeholder="+212 6XX XXX XXX"
         className="border rounded-xl px-4 py-2.5 text-sm w-full"
-        style={{ borderColor: "#E0DAC8", color: "#0F4C3A" }}
+        style={{ borderColor: "#EBEBEB", color: "#111" }}
       />
     ),
   }
 );
-
-// ── Helpers UI ─────────────────────────────────────────────────────────────
 
 function Champ({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
@@ -37,30 +34,24 @@ function Champ({ label, children, required }: { label: string; children: React.R
 
 export default function FormulaireInvitationAgent() {
   const [nomComplet, setNomComplet] = useState("");
-  const [email, setEmail] = useState("");
-  const [telephone, setTelephone] = useState<string | undefined>(undefined);
-  const [zones, setZones] = useState<string[]>([]);
-
+  const [email, setEmail]           = useState("");
+  const [telephone, setTelephone]   = useState<string | undefined>(undefined);
+  const [zones, setZones]           = useState<string[]>([]);
   const [chargement, setChargement] = useState(false);
-  const [succes, setSucces] = useState<string | null>(null);
-  const [erreur, setErreur] = useState<string | null>(null);
+  const [succes, setSucces]         = useState<string | null>(null);
+  const [erreur, setErreur]         = useState<string | null>(null);
 
   function toggleZone(ville: string) {
-    setZones((prev) =>
-      prev.includes(ville) ? prev.filter((v) => v !== ville) : [...prev, ville]
-    );
+    setZones((prev) => prev.includes(ville) ? prev.filter((v) => v !== ville) : [...prev, ville]);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     if (!nomComplet.trim()) { setErreur("Le nom complet est requis."); return; }
     if (!email.trim() || !email.includes("@")) { setErreur("Adresse e-mail invalide."); return; }
-
     setErreur(null);
     setSucces(null);
     setChargement(true);
-
     try {
       await ajouterAgent({
         nomComplet: nomComplet.trim(),
@@ -68,9 +59,7 @@ export default function FormulaireInvitationAgent() {
         telephone: telephone ?? "",
         zones,
       });
-
       setSucces(`Invitation envoyée à ${email.trim().toLowerCase()}`);
-      // Réinitialise le formulaire
       setNomComplet("");
       setEmail("");
       setTelephone(undefined);
@@ -82,18 +71,17 @@ export default function FormulaireInvitationAgent() {
     }
   }
 
-  const inp: React.CSSProperties = { borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" };
+  const inp: React.CSSProperties = { borderColor: "#EBEBEB", color: "#111", background: "#fff" };
   const cls = "border rounded-xl px-4 py-2.5 text-sm w-full focus:outline-none";
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 max-w-xl">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
       {/* Feedback */}
       {succes && (
-        <div className="px-4 py-3 rounded-xl text-sm border flex items-center gap-2"
+        <div className="px-4 py-3 rounded-xl text-sm border"
           style={{ background: "#D1FAE5", color: "#065F46", borderColor: "#6EE7B7" }}>
-          <span className="text-lg">✉️</span>
-          <span><strong>{succes}</strong> — L'agent recevra un lien pour créer son mot de passe.</span>
+          <strong>Invitation envoyée</strong> — {succes}. L'agent recevra un lien pour créer son mot de passe.
         </div>
       )}
       {erreur && (
@@ -105,44 +93,27 @@ export default function FormulaireInvitationAgent() {
 
       {/* Champs */}
       <div className="rounded-2xl border p-5 flex flex-col gap-4"
-        style={{ background: "#fff", borderColor: "#F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.05)" }}>
+        style={{ background: "#fff", borderColor: "#EBEBEB" }}>
 
         <Champ label="Nom complet" required>
-          <input
-            type="text"
-            value={nomComplet}
-            onChange={(e) => setNomComplet(e.target.value)}
-            placeholder="Prénom Nom"
-            className={cls} style={inp}
-          />
+          <input type="text" value={nomComplet} onChange={(e) => setNomComplet(e.target.value)}
+            placeholder="Prénom Nom" className={cls} style={inp} />
         </Champ>
 
         <Champ label="Adresse e-mail" required>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="agent@exemple.com"
-            autoComplete="email"
-            className={cls} style={inp}
-          />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder="agent@exemple.com" autoComplete="email" className={cls} style={inp} />
         </Champ>
 
-        <Champ label="Téléphone (international)">
-          {/* Chargé dynamiquement pour éviter les erreurs SSR */}
+        <Champ label="Téléphone">
           <div className="phone-input-wrapper">
-            <PhoneInput
-              value={telephone}
-              onChange={(val) => setTelephone(val)}
-              defaultCountry="MA"
-              placeholder="+212 6XX XXX XXX"
-              className="phone-input-hoomy"
-            />
+            <PhoneInput value={telephone} onChange={(val) => setTelephone(val)}
+              defaultCountry="MA" placeholder="+212 6XX XXX XXX" className="phone-input-hoomy" />
           </div>
           <style>{`
             .phone-input-wrapper { position: relative; }
-            .phone-input-hoomy { border: 1px solid #E0DAC8; border-radius: 12px; padding: 10px 16px; font-size: 14px; color: #0F4C3A; background: #fff; width: 100%; display: flex; align-items: center; gap: 8px; }
-            .phone-input-hoomy input { outline: none; border: none; background: transparent; flex: 1; color: #0F4C3A; font-size: 14px; }
+            .phone-input-hoomy { border: 1px solid #EBEBEB; border-radius: 12px; padding: 10px 16px; font-size: 14px; color: #111; background: #fff; width: 100%; display: flex; align-items: center; gap: 8px; }
+            .phone-input-hoomy input { outline: none; border: none; background: transparent; flex: 1; color: #111; font-size: 14px; }
             .phone-input-hoomy .PhoneInputCountry { display: flex; align-items: center; }
           `}</style>
         </Champ>
@@ -152,47 +123,39 @@ export default function FormulaireInvitationAgent() {
             {VILLES.map((v) => {
               const actif = zones.includes(v);
               return (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => toggleZone(v)}
+                <button key={v} type="button" onClick={() => toggleZone(v)}
                   className="px-3 py-1.5 rounded-full text-sm border cursor-pointer transition-all"
                   style={actif
-                    ? { background: "#0F4C3A", color: "#fff", borderColor: "#0F4C3A" }
-                    : { background: "#F4F6F5", color: "#6B7A71", borderColor: "#E0DAC8" }
-                  }
-                >
+                    ? { background: "#111", color: "#fff", borderColor: "#111" }
+                    : { background: "#F5F5F5", color: "#555", borderColor: "#EBEBEB" }
+                  }>
                   {v}
                 </button>
               );
             })}
           </div>
           {zones.length > 0 && (
-            <p className="text-xs mt-1" style={{ color: "#9DB8AD" }}>
+            <p className="text-xs mt-1" style={{ color: "#999" }}>
               {zones.length} ville{zones.length > 1 ? "s" : ""} sélectionnée{zones.length > 1 ? "s" : ""}
             </p>
           )}
         </Champ>
       </div>
 
-      {/* Note d'information */}
+      {/* Note info */}
       <div className="rounded-xl px-4 py-3 text-sm flex items-start gap-2"
-        style={{ background: "#F4F6F5", border: "1px solid #E0DAC8", color: "#6B7A71" }}>
-        <span className="flex-shrink-0">ℹ️</span>
-        <span>
-          L'agent recevra un e-mail avec un lien pour créer son mot de passe.
-          Aucun mot de passe n'est défini par l'administrateur.
-        </span>
+        style={{ background: "#F9F9F9", border: "1px solid #EBEBEB", color: "#777" }}>
+        <svg className="flex-shrink-0 mt-0.5" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        L'agent recevra un e-mail avec un lien pour créer son mot de passe. Aucun mot de passe n'est défini par l'administrateur.
       </div>
 
       {/* Submit */}
       <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={chargement}
+        <button type="submit" disabled={chargement}
           className="px-7 py-2.5 rounded-xl text-sm font-semibold cursor-pointer disabled:opacity-60 hover:opacity-90 transition-opacity"
-          style={{ background: "#0F4C3A", color: "#fff" }}
-        >
+          style={{ background: "#111", color: "#fff" }}>
           {chargement ? "Envoi de l'invitation…" : "Inviter l'agent"}
         </button>
       </div>
