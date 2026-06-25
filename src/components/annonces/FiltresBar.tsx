@@ -56,7 +56,7 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
 
   return (
     <div
-      className="sticky top-16 z-40 bg-white border-b"
+      className="bg-white border-b"
       style={{ borderColor: "#E8E2D2", boxShadow: "0 2px 8px rgba(15,76,58,0.06)" }}
     >
       <div className="max-w-6xl mx-auto px-6 py-3">
