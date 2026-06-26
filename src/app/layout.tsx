@@ -12,7 +12,14 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
   title: "HOOMY.MA — L'immobilier premium au Maroc",
-  description: "Des biens vérifiés à Agadir, Marrakech, Casablanca et partout au Maroc.",
+  description:
+    "Des biens vérifiés à Agadir, Marrakech, Casablanca et partout au Maroc.",
+
+  verification: {
+    google: "9faaf2b3157b91ed",
+  },
+
+  metadataBase: new URL("https://hoomy.ma"),
 };
 
 // Script inline exécuté AVANT le premier rendu pour éviter le flash de mauvais thème.
