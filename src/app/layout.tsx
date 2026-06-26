@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "Des biens vérifiés à Agadir, Marrakech, Casablanca et partout au Maroc.",
 
   verification: {
-    google: "9faaf2b3157b91ed",
+    google: "9lbPJsoQGI4dGxsXQXwOPW1ezTeENyAO9bVFT5FCB6I",
   },
 
   metadataBase: new URL("https://hoomy.ma"),
