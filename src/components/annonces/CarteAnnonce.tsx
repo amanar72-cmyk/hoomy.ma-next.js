@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { Bien } from "@/lib/types";
 import { trackEvenement } from "@/lib/tracking/track";
 import { useComparateur } from "@/lib/comparateur/ComparateurContext";
 import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
+import { createClient } from "@/lib/supabase/client";
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
@@ -108,7 +109,24 @@ function PlaceholderPhoto() {
 
 export default function CarteAnnonce({ bien }: { bien: Bien }) {
   const [favori, setFavori] = useState(false);
+  const userIdRef = useRef<string | null>(null);
   const { biens: biensCompares, ajouter, supprimer, estSelectionne } = useComparateur();
+
+  // Charge l'état favori depuis Supabase si l'utilisateur est connecté
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      userIdRef.current = user.id;
+      supabase
+        .from("favoris")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("bien_id", bien.id)
+        .maybeSingle()
+        .then(({ data }) => { if (data) setFavori(true); });
+    });
+  }, [bien.id]);
   const selectionne = estSelectionne(bien.id);
   const maxAtteint = !selectionne && biensCompares.length >= 4;
 
@@ -336,10 +354,19 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
       {/* ── Bouton cœur (hors du Link, z-index élevé) ── */}
       <button
         type="button"
-        onClick={(e) => {
+        onClick={async (e) => {
           e.preventDefault();
           e.stopPropagation();
+          const uid = userIdRef.current;
+          // Mise à jour optimiste
           setFavori((f) => !f);
+          if (!uid) return;
+          const supabase = createClient();
+          if (!favori) {
+            await supabase.from("favoris").insert({ user_id: uid, bien_id: bien.id });
+          } else {
+            await supabase.from("favoris").delete().eq("user_id", uid).eq("bien_id", bien.id);
+          }
         }}
         aria-label={favori ? "Retirer des favoris" : "Ajouter aux favoris"}
         aria-pressed={favori}
