@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import BoutonNotificationsPro from "@/components/pro/BoutonNotificationsPro";
 
 type Props = {
   nomUtilisateur: string;
@@ -60,6 +61,9 @@ export default function HeaderPro({ nomUtilisateur, role }: Props) {
 
       {/* Actions droite */}
       <div className="flex items-center gap-2">
+
+        {/* Notifications push */}
+        <BoutonNotificationsPro />
 
         {/* Avatar + menu */}
         <div className="relative">

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { envoyerNotificationPush } from "@/lib/push/notifications";
 
 // ── Biens ────────────────────────────────────────────────────────────────────
 
@@ -236,6 +237,19 @@ export async function affecterBienAgent(bienId: string, formData: FormData) {
   revalidatePath(`/admin/biens/${bienId}`);
   revalidatePath("/admin/affectation");
   revalidatePath("/admin/agents");
+
+  if (agentId) {
+    const { data: bien } = await supabase
+      .from("biens")
+      .select("titre")
+      .eq("id", bienId)
+      .single();
+    await envoyerNotificationPush(agentId, {
+      titre: "Nouveau bien affecté",
+      corps: bien?.titre ?? "Un bien vous a été affecté.",
+      url: `/pro/biens/${bienId}`,
+    }).catch(() => {});
+  }
 }
 
 // ── Statut leads (admin) ──────────────────────────────────────────────────────

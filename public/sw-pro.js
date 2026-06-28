@@ -82,3 +82,29 @@ self.addEventListener("fetch", (e) => {
     fetch(request).catch(() => caches.match(request))
   );
 });
+
+// ── Notifications push ────────────────────────────────────────────────────────
+self.addEventListener("push", (e) => {
+  const data = e.data?.json() ?? {};
+  e.waitUntil(
+    self.registration.showNotification(data.titre ?? "HOOMY PRO", {
+      body: data.corps ?? "",
+      icon: "/icons/pro-192",
+      badge: "/icons/pro-192",
+      data: { url: data.url ?? "/pro" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url ?? "/pro";
+  e.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((liste) => {
+      for (const client of liste) {
+        if (client.url === url && "focus" in client) return client.focus();
+      }
+      return clients.openWindow(url);
+    })
+  );
+});

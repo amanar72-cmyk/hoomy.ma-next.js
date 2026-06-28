@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { soumettreMessage } from "@/app/detail/actions";
 
 type Props = {
   bienId: string;
@@ -15,7 +16,6 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
   const [message, setMessage] = useState("");
-  const [clientId, setClientId] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
   const [succes, setSucces] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -26,7 +26,6 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      setClientId(user.id);
       if (user.email) setEmail(user.email);
       const { data: profil } = await supabase
         .from("profils")
@@ -58,20 +57,17 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
     setErreur(null);
     setChargement(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.from("demandes_visite").insert({
-      bien_id: bienId,
-      agent_id: agentId,
-      client_id: clientId,
-      nom_client: nom.trim(),
-      email_client: email.trim(),
-      telephone_client: telephone.trim() || null,
-      date_souhaitee: null,
-      message: message.trim(),
-      statut: "nouvelle",
-    });
-
-    if (error) {
+    try {
+      await soumettreMessage({
+        bienId,
+        agentId,
+        titreBien,
+        nomClient: nom.trim(),
+        emailClient: email.trim(),
+        telephoneClient: telephone.trim() || null,
+        message: message.trim(),
+      });
+    } catch {
       setErreur("Une erreur est survenue. Veuillez réessayer.");
       setChargement(false);
       return;
