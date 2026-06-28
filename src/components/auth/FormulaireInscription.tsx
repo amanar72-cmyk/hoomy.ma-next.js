@@ -38,11 +38,29 @@ export default function FormulaireInscription() {
       });
 
       if (error) {
-        if (error.message.toLowerCase().includes("already registered")) {
-          setErreur("Cette adresse email est déjà utilisée. Connectez-vous.");
+        const msg = error.message ?? "";
+        if (
+          msg.toLowerCase().includes("already registered") ||
+          msg.toLowerCase().includes("user already registered")
+        ) {
+          setErreur("Cette adresse email est déjà utilisée. Connectez-vous ou réinitialisez votre mot de passe.");
+        } else if (msg.toLowerCase().includes("password")) {
+          setErreur("Mot de passe invalide — utilisez au moins 6 caractères.");
+        } else if (msg.toLowerCase().includes("email")) {
+          setErreur("Adresse email invalide ou non acceptée.");
+        } else if (msg.toLowerCase().includes("rate limit")) {
+          setErreur("Trop de tentatives — réessayez dans quelques minutes.");
         } else {
-          setErreur(`Erreur : ${error.message}`);
+          setErreur(msg || "Une erreur est survenue. Veuillez réessayer.");
         }
+        setChargement(false);
+        return;
+      }
+
+      // Cas Supabase : email déjà utilisé + confirmation email activée.
+      // Supabase ne renvoie pas d'erreur mais retourne identities = [].
+      if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+        setErreur("Cette adresse email est déjà utilisée. Connectez-vous ou réinitialisez votre mot de passe.");
         setChargement(false);
         return;
       }
@@ -114,8 +132,8 @@ export default function FormulaireInscription() {
           </p>
 
           {erreur && (
-            <div className="mb-5 px-4 py-3 rounded-lg text-sm border"
-              style={{ background: "#FEF2F2", color: "var(--erreur-texte)", borderColor: "#FECACA" }}>
+            <div className="mb-5 px-4 py-3 rounded-lg text-sm"
+              style={{ background: "var(--erreur-fond)", color: "var(--erreur-texte)", border: "1px solid var(--erreur)" }}>
               {erreur}
             </div>
           )}
