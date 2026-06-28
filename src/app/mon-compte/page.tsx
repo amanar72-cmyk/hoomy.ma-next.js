@@ -92,7 +92,16 @@ export default async function PageTableauDeBord() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/connexion");
 
-  const [{ data: profil }, { data: biensRaw }, { data: suggestionsRaw }] = await Promise.all([
+  const aujourdhui = new Date().toISOString().split("T")[0];
+
+  const [
+    { data: profil },
+    { data: biensRaw },
+    { data: suggestionsRaw },
+    { count: nbFavoris },
+    { count: nbVisites },
+    { count: nbDemandes },
+  ] = await Promise.all([
     supabase
       .from("profils")
       .select("nom_complet, cree_le")
@@ -111,6 +120,28 @@ export default async function PageTableauDeBord() {
       .eq("verifie", true)
       .order("cree_le", { ascending: false })
       .limit(3),
+
+    // Favoris de l'utilisateur
+    supabase
+      .from("favoris")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
+
+    // Visites à venir : date_souhaitee dans le futur, statut non annulé
+    supabase
+      .from("demandes_visite")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", user.id)
+      .not("date_souhaitee", "is", null)
+      .gte("date_souhaitee", aujourdhui)
+      .neq("statut", "annulee"),
+
+    // Demandes en cours : statuts actifs (pas encore réalisé ni annulé)
+    supabase
+      .from("demandes_visite")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", user.id)
+      .in("statut", ["nouvelle", "confirmee"]),
   ]);
 
   const biens = (biensRaw ?? []) as BienClient[];
@@ -141,37 +172,42 @@ export default async function PageTableauDeBord() {
 
       {/* ── Cartes de statistiques ──────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        <StatCard
-          icone={<IcoBien />}
-          valeur={biens.length}
-          label="Biens soumis"
-          couleurIcone="#0F4C3A"
-          fondIcone="#E8F5ED"
-        />
-        <StatCard
-          icone={<IcoCoeur />}
-          valeur={0}
-          label="Favoris"
-          couleurIcone="#D4AF37"
-          fondIcone="#FFF9E6"
-          placeholder
-        />
-        <StatCard
-          icone={<IcoCalendrier />}
-          valeur={0}
-          label="Visites à venir"
-          couleurIcone="#5B21B6"
-          fondIcone="#EDE9FE"
-          placeholder
-        />
-        <StatCard
-          icone={<IcoBoite />}
-          valeur={0}
-          label="Demandes en cours"
-          couleurIcone="#1E40AF"
-          fondIcone="#DBEAFE"
-          placeholder
-        />
+        <Link href="/mon-compte/mes-biens" style={{ textDecoration: "none" }}>
+          <StatCard
+            icone={<IcoBien />}
+            valeur={biens.length}
+            label="Biens soumis"
+            couleurIcone="#0F4C3A"
+            fondIcone="#E8F5ED"
+          />
+        </Link>
+        <Link href="/mon-compte/favoris" style={{ textDecoration: "none" }}>
+          <StatCard
+            icone={<IcoCoeur />}
+            valeur={nbFavoris ?? 0}
+            label="Favoris"
+            couleurIcone="#D4AF37"
+            fondIcone="#FFF9E6"
+          />
+        </Link>
+        <Link href="/mon-compte/visites" style={{ textDecoration: "none" }}>
+          <StatCard
+            icone={<IcoCalendrier />}
+            valeur={nbVisites ?? 0}
+            label="Visites à venir"
+            couleurIcone="#5B21B6"
+            fondIcone="#EDE9FE"
+          />
+        </Link>
+        <Link href="/mon-compte/demandes" style={{ textDecoration: "none" }}>
+          <StatCard
+            icone={<IcoBoite />}
+            valeur={nbDemandes ?? 0}
+            label="Demandes en cours"
+            couleurIcone="#1E40AF"
+            fondIcone="#DBEAFE"
+          />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

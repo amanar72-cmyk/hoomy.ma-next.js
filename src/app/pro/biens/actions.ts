@@ -76,6 +76,7 @@ export type DonneesBienAgent = {
   salles_bain: number;
   surface: number;
   equipements: string[] | null;
+  composition: import("@/components/partage/CompositionNiveaux").NiveauBien[] | null;
   latitude: number | null;
   longitude: number | null;
 };
@@ -129,6 +130,7 @@ export type DonneesModificationBienAgent = {
   salles_bain: number;
   surface: number;
   equipements: string[] | null;
+  composition: import("@/components/partage/CompositionNiveaux").NiveauBien[] | null;
   photos: string[] | null;
   latitude: number | null;
   longitude: number | null;

@@ -1,13 +1,22 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SidebarAdmin from "@/components/admin/SidebarAdmin";
+import PwaInstaller from "@/components/pro/PwaInstaller";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Administration — HOOMY.MA",
+  title: "Administration — HOOMY PRO",
+  manifest: "/manifest-pro.json",
+  appleWebApp: {
+    capable: true,
+    title: "HOOMY PRO",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    apple: [{ url: "/icons/pro-180", sizes: "180x180", type: "image/png" }],
+  },
 };
 
-// Protège toutes les routes /admin — vérifie session + rôle admin
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
 
@@ -23,7 +32,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .eq("id", user.id)
     .single();
 
-  // Seuls les admins peuvent accéder — les autres sont renvoyés à l'accueil
   if (profil?.role !== "admin") {
     redirect("/?erreur=acces-refuse");
   }
@@ -37,6 +45,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="flex-1 overflow-auto" style={{ minHeight: "100vh" }}>
         {children}
       </main>
+
+      {/* Bandeau d'installation PWA */}
+      <PwaInstaller />
     </div>
   );
 }

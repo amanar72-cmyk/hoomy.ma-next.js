@@ -7,6 +7,7 @@ import { publierBien } from "@/app/publier/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import { appliquerWatermark } from "@/lib/images/watermark";
+import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,7 @@ type DonneesWizard = {
   chambres: number;
   salles_bain: number;
   equipements: string[];
+  composition: NiveauBien[];
   photos: PhotoUploadee[];
   titre: string;
   description: string;
@@ -241,6 +243,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
     chambres: 1,
     salles_bain: 1,
     equipements: [],
+    composition: [],
     photos: [],
     titre: "",
     description: "",
@@ -382,6 +385,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
         chambres: donnees.chambres,
         salles_bain: donnees.salles_bain,
         equipements: donnees.equipements,
+        composition: donnees.composition,
         photos: donnees.photos.map((p) => p.url),
         titre: donnees.titre,
         description: donnees.description,
@@ -535,7 +539,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
             </div>
 
             {/* Équipements */}
-            <div>
+            <div className="mb-6">
               <p className="text-sm font-medium mb-3" style={{ color: "#3D4A42" }}>Équipements</p>
               <div className="flex flex-wrap gap-2">
                 {EQUIPEMENTS.map((eq) => {
@@ -557,6 +561,21 @@ export default function WizardPublication({ userId }: { userId: string }) {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Composition par niveau — optionnelle */}
+            <div>
+              <p className="text-sm font-medium mb-1" style={{ color: "#3D4A42" }}>
+                Composition du bien{" "}
+                <span className="text-xs font-normal" style={{ color: "#9DB8AD" }}>(optionnel)</span>
+              </p>
+              <p className="text-xs mb-3" style={{ color: "#9DB8AD" }}>
+                Décrivez votre bien niveau par niveau. Vous pouvez passer cette étape.
+              </p>
+              <CompositionNiveaux
+                valeur={donnees.composition}
+                onChange={(v) => mettreAJour("composition", v)}
+              />
             </div>
           </div>
         );
@@ -725,6 +744,14 @@ export default function WizardPublication({ userId }: { userId: string }) {
                   <>
                     <span style={{ color: "#9DB8AD" }}>Équipements</span>
                     <span className="font-medium" style={{ color: "#1f2a24" }}>{donnees.equipements.join(", ")}</span>
+                  </>
+                )}
+                {donnees.composition.length > 0 && (
+                  <>
+                    <span style={{ color: "#9DB8AD" }}>Composition</span>
+                    <span className="font-medium" style={{ color: "#1f2a24" }}>
+                      {donnees.composition.length} niveau{donnees.composition.length > 1 ? "x" : ""} ({donnees.composition.reduce((acc, n) => acc + n.pieces.length, 0)} pièces)
+                    </span>
                   </>
                 )}
               </div>

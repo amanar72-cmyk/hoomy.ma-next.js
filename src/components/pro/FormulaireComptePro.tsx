@@ -11,182 +11,157 @@ type Props = {
   role: string;
 };
 
-export default function FormulaireComptePro({ userId, nomComplet, telephone, email, role }: Props) {
-  const [nom, setNom] = useState(nomComplet);
-  const [tel, setTel] = useState(telephone ?? "");
-  const [chargement, setChargement] = useState(false);
-  const [succes, setSucces] = useState(false);
-  const [erreur, setErreur] = useState<string | null>(null);
+const COULEURS_ROLE: Record<string, { bg: string; color: string }> = {
+  admin:  { bg: "#FEF3C7", color: "#92400E" },
+  agent:  { bg: "#D1FAE5", color: "#065F46" },
+  agence: { bg: "#DBEAFE", color: "#1E40AF" },
+};
 
-  // Changement de mot de passe
-  const [mdpActuel, setMdpActuel] = useState("");
-  const [mdpNouveau, setMdpNouveau] = useState("");
-  const [mdpConfirm, setMdpConfirm] = useState("");
-  const [chargementMdp, setChargementMdp] = useState(false);
-  const [succesMdp, setSuccesMdp] = useState(false);
-  const [erreurMdp, setErreurMdp] = useState<string | null>(null);
+function ChampLecture({ label, valeur, note }: { label: string; valeur: string; note?: string }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1.5" style={{ color: "#9DB8AD" }}>
+        {label}
+      </label>
+      <div
+        className="w-full border rounded-xl px-4 py-2.5 text-sm"
+        style={{ borderColor: "#E0DAC8", color: "#6B7280", background: "#F9F7F4", cursor: "default" }}
+      >
+        {valeur || <span style={{ color: "#C4D8CE" }}>—</span>}
+      </div>
+      {note && <p className="text-xs mt-1" style={{ color: "#C4D8CE" }}>{note}</p>}
+    </div>
+  );
+}
 
-  const inp = { borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" };
+export default function FormulaireComptePro({ nomComplet, telephone, email, role }: Props) {
+  const [envoi,    setEnvoi]    = useState<"idle" | "chargement" | "succes" | "erreur">("idle");
+  const [erreur,   setErreur]   = useState<string | null>(null);
 
-  async function enregistrer() {
-    if (!nom.trim()) { setErreur("Le nom est requis."); return; }
-    setErreur(null);
-    setSucces(false);
-    setChargement(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("profils")
-        .update({ nom_complet: nom.trim(), telephone: tel.trim() || null })
-        .eq("id", userId);
-      if (error) { setErreur(error.message); return; }
-      setSucces(true);
-    } finally {
-      setChargement(false);
-    }
-  }
-
-  async function changerMotDePasse() {
-    setErreurMdp(null);
-    setSuccesMdp(false);
-    if (!mdpNouveau || mdpNouveau.length < 6) { setErreurMdp("Mot de passe trop court (min. 6 caractères)."); return; }
-    if (mdpNouveau !== mdpConfirm) { setErreurMdp("Les mots de passe ne correspondent pas."); return; }
-    setChargementMdp(true);
-    try {
-      const supabase = createClient();
-      // Vérifier l'ancien mdp en se reconnectant
-      const { error: errConnexion } = await supabase.auth.signInWithPassword({ email, password: mdpActuel });
-      if (errConnexion) { setErreurMdp("Mot de passe actuel incorrect."); return; }
-      const { error } = await supabase.auth.updateUser({ password: mdpNouveau });
-      if (error) { setErreurMdp(error.message); return; }
-      setSuccesMdp(true);
-      setMdpActuel(""); setMdpNouveau(""); setMdpConfirm("");
-    } finally {
-      setChargementMdp(false);
-    }
-  }
-
-  const COULEURS_ROLE: Record<string, { bg: string; color: string }> = {
-    admin: { bg: "#FEF3C7", color: "#92400E" },
-    agent: { bg: "#D1FAE5", color: "#065F46" },
-    agence: { bg: "#DBEAFE", color: "#1E40AF" },
-  };
   const couleurRole = COULEURS_ROLE[role] ?? { bg: "#F3F4F6", color: "#6B7280" };
+
+  async function demanderReset() {
+    setEnvoi("chargement");
+    setErreur(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/definir-mot-de-passe`,
+      });
+      if (error) { setErreur(error.message); setEnvoi("erreur"); }
+      else        { setEnvoi("succes"); }
+    } catch {
+      setErreur("Une erreur inattendue est survenue.");
+      setEnvoi("erreur");
+    }
+  }
 
   return (
     <div className="max-w-2xl flex flex-col gap-6">
 
-      {/* Profil */}
-      <section className="rounded-2xl p-6 border"
-        style={{ background: "#fff", borderColor: "#F0EDE5", boxShadow: "0 2px 16px rgba(15,76,58,0.05)" }}>
-        <h2 className="text-base font-medium mb-5" style={{ color: "#0F4C3A" }}>
+      {/* ── Informations personnelles (lecture seule) ───────────────────── */}
+      <section
+        className="rounded-2xl p-6 border"
+        style={{ background: "#fff", borderColor: "#F0EDE5", boxShadow: "0 2px 16px rgba(15,76,58,0.05)" }}
+      >
+        <h2 className="text-base font-medium mb-1" style={{ color: "#0F4C3A" }}>
           Informations personnelles
         </h2>
+        <p className="text-xs mb-5" style={{ color: "#C4D8CE" }}>
+          Ces informations sont gérées par l&apos;administration. Contactez-nous pour toute modification.
+        </p>
 
-        {succes && (
-          <div className="mb-4 px-4 py-3 rounded-lg text-sm border"
-            style={{ background: "#D1FAE5", color: "#065F46", borderColor: "#6EE7B7" }}>
-            Profil enregistré avec succès.
+        <div className="flex flex-col gap-4">
+          <ChampLecture label="Nom complet" valeur={nomComplet} />
+          <ChampLecture
+            label="Adresse email professionnelle"
+            valeur={email}
+            note="Non modifiable via cette interface."
+          />
+          <ChampLecture
+            label="Téléphone"
+            valeur={telephone}
+            note="Non modifiable via cette interface."
+          />
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "#9DB8AD" }}>Rôle</label>
+            <span
+              className="inline-flex items-center text-xs px-3 py-1.5 rounded-full font-medium capitalize"
+              style={{ background: couleurRole.bg, color: couleurRole.color }}
+            >
+              {role}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Sécurité — reset par email ──────────────────────────────────── */}
+      <section
+        className="rounded-2xl p-6 border"
+        style={{ background: "#fff", borderColor: "#F0EDE5", boxShadow: "0 2px 16px rgba(15,76,58,0.05)" }}
+      >
+        <h2 className="text-base font-medium mb-1" style={{ color: "#0F4C3A" }}>Sécurité</h2>
+        <p className="text-sm mb-5" style={{ color: "#9DB8AD" }}>
+          Pour changer votre mot de passe, nous vous envoyons un lien sécurisé à votre adresse email.
+        </p>
+
+        {envoi === "succes" && (
+          <div
+            className="mb-4 px-4 py-3 rounded-xl text-sm flex items-start gap-2"
+            style={{ background: "#D1FAE5", color: "#065F46" }}
+          >
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.6a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.6a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z" />
+            </svg>
+            <div>
+              <p className="font-medium">Email envoyé !</p>
+              <p className="text-xs mt-0.5" style={{ color: "#065F46", opacity: 0.8 }}>
+                Vérifiez votre boîte mail ({email}) et cliquez sur le lien pour définir votre nouveau mot de passe.
+              </p>
+            </div>
           </div>
         )}
-        {erreur && (
-          <div className="mb-4 px-4 py-3 rounded-lg text-sm border"
-            style={{ background: "#FEF2F2", color: "#991B1B", borderColor: "#FECACA" }}>
+
+        {(envoi === "erreur") && erreur && (
+          <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: "#FEE2E2", color: "#991B1B" }}>
             {erreur}
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#555" }}>Nom complet</label>
-            <input type="text" value={nom} onChange={(e) => setNom(e.target.value)}
-              className="w-full border rounded-xl px-4 py-2.5 text-sm" style={inp} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#555" }}>Adresse email</label>
-            <input type="email" value={email} disabled
-              className="w-full border rounded-xl px-4 py-2.5 text-sm opacity-60" style={inp} />
-            <p className="text-xs mt-1" style={{ color: "#9DB8AD" }}>L'email ne peut pas être modifié ici.</p>
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#555" }}>Téléphone</label>
-            <input type="tel" value={tel} onChange={(e) => setTel(e.target.value)}
-              placeholder="+212 6 XX XX XX XX"
-              className="w-full border rounded-xl px-4 py-2.5 text-sm" style={inp} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#555" }}>Rôle</label>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center text-xs px-3 py-1 rounded-full font-medium capitalize"
-                style={{ background: couleurRole.bg, color: couleurRole.color }}>
-                {role}
-              </span>
-              <span className="text-xs" style={{ color: "#9DB8AD" }}>Modification via l'administration.</span>
+        <div
+          className="flex items-center justify-between p-4 rounded-xl mb-5"
+          style={{ background: "#F9F7F4", border: "1px solid #F0EDE5" }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "#E8F5ED" }}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#0F4C3A" strokeWidth="1.8">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium" style={{ color: "#1f2a24" }}>Mot de passe</p>
+              <p className="text-xs" style={{ color: "#9DB8AD" }}>Lien envoyé à {email}</p>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end mt-6">
-          <button type="button" onClick={enregistrer} disabled={chargement}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold cursor-pointer disabled:opacity-60"
-            style={{ background: "#0F4C3A", color: "#fff" }}>
-            {chargement ? "Enregistrement…" : "Enregistrer"}
-          </button>
-        </div>
-      </section>
-
-      {/* Préférences (placeholder) */}
-      <section className="rounded-2xl p-6 border"
-        style={{ background: "#fff", borderColor: "#F0EDE5", boxShadow: "0 2px 16px rgba(15,76,58,0.05)" }}>
-        <h2 className="text-base font-medium mb-2" style={{ color: "#0F4C3A" }}>Préférences</h2>
-        <p className="text-sm" style={{ color: "#9DB8AD" }}>
-          Les préférences de notification et d'affichage seront disponibles prochainement.
-        </p>
-      </section>
-
-      {/* Sécurité — changement de mot de passe */}
-      <section className="rounded-2xl p-6 border"
-        style={{ background: "#fff", borderColor: "#F0EDE5", boxShadow: "0 2px 16px rgba(15,76,58,0.05)" }}>
-        <h2 className="text-base font-medium mb-5" style={{ color: "#0F4C3A" }}>Sécurité</h2>
-
-        {succesMdp && (
-          <div className="mb-4 px-4 py-3 rounded-lg text-sm border"
-            style={{ background: "#D1FAE5", color: "#065F46", borderColor: "#6EE7B7" }}>
-            Mot de passe mis à jour avec succès.
-          </div>
-        )}
-        {erreurMdp && (
-          <div className="mb-4 px-4 py-3 rounded-lg text-sm border"
-            style={{ background: "#FEF2F2", color: "#991B1B", borderColor: "#FECACA" }}>
-            {erreurMdp}
-          </div>
-        )}
-
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#555" }}>Mot de passe actuel</label>
-            <input type="password" value={mdpActuel} onChange={(e) => setMdpActuel(e.target.value)}
-              placeholder="••••••••" className="w-full border rounded-xl px-4 py-2.5 text-sm" style={inp} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#555" }}>Nouveau mot de passe</label>
-            <input type="password" value={mdpNouveau} onChange={(e) => setMdpNouveau(e.target.value)}
-              placeholder="••••••••" className="w-full border rounded-xl px-4 py-2.5 text-sm" style={inp} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "#555" }}>Confirmer</label>
-            <input type="password" value={mdpConfirm} onChange={(e) => setMdpConfirm(e.target.value)}
-              placeholder="••••••••" className="w-full border rounded-xl px-4 py-2.5 text-sm" style={inp} />
-          </div>
-        </div>
-
-        <div className="flex justify-end mt-6">
-          <button type="button" onClick={changerMotDePasse} disabled={chargementMdp}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold cursor-pointer disabled:opacity-60"
-            style={{ background: "#D4AF37", color: "#0F4C3A" }}>
-            {chargementMdp ? "Mise à jour…" : "Changer le mot de passe"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={demanderReset}
+          disabled={envoi === "chargement" || envoi === "succes"}
+          className="px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60 transition-opacity hover:opacity-90"
+          style={{ background: "#D4AF37", color: "#0F4C3A" }}
+        >
+          {envoi === "chargement"
+            ? "Envoi en cours…"
+            : envoi === "succes"
+            ? "Email envoyé ✓"
+            : "Demander un lien de réinitialisation"}
+        </button>
       </section>
     </div>
   );

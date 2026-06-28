@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import FormulaireEditionBien from "@/components/admin/FormulaireEditionBien";
 import { affecterBienAgent } from "@/app/admin/actions";
+import PhotoGalerie from "@/components/ui/PhotoGalerie";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -181,19 +182,7 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
 
           {/* Photos */}
           {photos.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {photos.map((url, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={i}
-                  src={url}
-                  alt={`Photo ${i + 1}`}
-                  className="rounded-xl object-cover flex-shrink-0"
-                  style={{ height: 160, width: "auto", maxWidth: 260 }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-              ))}
-            </div>
+            <PhotoGalerie photos={photos} hauteur={160} largeurMax={260} classeImage="rounded-xl" />
           )}
 
           {/* Prix */}

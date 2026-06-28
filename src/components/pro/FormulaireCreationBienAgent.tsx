@@ -6,6 +6,7 @@ import { creerBienAgent, type DonneesBienAgent } from "@/app/pro/biens/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
+import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 
 const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
 const EQUIPEMENTS_LISTE = [
@@ -43,6 +44,7 @@ export default function FormulaireCreationBienAgent() {
   const [chambresSaisies, setChambresSaisies] = useState("0");
   const [sallesBainSaisies, setSallesBainSaisies] = useState("0");
   const [quartierSaisi, setQuartierSaisi] = useState("");
+  const [composition, setComposition] = useState<NiveauBien[]>([]);
 
   function toggleEquipement(eq: string) {
     setEquipementsChoisis((prev) =>
@@ -70,6 +72,7 @@ export default function FormulaireCreationBienAgent() {
       salles_bain: Number(sallesBainSaisies || fd.get("salles_bain")),
       surface: Number(surfaceSaisie || fd.get("surface")),
       equipements: equipementsChoisis.length > 0 ? equipementsChoisis : null,
+      composition: composition.length > 0 ? composition : null,
       latitude,
       longitude,
     };
@@ -335,6 +338,20 @@ export default function FormulaireCreationBienAgent() {
             );
           })}
         </div>
+      </div>
+
+      {/* ── Composition par niveau ───────────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-6"
+        style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
+      >
+        <h2 className="text-base font-semibold mb-1" style={{ color: "#0F4C3A" }}>
+          Composition du bien
+        </h2>
+        <p className="text-xs mb-4" style={{ color: "#9DB8AD" }}>
+          Optionnel — décrivez le bien niveau par niveau (pièces, quantités).
+        </p>
+        <CompositionNiveaux valeur={composition} onChange={setComposition} />
       </div>
 
       {/* ── Erreur + Soumettre ────────────────────────────────────────────── */}

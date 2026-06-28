@@ -155,7 +155,7 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: 
             </Link>
 
             <Link
-              href="/favoris"
+              href="/mon-compte/favoris"
               onClick={() => setOuvert(false)}
               style={itemMenuStyle}
               className="hover:bg-gray-50 flex"
@@ -167,7 +167,7 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: 
             </Link>
 
             <Link
-              href="/mes-annonces"
+              href="/mon-compte/mes-biens"
               onClick={() => setOuvert(false)}
               style={itemMenuStyle}
               className="hover:bg-gray-50 flex"
@@ -180,7 +180,7 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: 
             </Link>
 
             <Link
-              href="/parametres"
+              href="/mon-compte/parametres"
               onClick={() => setOuvert(false)}
               style={itemMenuStyle}
               className="hover:bg-gray-50 flex"

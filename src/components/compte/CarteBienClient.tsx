@@ -21,6 +21,12 @@ export type BienClient = {
   verifie: boolean;
 };
 
+export type InfoAgent = {
+  nom: string;
+  telephone: string | null;
+  email: string | null;
+};
+
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
 function formaterPrix(prix: number, transaction: string) {
@@ -31,9 +37,7 @@ function formaterPrix(prix: number, transaction: string) {
 function formaterDate(d: string | null) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("fr-MA", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
+    day: "2-digit", month: "long", year: "numeric",
   });
 }
 
@@ -46,7 +50,6 @@ const ETAPES = [
   { label: "Publié",         detail: "Votre annonce est en ligne" },
 ];
 
-// Mappe un statut à l'étape accomplie (0-indexé, -1 = pas encore soumis)
 const ETAPE_MAP: Record<string, number> = {
   en_attente_affectation: 0,
   dans_la_file:           1,
@@ -56,11 +59,14 @@ const ETAPE_MAP: Record<string, number> = {
 };
 
 const STATUTS_REFUS = ["rejete", "suspendu", "archive"];
-const STATUTS_REFUS_LABELS: Record<string, { label: string; couleur: string; icone: string }> = {
-  rejete:   { label: "Votre annonce a été refusée.",  couleur: "#FEE2E2", icone: "✗" },
-  suspendu: { label: "Votre annonce est suspendue.",  couleur: "#FEF3C7", icone: "⚠" },
-  archive:  { label: "Votre annonce a été archivée.", couleur: "#F3F4F6", icone: "◷" },
+const STATUTS_REFUS_LABELS: Record<string, { label: string; bg: string; icone: string }> = {
+  rejete:   { label: "Votre annonce a été refusée.",  bg: "#FEE2E2", icone: "✗" },
+  suspendu: { label: "Votre annonce est suspendue.",  bg: "#FEF3C7", icone: "⚠" },
+  archive:  { label: "Votre annonce a été archivée.", bg: "#F3F4F6", icone: "◷" },
 };
+
+// Statuts où une affectation est en cours (pas encore d'agent)
+const STATUTS_AFFECTATION_EN_COURS = ["en_attente_affectation", "dans_la_file"];
 
 function Stepper({ statut }: { statut: string | null }) {
   const s = statut ?? "brouillon";
@@ -70,7 +76,7 @@ function Stepper({ statut }: { statut: string | null }) {
     return (
       <div
         className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm"
-        style={{ background: info.couleur, color: "#374151" }}
+        style={{ background: info.bg, color: "#374151" }}
       >
         <span className="font-bold text-base">{info.icone}</span>
         <span>{info.label}</span>
@@ -88,13 +94,10 @@ function Stepper({ statut }: { statut: string | null }) {
       {ETAPES.map((etape, i) => {
         const estFait   = i < etapeActuelle;
         const estActuel = i === etapeActuelle;
-        const estFutur  = i > etapeActuelle;
 
         return (
           <div key={i} className="flex items-center flex-1 min-w-0">
-            {/* Étape */}
             <div className="flex flex-col items-center flex-shrink-0" style={{ minWidth: 48 }}>
-              {/* Cercle */}
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
                 style={{
@@ -107,11 +110,8 @@ function Stepper({ statut }: { statut: string | null }) {
                   <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
-                ) : (
-                  i + 1
-                )}
+                ) : i + 1}
               </div>
-              {/* Label */}
               <span
                 className="text-xs mt-1 text-center leading-tight hidden sm:block"
                 style={{
@@ -123,8 +123,6 @@ function Stepper({ statut }: { statut: string | null }) {
                 {etape.label}
               </span>
             </div>
-
-            {/* Connecteur */}
             {i < ETAPES.length - 1 && (
               <div
                 className="flex-1 h-0.5 mx-1 mt-[-14px]"
@@ -142,29 +140,26 @@ function Stepper({ statut }: { statut: string | null }) {
 
 export default function CarteBienClient({
   bien,
-  agentNom,
+  agent,
 }: {
   bien: BienClient;
-  agentNom: string | null;
+  agent: InfoAgent | null;
 }) {
-  const photo = bien.photos?.[0] ?? null;
-  const estBrouillon = bien.statut === "brouillon";
-  const estPublie    = bien.statut === "finalise" || bien.statut === "transacte";
-  const aAgent       = (bien.statut === "affecte" || bien.statut === "finalise" || bien.statut === "transacte") && agentNom;
-  const lienAnnonce  = estPublie && bien.slug
+  const photo          = bien.photos?.[0] ?? null;
+  const estBrouillon   = bien.statut === "brouillon";
+  const estPublie      = bien.statut === "finalise" || bien.statut === "transacte";
+  const enAttente      = STATUTS_AFFECTATION_EN_COURS.includes(bien.statut ?? "");
+  const agentVisible   = !!agent;
+  const lienAnnonce    = estPublie && bien.slug
     ? `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug}`
     : null;
 
   return (
     <article
       className="rounded-2xl overflow-hidden"
-      style={{
-        background: "#fff",
-        border: "1px solid #F0EDE5",
-        boxShadow: "0 2px 12px rgba(15,76,58,0.06)",
-      }}
+      style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
     >
-      {/* ── Corps principal ──────────────────────────────────────────────── */}
+      {/* ── Corps principal ───────────────────────────────────────────────── */}
       <div className="flex gap-4 p-4 pb-3">
 
         {/* Photo */}
@@ -214,37 +209,89 @@ export default function CarteBienClient({
             {bien.verifie && (
               <span className="text-xs font-medium" style={{ color: "#146C43" }}>✓ Vérifié</span>
             )}
-            {/* Stats placeholder */}
-            <span className="text-xs" style={{ color: "#E8E2D2" }}>· 0 vues · 0 contacts</span>
           </div>
         </div>
       </div>
 
-      {/* ── Conseiller ───────────────────────────────────────────────────── */}
-      {aAgent && (
+      {/* ── Badge "Affectation en cours" ──────────────────────────────────── */}
+      {enAttente && (
         <div
-          className="mx-4 mb-3 px-3 py-2 rounded-xl flex items-center gap-2"
-          style={{ background: "#F0FAF4", border: "1px solid #D1FAE5" }}
+          className="mx-4 mb-3 px-3 py-2 rounded-xl flex items-center gap-2.5"
+          style={{ background: "#FFFBEB", border: "1px solid #FDE68A" }}
         >
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-            style={{ background: "#0F4C3A", color: "#D4AF37" }}
-          >
-            {(agentNom ?? "?")[0].toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold truncate" style={{ color: "#0F4C3A" }}>
-              Votre conseiller : {agentNom}
+          <span className="relative flex-shrink-0">
+            <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full opacity-60" style={{ background: "#D97706" }} />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: "#F59E0B" }} />
+          </span>
+          <div>
+            <p className="text-xs font-semibold" style={{ color: "#92400E" }}>Affectation en cours</p>
+            <p className="text-xs" style={{ color: "#B45309" }}>
+              Notre équipe recherche le conseiller idéal pour votre bien.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Fiche conseiller (une fois affecté) ──────────────────────────── */}
+      {agentVisible && (
+        <div
+          className="mx-4 mb-3 rounded-xl overflow-hidden"
+          style={{ border: "1px solid #D1FAE5" }}
+        >
+          {/* En-tête */}
+          <div
+            className="flex items-center gap-2.5 px-3 py-2.5"
+            style={{ background: "#F0FAF4", borderBottom: "1px solid #D1FAE5" }}
+          >
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+              style={{ background: "#0F4C3A", color: "#D4AF37" }}
+            >
+              {agent.nom[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold" style={{ color: "#0F4C3A" }}>
+                Votre conseiller
+              </p>
+              <p className="text-sm font-bold truncate" style={{ color: "#1f2a24" }}>
+                {agent.nom}
+              </p>
+            </div>
             {bien.date_affectation && (
-              <p className="text-xs" style={{ color: "#9DB8AD" }}>
-                Affecté le {formaterDate(bien.date_affectation)}
+              <p className="text-xs flex-shrink-0" style={{ color: "#9DB8AD" }}>
+                depuis le {formaterDate(bien.date_affectation)}
               </p>
             )}
           </div>
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#146C43" strokeWidth="2">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.6a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.6a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z" />
-          </svg>
+
+          {/* Contacts */}
+          <div className="px-3 py-2 flex flex-col gap-1.5" style={{ background: "#fff" }}>
+            {agent.telephone && (
+              <a
+                href={`tel:${agent.telephone}`}
+                className="flex items-center gap-2 text-xs hover:opacity-70 transition-opacity"
+                style={{ color: "#0F4C3A", textDecoration: "none" }}
+              >
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.6a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.6a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z" />
+                </svg>
+                <span className="font-medium">{agent.telephone}</span>
+              </a>
+            )}
+            {agent.email && (
+              <a
+                href={`mailto:${agent.email}`}
+                className="flex items-center gap-2 text-xs hover:opacity-70 transition-opacity"
+                style={{ color: "#0F4C3A", textDecoration: "none" }}
+              >
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+                <span className="font-medium">{agent.email}</span>
+              </a>
+            )}
+          </div>
         </div>
       )}
 
@@ -255,10 +302,7 @@ export default function CarteBienClient({
 
       {/* ── Actions ──────────────────────────────────────────────────────── */}
       {(lienAnnonce || estBrouillon) && (
-        <div
-          className="px-4 py-3 flex gap-2 flex-wrap"
-          style={{ borderTop: "1px solid #F8F5EE" }}
-        >
+        <div className="px-4 py-3 flex gap-2 flex-wrap" style={{ borderTop: "1px solid #F8F5EE" }}>
           {lienAnnonce && (
             <Link
               href={lienAnnonce}

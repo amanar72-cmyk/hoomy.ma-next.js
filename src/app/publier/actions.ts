@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { NiveauBien } from "@/components/partage/CompositionNiveaux";
 
 function normaliserPourSlug(s: string): string {
   return s
@@ -33,6 +34,7 @@ export type DonneesBienClient = {
   chambres: number;
   salles_bain: number;
   equipements: string[];
+  composition: NiveauBien[];
   photos: string[];
   titre: string;
   description: string;
@@ -68,6 +70,7 @@ export async function publierBien(donnees: DonneesBienClient): Promise<{ id: str
       salles_bain: donnees.salles_bain,
       surface: donnees.surface,
       equipements: donnees.equipements.length > 0 ? donnees.equipements : null,
+      composition: donnees.composition.length > 0 ? donnees.composition : null,
       photos: donnees.photos.length > 0 ? donnees.photos : null,
       verifie: false,
       proprietaire_id: user.id,

@@ -12,6 +12,7 @@ import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte"
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import { appliquerWatermark } from "@/lib/images/watermark";
+import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,6 +30,7 @@ export type BienEditable = {
   salles_bain: number;
   surface: number;
   equipements: string[] | null;
+  composition: NiveauBien[] | null;
   photos: string[] | null;
   statut: string | null;
   latitude: number | null;
@@ -95,6 +97,7 @@ export default function FormulaireEditionBienAgent({
   const [sallesBain, setSallesBain] = useState(bien.salles_bain.toString());
   const [surface, setSurface] = useState(bien.surface.toString());
   const [equipements, setEquipements] = useState<string[]>(bien.equipements ?? []);
+  const [composition, setComposition] = useState<NiveauBien[]>(bien.composition ?? []);
   const [photos, setPhotos] = useState<string[]>(bien.photos ?? []);
   const [latitude, setLatitude] = useState<number | null>(bien.latitude ?? null);
   const [longitude, setLongitude] = useState<number | null>(bien.longitude ?? null);
@@ -200,6 +203,7 @@ export default function FormulaireEditionBienAgent({
       salles_bain: Math.max(0, parseInt(sallesBain) || 0),
       surface: Math.max(0, parseFloat(surface) || 0),
       equipements: equipements.length > 0 ? equipements : null,
+      composition: composition.length > 0 ? composition : null,
       photos: photos.length > 0 ? photos : null,
       latitude,
       longitude,
@@ -513,6 +517,14 @@ export default function FormulaireEditionBienAgent({
             {equipements.length} équipement{equipements.length > 1 ? "s" : ""} sélectionné{equipements.length > 1 ? "s" : ""}
           </p>
         )}
+      </Section>
+
+      {/* ── Composition par niveau ──────────────────────────────────────────── */}
+      <Section titre="Composition du bien">
+        <p className="text-xs mb-4" style={{ color: "#9DB8AD" }}>
+          Optionnel — décrivez le bien niveau par niveau (pièces, quantités).
+        </p>
+        <CompositionNiveaux valeur={composition} onChange={setComposition} />
       </Section>
 
       {/* ── Barre d'actions ──────────────────────────────────────────────────── */}

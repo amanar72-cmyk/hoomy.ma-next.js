@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import CarteBienClient, { type BienClient } from "@/components/compte/CarteBienClient";
+import CarteBienClient, { type BienClient, type InfoAgent } from "@/components/compte/CarteBienClient";
 import EtatVide from "@/components/compte/EtatVide";
 
 // ── Définition des onglets ────────────────────────────────────────────────────
@@ -69,19 +69,26 @@ export default async function PageMesBiens({
 
   const tousLesBiens = (biensRaw ?? []) as unknown as BienClient[];
 
-  // ── Fetch noms des agents pour les biens concernés ────────────────────────
+  // ── Fetch infos complètes des agents (nom, téléphone, email) ─────────────
   const agentIds = [
     ...new Set(tousLesBiens.map((b) => b.agent_id).filter(Boolean)),
   ] as string[];
 
-  let agentsMap: Record<string, string> = {};
+  let agentsMap: Record<string, InfoAgent> = {};
   if (agentIds.length > 0) {
     const { data: agents } = await supabase
       .from("profils")
-      .select("id, nom_complet")
+      .select("id, nom_complet, telephone, email")
       .in("id", agentIds);
     agentsMap = Object.fromEntries(
-      (agents ?? []).map((a) => [a.id, a.nom_complet ?? "Conseiller"])
+      (agents ?? []).map((a) => [
+        a.id,
+        {
+          nom:       a.nom_complet ?? "Conseiller",
+          telephone: a.telephone   ?? null,
+          email:     a.email       ?? null,
+        },
+      ])
     );
   }
 
@@ -205,7 +212,7 @@ export default async function PageMesBiens({
             <CarteBienClient
               key={b.id}
               bien={b}
-              agentNom={b.agent_id ? (agentsMap[b.agent_id] ?? null) : null}
+              agent={b.agent_id ? (agentsMap[b.agent_id] ?? null) : null}
             />
           ))}
         </div>

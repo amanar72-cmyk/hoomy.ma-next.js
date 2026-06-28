@@ -2,10 +2,20 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SidebarPro from "@/components/pro/SidebarPro";
 import HeaderPro from "@/components/pro/HeaderPro";
+import PwaInstaller from "@/components/pro/PwaInstaller";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Espace Pro — HOOMY.MA",
+  title: "Espace Pro — HOOMY PRO",
+  manifest: "/manifest-pro.json",
+  appleWebApp: {
+    capable: true,
+    title: "HOOMY PRO",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    apple: [{ url: "/icons/pro-180", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 const ROLES_AUTORISES = ["agent", "agence", "admin"];
@@ -22,7 +32,6 @@ export default async function ProLayout({ children }: { children: React.ReactNod
     .eq("id", user.id)
     .single();
 
-  // Rôles simples non autorisés
   if (!profil || !ROLES_AUTORISES.includes(profil.role)) {
     redirect("/?message=acces-reserve-pro");
   }
@@ -46,6 +55,9 @@ export default async function ProLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      {/* Bandeau d'installation PWA — visible uniquement sur Android/Chrome */}
+      <PwaInstaller />
     </div>
   );
 }

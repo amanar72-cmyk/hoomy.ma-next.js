@@ -17,6 +17,7 @@ export type Bien = {
   longitude: number | null;
   equipements: string[] | null;
   photos: string[] | null;
+  composition: import("@/components/partage/CompositionNiveaux").NiveauBien[] | null;
   verifie: boolean;
   cree_le: string;
 };

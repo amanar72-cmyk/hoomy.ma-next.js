@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import FormulaireEditionBienAgent, { type BienEditable } from "@/components/pro/FormulaireEditionBienAgent";
+import PhotoGalerie from "@/components/ui/PhotoGalerie";
 
 export const metadata: Metadata = {
   title: "Fiche bien — Espace Pro HOOMY.MA",
@@ -36,7 +37,7 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
     .from("biens")
     .select(
       "id, reference, slug, titre, description, type, transaction, prix, ville, quartier, " +
-      "chambres, salles_bain, surface, equipements, photos, statut, agent_id, latitude, longitude, cree_le, verifie"
+      "chambres, salles_bain, surface, equipements, composition, photos, statut, agent_id, latitude, longitude, cree_le, verifie"
     )
     .eq("id", id)
     .single();
@@ -223,18 +224,8 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
 
       {/* Photos */}
       {photos.length > 0 && (
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
-          {photos.map((url, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={i}
-              src={url}
-              alt={`Photo ${i + 1}`}
-              className="rounded-2xl object-cover flex-shrink-0"
-              style={{ height: 180, width: "auto", maxWidth: 280 }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-          ))}
+        <div className="mb-6">
+          <PhotoGalerie photos={photos} hauteur={180} largeurMax={280} classeImage="rounded-2xl" />
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Bien } from "@/lib/types";
+import type { NiveauBien } from "@/components/partage/CompositionNiveaux";
 import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
 
 // ── Emoji dynamique selon le type de bien ─────────────────────────────────────
@@ -72,8 +73,89 @@ function emojiEquipement(nom: string): string {
 
 // ── Composant ─────────────────────────────────────────────────────────────────
 
+const EMOJI_PIECE: Record<string, string> = {
+  "salon":                    "🛋️",
+  "salle à manger":           "🍽️",
+  "chambre":                  "🛏️",
+  "suite parentale":          "🛏️",
+  "cuisine":                  "🍳",
+  "salle de bain":            "🚿",
+  "toilette séparée (wc)":    "🚽",
+  "balcon":                   "🌿",
+  "terrasse":                 "☀️",
+  "bureau":                   "💼",
+  "buanderie":                "🧺",
+  "dressing":                 "👗",
+  "garage":                   "🚗",
+  "cave":                     "📦",
+  "jardin":                   "🌳",
+  "hall/entrée":              "🚪",
+  "débarras":                 "📦",
+};
+
+function emojiPiece(type: string): string {
+  return EMOJI_PIECE[type.toLowerCase()] ?? "🏠";
+}
+
+function SectionComposition({ composition }: { composition: NiveauBien[] }) {
+  if (composition.length === 0) return null;
+  return (
+    <section className="mb-12">
+      <h2
+        className="text-xl font-normal mb-6"
+        style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
+      >
+        Composition du bien
+      </h2>
+      <div className="flex flex-col gap-4">
+        {composition.map((niveau, i) => (
+          <div
+            key={i}
+            className="rounded-2xl overflow-hidden"
+            style={{ border: "1px solid #EDE7D7" }}
+          >
+            {/* En-tête niveau */}
+            <div
+              className="px-5 py-3"
+              style={{ background: "var(--fond-secondaire)", borderBottom: "1px solid #EDE7D7" }}
+            >
+              <p className="text-sm font-semibold" style={{ color: "var(--primaire)" }}>
+                {niveau.niveau}
+              </p>
+            </div>
+            {/* Pièces */}
+            {niveau.pieces.length > 0 ? (
+              <div className="px-5 py-4 flex flex-wrap gap-3">
+                {niveau.pieces.map((piece, j) => (
+                  <div
+                    key={j}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                    style={{ background: "#fff", border: "1px solid #F0EDE5" }}
+                  >
+                    <span className="text-lg leading-none">{emojiPiece(piece.type)}</span>
+                    <div>
+                      <p className="text-sm font-medium leading-none" style={{ color: "var(--primaire)" }}>
+                        {piece.nombre > 1 ? `${piece.nombre} ` : ""}{piece.type}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="px-5 py-3 text-sm" style={{ color: "var(--texte-tertiaire)" }}>
+                Aucune pièce renseignée
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function InfosBien({ bien }: { bien: Bien }) {
   const equipements = (bien.equipements ?? []) as string[];
+  const composition = (bien.composition ?? []) as NiveauBien[];
   const estVente = bien.transaction !== "location";
   const frais = estVente ? calculerFraisAcquisition(bien.prix) : null;
 
@@ -219,6 +301,9 @@ export default function InfosBien({ bien }: { bien: Bien }) {
           </div>
         </section>
       )}
+
+      {/* ── Composition par niveau ────────────────────────────────────── */}
+      {composition.length > 0 && <SectionComposition composition={composition} />}
 
       {/* ── Estimation des frais — vente uniquement ───────────────────── */}
       {estVente && frais && (
