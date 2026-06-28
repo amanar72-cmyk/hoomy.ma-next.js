@@ -90,23 +90,24 @@ export default function BoutonNotificationsPro() {
     }
   }
 
-  if (etat === "non_supporte") return null;
-
   const actif = etat === "actif";
   const enCours = etat === "chargement";
   const refuse = etat === "refuse";
+  const nonSupporte = etat === "non_supporte";
 
   const titre = actif
     ? "Notifications activées — cliquer pour désactiver"
-    : refuse
-      ? "Notifications bloquées par le navigateur"
-      : "Activer les notifications push";
+    : nonSupporte
+      ? "Notifications non disponibles — installez l'app sur l'écran d'accueil"
+      : refuse
+        ? "Notifications bloquées par le navigateur"
+        : "Activer les notifications push";
 
   return (
     <button
       type="button"
       title={titre}
-      disabled={enCours || refuse}
+      disabled={enCours || refuse || nonSupporte}
       onClick={actif ? desactiver : activer}
       className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       style={{
