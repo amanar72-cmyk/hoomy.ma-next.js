@@ -84,6 +84,15 @@ function IcGraphique() {
   );
 }
 
+function IcLocalisation() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  );
+}
+
 const MODES: { id: Mode; label: string; desc: string; Icone: () => React.ReactElement }[] = [
   { id: "acheter", label: "Acheter",  desc: "Appartements, villas, riads…",    Icone: IcMaison },
   { id: "louer",   label: "Louer",    desc: "Location longue ou courte durée", Icone: IcCle },
@@ -96,15 +105,20 @@ const MODES: { id: Mode; label: string; desc: string; Icone: () => React.ReactEl
 export default function HeroSection() {
   const router = useRouter();
 
-  const [mode, setMode] = useState<Mode>("acheter");
-  const [ville, setVille] = useState("");
+  // ── État partagé mobile + desktop ──────────────────────────────────────────
+  const [mode, setMode]                     = useState<Mode>("acheter");
+  const [ville, setVille]                   = useState("");
   const [quartiersChoisis, setQuartiersChoisis] = useState<string[]>([]);
   const [dropdownOuvert, setDropdownOuvert] = useState(false);
-  const [type, setType] = useState("");
-  const [budgetIdx, setBudgetIdx] = useState(0);
-  const [quartiers, setQuartiers] = useState<string[]>([]);
-  const [chargeQ, setChargeQ] = useState(false);
+  const [type, setType]                     = useState("");
+  const [budgetIdx, setBudgetIdx]           = useState(0);
+  const [quartiers, setQuartiers]           = useState<string[]>([]);
+  const [chargeQ, setChargeQ]               = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // ── État propre à la version mobile ────────────────────────────────────────
+  const [filtresMobileOuverts, setFiltresMobileOuverts] = useState(false);
+  const [chambresMin, setChambresMin]                   = useState(0);
 
   // ── Cascade ville → quartiers ────────────────────────────────────────────────
   useEffect(() => {
@@ -138,7 +152,7 @@ export default function HeroSection() {
     return () => { annule = true; };
   }, [ville]);
 
-  // ── Fermer le dropdown sur clic extérieur ─────────────────────────────────
+  // ── Fermer le dropdown secteur sur clic extérieur ─────────────────────────
   useEffect(() => {
     if (!dropdownOuvert) return;
     function fermer(e: MouseEvent) {
@@ -164,13 +178,14 @@ export default function HeroSection() {
     if (m === "estimer") router.push("/estimer");
   }
 
-  // ── Soumission de la recherche ────────────────────────────────────────────────
+  // ── Soumission de la recherche (mobile + desktop partagent cette fonction) ────
   function chercher(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
     if (ville) params.set("ville", ville);
     if (quartiersChoisis.length > 0) params.set("quartier", quartiersChoisis.join(","));
     if (type) params.set("type", type);
+    if (chambresMin > 0) params.set("chambresMin", String(chambresMin));
 
     const budgets = mode === "louer" ? BUDGETS_LOCATION : BUDGETS_VENTE;
     const b = budgets[budgetIdx] as { label: string; prixMin?: number; prixMax?: number };
@@ -182,6 +197,7 @@ export default function HeroSection() {
 
   const budgets = mode === "louer" ? BUDGETS_LOCATION : BUDGETS_VENTE;
 
+  // Classes/styles réutilisés pour les selects desktop
   const selectCls =
     "w-full border rounded-xl px-3 py-2.5 text-sm appearance-none focus:outline-none cursor-pointer";
   const selectStyle: React.CSSProperties = {
@@ -189,6 +205,19 @@ export default function HeroSection() {
     color: "var(--texte-corps)",
     background: "var(--fond-secondaire)",
   };
+
+  // Mode actif simplifié pour les onglets mobiles (Acheter / Louer uniquement)
+  const modeActifMobile: "acheter" | "louer" = mode === "louer" ? "louer" : "acheter";
+
+  // Nombre de filtres actifs dans le panneau mobile (pour l'indicateur)
+  const nbFiltresActifs = (type ? 1 : 0) + (budgetIdx > 0 ? 1 : 0) + (chambresMin > 0 ? 1 : 0);
+
+  // Styles boutons toggle (type de bien, chambres)
+  function styleBtnToggle(actif: boolean): React.CSSProperties {
+    return actif
+      ? { background: "var(--primaire)", color: "var(--fond-secondaire)", border: "1.5px solid var(--primaire)" }
+      : { background: "transparent", color: "var(--texte-corps)", border: "1.5px solid var(--bordure)" };
+  }
 
   return (
     <section
@@ -220,8 +249,10 @@ export default function HeroSection() {
           Biens vérifiés dans toutes les grandes villes du Royaume.
         </p>
 
-        {/* ── 4 cartes d'intention ────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        {/* ══════════════════════════════════════════════════════════════════
+            4 cartes d'intention — DESKTOP uniquement (hidden en mobile)
+        ═══════════════════════════════════════════════════════════════════ */}
+        <div className="hidden md:grid md:grid-cols-4 gap-3 mb-5">
           {MODES.map(({ id, label, desc, Icone }) => {
             const actif = mode === id;
             return (
@@ -235,8 +266,7 @@ export default function HeroSection() {
                     ? {
                         background: "rgba(212,175,55,0.13)",
                         border: "1.5px solid rgba(212,175,55,0.65)",
-                        boxShadow:
-                          "0 0 20px rgba(212,175,55,0.18), 0 4px 16px rgba(0,0,0,0.15)",
+                        boxShadow: "0 0 20px rgba(212,175,55,0.18), 0 4px 16px rgba(0,0,0,0.15)",
                       }
                     : {
                         background: "rgba(255,255,255,0.065)",
@@ -254,13 +284,38 @@ export default function HeroSection() {
                   {label}
                 </span>
                 <span
-                  className="text-xs mt-0.5 hidden md:block"
-                  style={{
-                    color: actif ? "rgba(212,175,55,0.75)" : "rgba(255,255,255,0.38)",
-                  }}
+                  className="text-xs mt-0.5"
+                  style={{ color: actif ? "rgba(212,175,55,0.75)" : "rgba(255,255,255,0.38)" }}
                 >
                   {desc}
                 </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            2 onglets Acheter / Louer — MOBILE uniquement (md:hidden)
+        ═══════════════════════════════════════════════════════════════════ */}
+        <div
+          className="flex md:hidden mb-4 p-1 gap-1 rounded-2xl"
+          style={{ background: "rgba(255,255,255,0.1)" }}
+        >
+          {(["acheter", "louer"] as const).map((m) => {
+            const actif = modeActifMobile === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => changerMode(m)}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all duration-200"
+                style={
+                  actif
+                    ? { background: "#D4AF37", color: "#0F4C3A" }
+                    : { background: "transparent", color: "rgba(255,255,255,0.78)" }
+                }
+              >
+                {m === "acheter" ? "Acheter" : "Louer"}
               </button>
             );
           })}
@@ -276,180 +331,358 @@ export default function HeroSection() {
               boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
             }}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
 
-              {/* Ville */}
-              <div>
-                <label
-                  className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                  style={{ color: "var(--texte-tertiaire)" }}
+            {/* ══════════════════════════════════════════════════════════════
+                VERSION MOBILE — champ unique + filtres dépliables
+                (masquée sur md+)
+            ═════════════════════════════════════════════════════════════ */}
+            <div className="md:hidden">
+
+              {/* Champ principal : Ville */}
+              <div className="relative mb-3">
+                <span
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: "var(--primaire)" }}
                 >
-                  Ville
-                </label>
+                  <IcLocalisation />
+                </span>
                 <select
                   value={ville}
                   onChange={(e) => setVille(e.target.value)}
-                  className={selectCls}
-                  style={selectStyle}
+                  className="w-full border rounded-xl appearance-none focus:outline-none cursor-pointer"
+                  style={{
+                    paddingLeft: 40,
+                    paddingRight: 16,
+                    paddingTop: 16,
+                    paddingBottom: 16,
+                    fontSize: 15,
+                    borderColor: "var(--bordure)",
+                    color: ville ? "var(--texte-corps)" : "var(--texte-tertiaire)",
+                    background: "var(--fond-secondaire)",
+                    fontFamily: "var(--font-outfit), sans-serif",
+                  }}
                 >
-                  <option value="">Toutes les villes</option>
+                  <option value="">Ville, quartier...</option>
                   {VILLES.map((v) => (
                     <option key={v} value={v}>{v}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Secteur — multi-sélection avec dropdown */}
-              <div ref={dropdownRef} className="relative">
-                <label
-                  className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                  style={{ color: "var(--texte-tertiaire)" }}
-                >
-                  Secteur
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (ville && !chargeQ && quartiers.length > 0) {
-                      setDropdownOuvert((o) => !o);
-                    }
-                  }}
-                  disabled={!ville || chargeQ}
-                  className={`${selectCls} disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-between gap-1`}
-                  style={selectStyle}
-                >
-                  <span className="truncate text-left">
-                    {!ville
-                      ? "Choisissez d'abord une ville"
-                      : chargeQ
-                      ? "Chargement…"
-                      : quartiers.length === 0
-                      ? "Aucun secteur"
-                      : quartiersChoisis.length === 0
-                      ? "Tous les secteurs"
-                      : quartiersChoisis.length === 1
-                      ? quartiersChoisis[0]
-                      : `${quartiersChoisis.length} secteurs`}
-                  </span>
-                  <svg
-                    width="13" height="13" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0"
-                    style={{ transform: dropdownOuvert ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }}
-                  >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
+              {/* Bouton Rechercher */}
+              <button
+                type="submit"
+                className="w-full rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
+                style={{
+                  paddingTop: 16,
+                  paddingBottom: 16,
+                  background: "#D4AF37",
+                  color: "#0F4C3A",
+                  marginBottom: 10,
+                  fontFamily: "var(--font-outfit), sans-serif",
+                }}
+              >
+                Rechercher
+              </button>
 
-                {/* Dropdown avec checkboxes */}
-                {dropdownOuvert && quartiers.length > 0 && (
-                  <div
-                    className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl overflow-hidden"
-                    style={{
-                      background: "var(--fond-secondaire)",
-                      border: "1px solid var(--bordure)",
-                      boxShadow: "0 8px 28px rgba(0,0,0,0.14)",
-                      maxHeight: 228,
-                      overflowY: "auto",
-                    }}
-                  >
-                    {/* Effacer sélection */}
-                    {quartiersChoisis.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setQuartiersChoisis([])}
-                        className="w-full text-left px-3 py-2 text-xs font-semibold"
-                        style={{
-                          color: "var(--primaire-clair)",
-                          borderBottom: "1px solid var(--bordure-legere)",
-                          background: "var(--fond-accent)",
-                        }}
-                      >
-                        ✕ Effacer la sélection ({quartiersChoisis.length})
-                      </button>
-                    )}
-                    {quartiers.map((q) => {
-                      const coche = quartiersChoisis.includes(q);
-                      return (
-                        <label
-                          key={q}
-                          className="flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors"
-                          style={{
-                            background: coche ? "var(--fond-vert-leger)" : undefined,
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!coche) (e.currentTarget as HTMLLabelElement).style.background = "var(--fond-accent)";
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLLabelElement).style.background = coche ? "var(--fond-vert-leger)" : "";
-                          }}
+              {/* Bouton + Filtres */}
+              <button
+                type="button"
+                onClick={() => setFiltresMobileOuverts((o) => !o)}
+                className="w-full py-2 text-xs text-center transition-opacity hover:opacity-80"
+                style={{
+                  color: "var(--texte-tertiaire)",
+                  letterSpacing: "0.04em",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {filtresMobileOuverts
+                  ? "✕ Fermer les filtres"
+                  : nbFiltresActifs > 0
+                  ? `+ Filtres · ${nbFiltresActifs} actif${nbFiltresActifs > 1 ? "s" : ""}`
+                  : "+ Filtres  —  type · budget · pièces"}
+              </button>
+
+              {/* Panneau de filtres dépliable */}
+              <div
+                style={{
+                  maxHeight: filtresMobileOuverts ? 580 : 0,
+                  overflow: "hidden",
+                  transition: "max-height 0.38s cubic-bezier(0.4,0,0.2,1)",
+                }}
+              >
+                <div
+                  className="space-y-5 pt-4 mt-3"
+                  style={{ borderTop: "1px solid var(--bordure)" }}
+                >
+
+                  {/* Type de bien */}
+                  <div>
+                    <p
+                      className="text-xs uppercase font-semibold mb-2.5 tracking-wide"
+                      style={{ color: "var(--texte-tertiaire)" }}
+                    >
+                      Type de bien
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: "Tous", value: "" },
+                        ...TYPES_BIEN.map((t) => ({ label: t, value: t })),
+                      ].map(({ label, value }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setType(value)}
+                          className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all"
+                          style={styleBtnToggle(type === value)}
                         >
-                          <input
-                            type="checkbox"
-                            checked={coche}
-                            onChange={() => toggleQuartier(q)}
-                            className="w-3.5 h-3.5 rounded cursor-pointer"
-                            style={{ accentColor: "var(--primaire)" }}
-                          />
-                          <span className="text-sm leading-none" style={{ color: "var(--texte-corps)" }}>
-                            {q}
-                          </span>
-                        </label>
-                      );
-                    })}
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Type de bien */}
-              <div>
-                <label
-                  className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                  style={{ color: "var(--texte-tertiaire)" }}
-                >
-                  Type de bien
-                </label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                  className={selectCls}
-                  style={selectStyle}
-                >
-                  <option value="">Tous les types</option>
-                  {TYPES_BIEN.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
+                  {/* Budget */}
+                  <div>
+                    <p
+                      className="text-xs uppercase font-semibold mb-2.5 tracking-wide"
+                      style={{ color: "var(--texte-tertiaire)" }}
+                    >
+                      Budget
+                    </p>
+                    <select
+                      value={budgetIdx}
+                      onChange={(e) => setBudgetIdx(Number(e.target.value))}
+                      className={selectCls}
+                      style={selectStyle}
+                    >
+                      {budgets.map((b, i) => (
+                        <option key={i} value={i}>{b.label}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              {/* Budget */}
-              <div>
-                <label
-                  className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                  style={{ color: "var(--texte-tertiaire)" }}
-                >
-                  Budget
-                </label>
-                <select
-                  value={budgetIdx}
-                  onChange={(e) => setBudgetIdx(Number(e.target.value))}
-                  className={selectCls}
-                  style={selectStyle}
-                >
-                  {budgets.map((b, i) => (
-                    <option key={i} value={i}>{b.label}</option>
-                  ))}
-                </select>
+                  {/* Chambres */}
+                  <div>
+                    <p
+                      className="text-xs uppercase font-semibold mb-2.5 tracking-wide"
+                      style={{ color: "var(--texte-tertiaire)" }}
+                    >
+                      Chambres
+                    </p>
+                    <div className="flex gap-2">
+                      {[
+                        { label: "Toutes", value: 0 },
+                        { label: "1+",     value: 1 },
+                        { label: "2+",     value: 2 },
+                        { label: "3+",     value: 3 },
+                        { label: "4+",     value: 4 },
+                      ].map(({ label, value }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setChambresMin(value)}
+                          className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
+                          style={styleBtnToggle(chambresMin === value)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Bouton "Voir les biens" depuis les filtres */}
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
+                    style={{ background: "var(--primaire)", color: "var(--fond-secondaire)" }}
+                  >
+                    Voir les biens
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Bouton soumettre */}
-            <button
-              type="submit"
-              className="w-full py-3.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 cursor-pointer"
-              style={{ background: "var(--accent)", color: "var(--primaire)" }}
-            >
-              {mode === "neuf" ? "Voir les biens neufs" : "Voir les biens"}
-            </button>
+            {/* ══════════════════════════════════════════════════════════════
+                VERSION DESKTOP — 4 champs en grille (inchangée)
+                (masquée sur mobile)
+            ═════════════════════════════════════════════════════════════ */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+
+                {/* Ville */}
+                <div>
+                  <label
+                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    style={{ color: "var(--texte-tertiaire)" }}
+                  >
+                    Ville
+                  </label>
+                  <select
+                    value={ville}
+                    onChange={(e) => setVille(e.target.value)}
+                    className={selectCls}
+                    style={selectStyle}
+                  >
+                    <option value="">Toutes les villes</option>
+                    {VILLES.map((v) => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Secteur — multi-sélection avec dropdown */}
+                <div ref={dropdownRef} className="relative">
+                  <label
+                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    style={{ color: "var(--texte-tertiaire)" }}
+                  >
+                    Secteur
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (ville && !chargeQ && quartiers.length > 0) {
+                        setDropdownOuvert((o) => !o);
+                      }
+                    }}
+                    disabled={!ville || chargeQ}
+                    className={`${selectCls} disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-between gap-1`}
+                    style={selectStyle}
+                  >
+                    <span className="truncate text-left">
+                      {!ville
+                        ? "Choisissez d'abord une ville"
+                        : chargeQ
+                        ? "Chargement…"
+                        : quartiers.length === 0
+                        ? "Aucun secteur"
+                        : quartiersChoisis.length === 0
+                        ? "Tous les secteurs"
+                        : quartiersChoisis.length === 1
+                        ? quartiersChoisis[0]
+                        : `${quartiersChoisis.length} secteurs`}
+                    </span>
+                    <svg
+                      width="13" height="13" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0"
+                      style={{ transform: dropdownOuvert ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown avec checkboxes */}
+                  {dropdownOuvert && quartiers.length > 0 && (
+                    <div
+                      className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl overflow-hidden"
+                      style={{
+                        background: "var(--fond-secondaire)",
+                        border: "1px solid var(--bordure)",
+                        boxShadow: "0 8px 28px rgba(0,0,0,0.14)",
+                        maxHeight: 228,
+                        overflowY: "auto",
+                      }}
+                    >
+                      {quartiersChoisis.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setQuartiersChoisis([])}
+                          className="w-full text-left px-3 py-2 text-xs font-semibold"
+                          style={{
+                            color: "var(--primaire-clair)",
+                            borderBottom: "1px solid var(--bordure-legere)",
+                            background: "var(--fond-accent)",
+                          }}
+                        >
+                          ✕ Effacer la sélection ({quartiersChoisis.length})
+                        </button>
+                      )}
+                      {quartiers.map((q) => {
+                        const coche = quartiersChoisis.includes(q);
+                        return (
+                          <label
+                            key={q}
+                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors"
+                            style={{ background: coche ? "var(--fond-vert-leger)" : undefined }}
+                            onMouseEnter={(e) => {
+                              if (!coche) (e.currentTarget as HTMLLabelElement).style.background = "var(--fond-accent)";
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLLabelElement).style.background = coche ? "var(--fond-vert-leger)" : "";
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={coche}
+                              onChange={() => toggleQuartier(q)}
+                              className="w-3.5 h-3.5 rounded cursor-pointer"
+                              style={{ accentColor: "var(--primaire)" }}
+                            />
+                            <span className="text-sm leading-none" style={{ color: "var(--texte-corps)" }}>
+                              {q}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Type de bien */}
+                <div>
+                  <label
+                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    style={{ color: "var(--texte-tertiaire)" }}
+                  >
+                    Type de bien
+                  </label>
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    className={selectCls}
+                    style={selectStyle}
+                  >
+                    <option value="">Tous les types</option>
+                    {TYPES_BIEN.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Budget */}
+                <div>
+                  <label
+                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    style={{ color: "var(--texte-tertiaire)" }}
+                  >
+                    Budget
+                  </label>
+                  <select
+                    value={budgetIdx}
+                    onChange={(e) => setBudgetIdx(Number(e.target.value))}
+                    className={selectCls}
+                    style={selectStyle}
+                  >
+                    {budgets.map((b, i) => (
+                      <option key={i} value={i}>{b.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Bouton soumettre desktop */}
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 cursor-pointer"
+                style={{ background: "var(--accent)", color: "var(--primaire)" }}
+              >
+                {mode === "neuf" ? "Voir les biens neufs" : "Voir les biens"}
+              </button>
+            </div>
+
           </form>
         ) : (
           /* CTA Estimer */

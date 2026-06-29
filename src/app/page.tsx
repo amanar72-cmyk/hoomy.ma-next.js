@@ -39,11 +39,11 @@ export default async function Accueil() {
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
       <HeroSection />
+      <ParcoursVendeur />
+      <PourquoiHoomy />
       <BiensVedette biens={biens} />
       <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
       <SectionVilles comptesParVille={comptesParVille} />
-      <PourquoiHoomy />
-      <ParcoursVendeur />
       <Footer />
     </main>
   );

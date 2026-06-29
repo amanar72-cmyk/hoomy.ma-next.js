@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import MenuUtilisateur from "./MenuUtilisateur";
 import ToggleTheme from "@/components/ui/ToggleTheme";
 import NavbarShell from "./NavbarShell";
+import MenuMobileHamburger from "./MenuMobileHamburger";
 
 export default async function Navbar() {
   // Lecture de la session côté serveur — pas de flash non-authentifié
@@ -88,7 +89,7 @@ export default async function Navbar() {
             <>
               <Link
                 href="/connexion"
-                className="text-sm px-4 py-2 rounded-lg border transition-opacity hover:opacity-80"
+                className="hidden md:inline-block text-sm px-4 py-2 rounded-lg border transition-opacity hover:opacity-80"
                 style={{ borderColor: "var(--bordure-action)", color: "var(--bordure-action)", textDecoration: "none" }}
               >
                 Se connecter
@@ -102,6 +103,9 @@ export default async function Navbar() {
               </Link>
             </>
           )}
+
+          {/* Hamburger — mobile uniquement, caché sur md+ */}
+          <MenuMobileHamburger estConnecte={!!user} nomComplet={nomComplet} />
         </div>
       </div>
     </header>

@@ -6,9 +6,8 @@ import type { Bien } from "@/lib/types";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const LARGEUR_CARTE = 310; // px — présence visuelle accrue
+const LARGEUR_CARTE = 310; // px — desktop (animation auto)
 const GAP           = 18;  // px entre cartes
-// ~80 px/s → ≈ 20 s pour 6 cartes (310 + 18 = 328 px/carte)
 const PX_PAR_SEC    = 80;
 
 // ── Icône localisation ────────────────────────────────────────────────────────
@@ -30,7 +29,6 @@ function IcPin() {
 
 function CarteCarrousel({ bien }: { bien: Bien }) {
   const chemin = `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug ?? bien.id}`;
-  // Point médian entre ville et quartier ; quartier absent → ville seule
   const localisation = bien.quartier ? `${bien.ville} · ${bien.quartier}` : bien.ville;
   const prix =
     bien.prix.toLocaleString("fr-FR") +
@@ -121,7 +119,6 @@ function CarteCarrousel({ bien }: { bien: Bien }) {
 
         {/* ── Infos ──────────────────────────────────────────────────────── */}
         <div style={{ padding: "13px 14px 15px" }}>
-          {/* Prix — or Marcellus */}
           <p
             style={{
               fontFamily: "var(--font-marcellus), serif",
@@ -134,7 +131,6 @@ function CarteCarrousel({ bien }: { bien: Bien }) {
             {prix}
           </p>
 
-          {/* Ville · Quartier */}
           <p
             style={{
               display: "flex",
@@ -158,7 +154,6 @@ function CarteCarrousel({ bien }: { bien: Bien }) {
             </span>
           </p>
 
-          {/* Référence */}
           {bien.reference && (
             <p
               style={{
@@ -180,9 +175,8 @@ function CarteCarrousel({ bien }: { bien: Bien }) {
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export default function BiensVedette({ biens }: { biens: Bien[] }) {
-  // Deux états distincts : survol reste actif après mouseup tant qu'on est dessus
-  const [survol, setSurvol]         = useState(false);
-  const [maintien, setMaintien]     = useState(false);
+  const [survol, setSurvol]             = useState(false);
+  const [maintien, setMaintien]         = useState(false);
   const [motionReduit, setMotionReduit] = useState(false);
 
   const enPause = survol || maintien;
@@ -212,24 +206,21 @@ export default function BiensVedette({ biens }: { biens: Bien[] }) {
     );
   }
 
-  // ── Duplication pour boucle infinie sans coupure ──────────────────────────
-  // ≤ 3 biens → ×4 pour que la piste soit assez longue et que le saut
-  // à −25 % (= 1 set) ne soit jamais visible côté gauche.
+  // ── Données pour l'animation desktop ─────────────────────────────────────
   const facteur    = biens.length <= 3 ? 4 : 2;
-  const pctFin     = (100 / facteur).toFixed(4); // "50.0000" ou "25.0000"
+  const pctFin     = (100 / facteur).toFixed(4);
   const biensTrack = Array.from({ length: facteur }, () => biens).flat();
-
-  // Durée ciblant ~78 px/s → ≈ 20 s pour 6 cartes ; min 15 s pour très peu
-  const dureeS = Math.max(15, (biens.length * (LARGEUR_CARTE + GAP)) / PX_PAR_SEC).toFixed(1);
+  const dureeS     = Math.max(15, (biens.length * (LARGEUR_CARTE + GAP)) / PX_PAR_SEC).toFixed(1);
 
   return (
     <section className="py-16">
-      {/* Keyframe : le pourcentage varie selon le facteur de duplication */}
+      {/* Keyframe animation + masquage scrollbar webkit */}
       <style>{`
         @keyframes hoomyCarrousel {
           from { transform: translateX(0); }
           to   { transform: translateX(-${pctFin}%); }
         }
+        .bv-scroll::-webkit-scrollbar { display: none; }
       `}</style>
 
       {/* ── En-tête ──────────────────────────────────────────────────────── */}
@@ -249,12 +240,53 @@ export default function BiensVedette({ biens }: { biens: Bien[] }) {
         </Link>
       </div>
 
-      {motionReduit ? (
-        /* ── Mode réduit (prefers-reduced-motion) : scroll horizontal ──── */
+      {/* ══════════════════════════════════════════════════════════════════
+          MOBILE (< md) — scroll-snap natif, swipe au doigt
+          Alignement : paddingLeft 24 px = cohérent avec l'en-tête px-6.
+          scroll-padding-left aligne le snap sur ce même offset.
+          Largeur carte : min(310px, 82vw) → laisse ~18 vw visible à droite
+          pour signaler qu'il y a d'autres cartes à swiper.
+      ═══════════════════════════════════════════════════════════════════ */}
+      <div
+        className="bv-scroll md:hidden"
+        style={{
+          overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
+          scrollSnapType: "x mandatory",
+          scrollPaddingLeft: 24,
+          scrollbarWidth: "none",
+          paddingTop: 10,
+          paddingBottom: 22,
+        }}
+      >
         <div
+          className="flex"
+          style={{ gap: GAP, paddingLeft: 24, paddingRight: 24 }}
+        >
+          {biens.map((bien) => (
+            <div
+              key={bien.id}
+              style={{
+                width: "min(310px, 82vw)",
+                flexShrink: 0,
+                scrollSnapAlign: "start",
+              }}
+            >
+              <CarteCarrousel bien={bien} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          DESKTOP (md+) — animation automatique (ou scroll si motion réduit)
+      ═══════════════════════════════════════════════════════════════════ */}
+      {motionReduit ? (
+        /* Scroll statique pour prefers-reduced-motion */
+        <div
+          className="bv-scroll hidden md:block"
           style={{
             overflowX: "auto",
-            WebkitOverflowScrolling: "touch",
             scrollbarWidth: "none",
             paddingLeft: 24,
             paddingRight: 24,
@@ -269,22 +301,20 @@ export default function BiensVedette({ biens }: { biens: Bien[] }) {
           </div>
         </div>
       ) : (
-        /* ── Mode carrousel animé ────────────────────────────────────────── */
+        /* Carrousel animé standard */
         <div
+          className="hidden md:block"
           style={{ overflow: "hidden", paddingTop: 10, paddingBottom: 22 }}
           onMouseEnter={() => setSurvol(true)}
           onMouseLeave={() => { setSurvol(false); setMaintien(false); }}
           onMouseDown={() => setMaintien(true)}
           onMouseUp={() => setMaintien(false)}
-          onTouchStart={() => setMaintien(true)}
-          onTouchEnd={() => setMaintien(false)}
         >
           <div
             className="flex"
             style={{
               gap: GAP,
               width: "fit-content",
-              // transform sur GPU, aucun JS à chaque frame
               animation: `hoomyCarrousel ${dureeS}s linear infinite`,
               animationPlayState: enPause ? "paused" : "running",
             }}
