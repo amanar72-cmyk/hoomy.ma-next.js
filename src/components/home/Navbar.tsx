@@ -4,6 +4,8 @@ import MenuUtilisateur from "./MenuUtilisateur";
 import ToggleTheme from "@/components/ui/ToggleTheme";
 import NavbarShell from "./NavbarShell";
 import MenuMobileHamburger from "./MenuMobileHamburger";
+import LogoHoomy from "./LogoHoomy";
+import SelecteurLangue from "./SelecteurLangue";
 
 export default async function Navbar() {
   // Lecture de la session côté serveur — pas de flash non-authentifié
@@ -36,12 +38,13 @@ export default async function Navbar() {
       }}
     >
       <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+
+        {/* ── Logo monogramme ─────────────────────────────────────────────── */}
         <Link href="/" style={{ textDecoration: "none" }}>
-          <span style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)", fontSize: 21, letterSpacing: 2 }}>
-            HOOMY
-          </span>
+          <LogoHoomy />
         </Link>
 
+        {/* ── Navigation desktop ──────────────────────────────────────────── */}
         <nav className="hidden md:flex items-center gap-8 text-[15px]" style={{ color: "var(--texte-corps)" }}>
           <Link href="/acheter" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
             Acheter
@@ -63,9 +66,13 @@ export default async function Navbar() {
           </Link>
         </nav>
 
+        {/* ── Actions droite ──────────────────────────────────────────────── */}
         <div className="flex items-center gap-2">
-          {/* Bouton jour/nuit */}
+          {/* Thème jour/nuit */}
           <ToggleTheme />
+
+          {/* Sélecteur de langue — desktop ET mobile, visible dans la barre */}
+          <SelecteurLangue />
 
           {user ? (
             <>

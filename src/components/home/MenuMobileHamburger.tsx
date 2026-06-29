@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import LogoHoomy from "./LogoHoomy";
 
 const LIENS_NAV = [
   { label: "Acheter",               href: "/acheter" },
@@ -114,17 +115,8 @@ export default function MenuMobileHamburger({ estConnecte, nomComplet }: Props) 
           className="flex items-center justify-between px-5 py-4 shrink-0"
           style={{ borderBottom: "1px solid var(--bordure)" }}
         >
-          <Link
-            href="/"
-            style={{
-              fontFamily: "var(--font-marcellus), serif",
-              color: "var(--primaire)",
-              fontSize: 19,
-              letterSpacing: "0.12em",
-              textDecoration: "none",
-            }}
-          >
-            HOOMY<span style={{ color: "var(--accent)" }}>.MA</span>
+          <Link href="/" style={{ textDecoration: "none" }}>
+            <LogoHoomy tailleBadge={26} tailleTexte={17} />
           </Link>
 
           <button
