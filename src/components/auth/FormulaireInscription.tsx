@@ -69,11 +69,14 @@ export default function FormulaireInscription() {
 
     try {
       const supabase = createClient();
+      const base = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const { error, data } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password: motDePasse,
         options: {
           data: { nom_complet: nomComplet.trim(), telephone: telephoneComplet },
+          // Le lien de confirmation redirige vers /auth/callback pour établir la session
+          emailRedirectTo: `${base}/auth/callback?next=/mon-compte`,
         },
       });
 

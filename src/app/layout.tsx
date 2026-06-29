@@ -13,13 +13,30 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 export const metadata: Metadata = {
   title: "HOOMY.MA — L'immobilier premium au Maroc",
   description:
-    "Des biens vérifiés à Agadir, Marrakech, Casablanca et partout au Maroc.",
+    "Appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+
+  metadataBase: new URL("https://hoomy.ma"),
 
   verification: {
     google: "9lbPJsoQGI4dGxsXQXwOPW1ezTeENyAO9bVFT5FCB6I",
   },
 
-  metadataBase: new URL("https://hoomy.ma"),
+  openGraph: {
+    type: "website",
+    locale: "fr_MA",
+    url: "https://hoomy.ma",
+    siteName: "HOOMY.MA",
+    title: "HOOMY.MA — L'immobilier premium au Maroc",
+    description:
+      "Appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "HOOMY.MA — L'immobilier premium au Maroc",
+    description:
+      "Appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+  },
 };
 
 // Script inline exécuté AVANT le premier rendu pour éviter le flash de mauvais thème.
@@ -39,6 +56,60 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         {/* Anti-flash : s'exécute de façon synchrone avant tout rendu CSS */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_ANTI_FLASH }} />
+        {/* Données structurées Schema.org — Organization + RealEstateAgent + WebSite */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": ["Organization", "RealEstateAgent"],
+                  "@id": "https://hoomy.ma/#organization",
+                  "name": "HOOMY",
+                  "alternateName": "HOOMY.MA",
+                  "url": "https://hoomy.ma",
+                  "logo": {
+                    "@type": "ImageObject",
+                    "@id": "https://hoomy.ma/#logo",
+                    "url": "https://hoomy.ma/api/logo",
+                    "contentUrl": "https://hoomy.ma/api/logo",
+                    "width": 600,
+                    "height": 200,
+                    "caption": "HOOMY",
+                  },
+                  "image": { "@id": "https://hoomy.ma/#logo" },
+                  "description":
+                    "Plateforme immobilière premium au Maroc — appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+                  "areaServed": { "@type": "Country", "name": "Maroc" },
+                  "knowsLanguage": ["fr", "ar"],
+                  "contactPoint": {
+                    "@type": "ContactPoint",
+                    "email": "contact@hoomy.ma",
+                    "contactType": "customer service",
+                    "availableLanguage": ["French", "Arabic"],
+                  },
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://hoomy.ma/#website",
+                  "url": "https://hoomy.ma",
+                  "name": "HOOMY.MA",
+                  "publisher": { "@id": "https://hoomy.ma/#organization" },
+                  "inLanguage": "fr-MA",
+                  "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                      "@type": "EntryPoint",
+                      "urlTemplate": "https://hoomy.ma/acheter?q={search_term_string}",
+                    },
+                    "query-input": "required name=search_term_string",
+                  },
+                },
+              ],
+            }),
+          }}
+        />
       </head>
       <body
         className={`${marcellus.variable} ${outfit.variable}`}

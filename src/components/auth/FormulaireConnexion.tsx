@@ -26,7 +26,16 @@ export default function FormulaireConnexion() {
         password: motDePasse,
       });
       if (error) {
-        setErreur("Email ou mot de passe incorrect.");
+        const msg = error.message?.toLowerCase() ?? "";
+        if (msg.includes("email not confirmed")) {
+          setErreur("Votre email n'est pas encore confirmé. Vérifiez votre boîte mail et cliquez sur le lien de confirmation.");
+        } else if (msg.includes("invalid login") || msg.includes("invalid credentials") || msg.includes("wrong password")) {
+          setErreur("Email ou mot de passe incorrect.");
+        } else if (msg.includes("rate limit") || msg.includes("too many")) {
+          setErreur("Trop de tentatives — réessayez dans quelques minutes.");
+        } else {
+          setErreur("Email ou mot de passe incorrect.");
+        }
         setChargement(false);
         return;
       }
