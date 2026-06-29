@@ -45,16 +45,17 @@ export default function FormulaireConnexion() {
     setChargementGoogle(true);
     try {
       const supabase = createClient();
+      const base = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: `${base}/auth/callback?next=/mon-compte` },
       });
       if (error) {
-        setErreur(`Google : ${error.message}`);
+        setErreur(`Connexion Google impossible : ${error.message}`);
         setChargementGoogle(false);
       }
     } catch {
-      setErreur("Erreur inattendue Google.");
+      setErreur("Erreur inattendue — réessayez.");
       setChargementGoogle(false);
     }
   }
@@ -86,8 +87,8 @@ export default function FormulaireConnexion() {
           </p>
 
           {erreur && (
-            <div className="mb-5 px-4 py-3 rounded-lg text-sm border"
-              style={{ background: "#FEF2F2", color: "var(--erreur-texte)", borderColor: "#FECACA" }}>
+            <div className="mb-5 px-4 py-3 rounded-lg text-sm"
+              style={{ background: "var(--erreur-fond)", color: "var(--erreur-texte)", border: "1px solid var(--erreur)" }}>
               {erreur}
             </div>
           )}
