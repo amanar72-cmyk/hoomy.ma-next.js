@@ -1,11 +1,22 @@
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+// Initialisation différée — setVapidDetails lance une exception si les clés sont
+// absentes. En l'appelant au niveau module, tout import de ce fichier (même indirect
+// via admin/actions.ts) ferait crasher les pages en 500 si les env vars ne sont pas
+// définies sur le serveur. L'init lazy résout ça.
+let vapidPret = false;
+function initialiserVapid() {
+  if (vapidPret) return;
+  const subject    = process.env.VAPID_SUBJECT;
+  const publicKey  = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!subject || !publicKey || !privateKey) {
+    throw new Error("Variables VAPID manquantes (VAPID_SUBJECT, NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)");
+  }
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+  vapidPret = true;
+}
 
 export type PayloadPush = {
   titre: string;
@@ -17,6 +28,7 @@ export async function envoyerNotificationPush(
   userId: string,
   payload: PayloadPush,
 ): Promise<void> {
+  initialiserVapid();
   const admin = createAdminClient();
   const { data: subs } = await admin
     .from("push_subscriptions")
@@ -49,6 +61,7 @@ export async function envoyerNotificationPush(
 }
 
 export async function envoyerNotificationAuxAdmins(payload: PayloadPush): Promise<void> {
+  initialiserVapid();
   const admin = createAdminClient();
   const { data: admins } = await admin
     .from("profils")
