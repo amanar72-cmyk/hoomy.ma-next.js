@@ -4,6 +4,7 @@ import HeroSection from "@/components/home/HeroSection";
 import BiensVedette from "@/components/home/BiensVedette";
 import SectionVilles from "@/components/home/SectionVilles";
 import PourquoiHoomy from "@/components/home/PourquoiHoomy";
+import ParcoursVendeur from "@/components/home/ParcoursVendeur";
 import Footer from "@/components/home/Footer";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
 import type { Bien } from "@/lib/types";
@@ -42,6 +43,7 @@ export default async function Accueil() {
       <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
       <SectionVilles comptesParVille={comptesParVille} />
       <PourquoiHoomy />
+      <ParcoursVendeur />
       <Footer />
     </main>
   );

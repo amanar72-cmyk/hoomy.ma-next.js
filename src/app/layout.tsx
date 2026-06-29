@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Marcellus, Outfit } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
+import AnalytiqueGA from "@/components/AnalytiqueGA";
 import BulleChatConditionnelle from "@/components/chat/BulleChatConditionnelle";
 import { ComparateurProvider } from "@/lib/comparateur/ComparateurContext";
 import BarreComparateur from "@/components/comparateur/BarreComparateur";
@@ -120,6 +121,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SplashScreen splashDeja={splashDeja} />
           {children}
           <BulleChatConditionnelle />
+          {process.env.NEXT_PUBLIC_GA_ID && (
+            <AnalytiqueGA gaId={process.env.NEXT_PUBLIC_GA_ID} />
+          )}
           <BarreComparateur />
         </ComparateurProvider>
       </body>

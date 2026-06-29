@@ -217,7 +217,7 @@ export default function HeroSection() {
           <span style={{ color: "var(--accent)", fontStyle: "italic" }}>au Maroc</span>
         </h1>
         <p className="text-sm mb-8" style={{ color: "#C9D5CF" }}>
-          Des milliers d'annonces vérifiées dans toutes les grandes villes du Royaume.
+          Biens vérifiés dans toutes les grandes villes du Royaume.
         </p>
 
         {/* ── 4 cartes d'intention ────────────────────────────────────────── */}
