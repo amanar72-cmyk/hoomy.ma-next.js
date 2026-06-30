@@ -132,6 +132,7 @@ export type DonneesModificationBienAgent = {
   equipements: string[] | null;
   composition: import("@/components/partage/CompositionNiveaux").NiveauBien[] | null;
   photos: string[] | null;
+  photosOriginales: string[] | null;
   latitude: number | null;
   longitude: number | null;
 };
@@ -158,10 +159,11 @@ export async function modifierBienAgent(
 
   // UPDATE via admin client — contourne la policy RLS UPDATE (admin-only)
   // La vérification de propriété est faite ci-dessus dans le code
+  const { photosOriginales, ...reste } = donnees;
   const adminClient = createAdminClient();
   const { error } = await adminClient
     .from("biens")
-    .update(donnees)
+    .update({ ...reste, photos_originales: photosOriginales })
     .eq("id", bienId);
 
   if (error) throw new Error(error.message);

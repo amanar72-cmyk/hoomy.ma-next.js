@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import BoutonAction from "@/components/admin/BoutonAction";
 import ModalZonesAgent from "@/components/admin/ModalZonesAgent";
 import SelectRole from "@/components/admin/SelectRole";
+import SelecteurConseillerAdmin from "@/components/admin/SelecteurConseillerAdmin";
 import { retirerBienAgent } from "@/app/admin/actions";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -86,12 +87,13 @@ export default async function PageFicheAgent({ params }: Props) {
   const supabase    = await createClient();
   const adminClient = createAdminClient();
 
-  // Profil + email + biens + leads en parallèle
+  // Profil + email + biens + leads + liste des conseillers (pour le sélecteur) en parallèle
   const [
     { data: agent },
     { data: authUser },
     { data: biensRaw },
     { data: leadsRaw },
+    { data: conseillersRaw },
   ] = await Promise.all([
     supabase
       .from("profils")
@@ -110,10 +112,17 @@ export default async function PageFicheAgent({ params }: Props) {
       .eq("agent_id", agentId)
       .order("cree_le", { ascending: false })
       .limit(8),
+    supabase
+      .from("profils")
+      .select("id, nom_complet, role")
+      .in("role", ["agent", "agence"])
+      .order("nom_complet", { ascending: true })
+      .limit(200),
   ]);
 
   if (!agent) notFound();
 
+  const conseillers = conseillersRaw ?? [];
   const email    = authUser?.user?.email ?? "";
   const biens    = (biensRaw ?? []) as unknown as Bien[];
   const leads    = (leadsRaw ?? []) as unknown as Lead[];
@@ -125,17 +134,20 @@ export default async function PageFicheAgent({ params }: Props) {
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto">
 
-      {/* Breadcrumb */}
-      <Link
-        href="/admin/agents"
-        className="inline-flex items-center gap-1.5 text-xs mb-5 hover:underline"
-        style={{ color: "#999", textDecoration: "none" }}
-      >
-        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-        Agents
-      </Link>
+      {/* Breadcrumb + sélecteur de conseiller */}
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
+        <Link
+          href="/admin/agents"
+          className="inline-flex items-center gap-1.5 text-xs hover:underline"
+          style={{ color: "#999", textDecoration: "none" }}
+        >
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Agents
+        </Link>
+        <SelecteurConseillerAdmin conseillers={conseillers} conseillerActuelId={agentId} />
+      </div>
 
       {/* En-tête agent */}
       <div

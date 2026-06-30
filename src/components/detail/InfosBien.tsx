@@ -178,15 +178,36 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         >
           {bien.type}
         </span>
-        {bien.verifie && (
+        {bien.verifie ? (
           <span
             className="text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1"
             style={{ background: "#E8F5EE", color: "var(--primaire-clair)" }}
           >
             ✅ Bien vérifié
           </span>
+        ) : (
+          <span
+            className="text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1"
+            style={{ background: "var(--primaire)", color: "#fff" }}
+          >
+            🔒 En cours de traitement
+          </span>
         )}
       </div>
+
+      {/* ── Avertissement bien en traitement ─────────────────────────── */}
+      {!bien.verifie && (
+        <div
+          className="rounded-xl px-4 py-3 mb-6 flex items-start gap-2.5 text-sm"
+          style={{ background: "var(--fond-accent)", border: "1px solid #EDE7D7", color: "var(--texte-secondaire)" }}
+        >
+          <span className="flex-shrink-0 mt-0.5">ℹ️</span>
+          <span>
+            Cette annonce est en cours de traitement par nos équipes. Les photos sont temporairement
+            floutées et seront visibles en clair dès la validation du bien.
+          </span>
+        </div>
+      )}
 
       {/* ── Titre ─────────────────────────────────────────────────────── */}
       <h1

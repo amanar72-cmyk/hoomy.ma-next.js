@@ -36,6 +36,7 @@ export type DonneesBienClient = {
   equipements: string[];
   composition: NiveauBien[];
   photos: string[];
+  photosOriginales: string[];
   titre: string;
   description: string;
   prix: number;
@@ -72,6 +73,7 @@ export async function publierBien(donnees: DonneesBienClient): Promise<{ id: str
       equipements: donnees.equipements.length > 0 ? donnees.equipements : null,
       composition: donnees.composition.length > 0 ? donnees.composition : null,
       photos: donnees.photos.length > 0 ? donnees.photos : null,
+      photos_originales: donnees.photosOriginales.length > 0 ? donnees.photosOriginales : null,
       verifie: false,
       proprietaire_id: user.id,
       date_soumission: new Date().toISOString(),

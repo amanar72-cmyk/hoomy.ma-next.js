@@ -2,18 +2,22 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { publierBien } from "@/app/publier/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import { appliquerWatermark } from "@/lib/images/watermark";
+import { appliquerFlou } from "@/lib/images/flou";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
+import LogoHoomy from "@/components/home/LogoHoomy";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type PhotoWizard = {
   id: string;
-  url: string;
+  url: string;          // URL publique — version FLOUTÉE tant que le bien n'est pas validé
+  cheminPrive: string;  // chemin dans le bucket privé "biens-prive" — version nette, jamais publique
   nom: string;
   uploadee: boolean;
   fichier?: File;
@@ -341,6 +345,7 @@ export default function WizardPublication({ userId }: { userId: string | null })
       const enAttente: PhotoWizard[] = aTraiter.map((fichier) => ({
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         url: URL.createObjectURL(fichier),
+        cheminPrive: "",
         nom: fichier.name,
         uploadee: false,
         fichier,
@@ -357,13 +362,32 @@ export default function WizardPublication({ userId }: { userId: string | null })
       setUploadsProgression((prev) => ({ ...prev, [id]: 0 }));
 
       const chemin = `${userId}/${Date.now()}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      let aEnvoyer: File | Blob = fichier;
+      let nette: File | Blob = fichier;
       try {
-        aEnvoyer = await appliquerWatermark(fichier);
+        nette = await appliquerWatermark(fichier);
       } catch (err) {
         console.warn("[HOOMY] Watermark échoué, upload original :", err);
       }
-      const { data, error } = await supabase.storage.from("biens").upload(chemin, aEnvoyer);
+
+      // 1. Version NETTE → bucket privé (jamais public tant que non validé)
+      const { error: erreurPrive } = await supabase.storage.from("biens-prive").upload(chemin, nette);
+      if (erreurPrive) {
+        setErreurUpload(`Erreur lors de l'envoi sécurisé de "${fichier.name}" : ${erreurPrive.message}`);
+        setUploadsProgression((prev) => { const n = { ...prev }; delete n[id]; return n; });
+        continue;
+      }
+
+      // 2. Version FLOUTÉE (dérivée de la nette, perte d'information irréversible) → bucket public
+      let floutee: Blob;
+      try {
+        floutee = await appliquerFlou(nette);
+      } catch (err) {
+        console.warn("[HOOMY] Floutage échoué :", err);
+        setErreurUpload(`Erreur lors du floutage de "${fichier.name}".`);
+        setUploadsProgression((prev) => { const n = { ...prev }; delete n[id]; return n; });
+        continue;
+      }
+      const { data, error } = await supabase.storage.from("biens").upload(chemin, floutee);
 
       if (error) {
         setErreurUpload(`Erreur lors de l'upload de "${fichier.name}" : ${error.message}`);
@@ -372,7 +396,7 @@ export default function WizardPublication({ userId }: { userId: string | null })
       }
 
       const { data: urlData } = supabase.storage.from("biens").getPublicUrl(data.path);
-      nouvellesPhotos.push({ id, url: urlData.publicUrl, nom: fichier.name, uploadee: true });
+      nouvellesPhotos.push({ id, url: urlData.publicUrl, cheminPrive: chemin, nom: fichier.name, uploadee: true });
       setUploadsProgression((prev) => { const n = { ...prev }; delete n[id]; return n; });
     }
 
@@ -408,17 +432,24 @@ export default function WizardPublication({ userId }: { userId: string | null })
     for (const photo of donnees.photos) {
       if (photo.uploadee || !photo.fichier) { photosFinales.push(photo); continue; }
       const chemin = `${uid}/${Date.now()}-${photo.fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      let aEnvoyer: File | Blob = photo.fichier;
+      let nette: File | Blob = photo.fichier;
       try {
-        aEnvoyer = await appliquerWatermark(photo.fichier);
+        nette = await appliquerWatermark(photo.fichier);
       } catch (err) {
         console.warn("[HOOMY] Watermark échoué, upload original :", err);
       }
-      const { data, error } = await supabase.storage.from("biens").upload(chemin, aEnvoyer);
+
+      // 1. Version NETTE → bucket privé
+      const { error: erreurPrive } = await supabase.storage.from("biens-prive").upload(chemin, nette);
+      if (erreurPrive) throw new Error(`Erreur lors de l'envoi sécurisé de la photo « ${photo.nom} » : ${erreurPrive.message}`);
+
+      // 2. Version FLOUTÉE → bucket public
+      const floutee = await appliquerFlou(nette);
+      const { data, error } = await supabase.storage.from("biens").upload(chemin, floutee);
       if (error) throw new Error(`Erreur lors de l'envoi de la photo « ${photo.nom} » : ${error.message}`);
       const { data: urlData } = supabase.storage.from("biens").getPublicUrl(data.path);
       URL.revokeObjectURL(photo.url);
-      photosFinales.push({ ...photo, url: urlData.publicUrl, uploadee: true, fichier: undefined });
+      photosFinales.push({ ...photo, url: urlData.publicUrl, cheminPrive: chemin, uploadee: true, fichier: undefined });
     }
 
     await publierBien({
@@ -432,6 +463,7 @@ export default function WizardPublication({ userId }: { userId: string | null })
       equipements: donnees.equipements,
       composition: donnees.composition,
       photos: photosFinales.map((p) => p.url),
+      photosOriginales: photosFinales.map((p) => p.cheminPrive),
       titre: donnees.titre,
       description: donnees.description,
       prix: donnees.prix,
@@ -1070,6 +1102,13 @@ export default function WizardPublication({ userId }: { userId: string | null })
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
+      {/* Retour accueil */}
+      <div className="flex justify-center mb-6">
+        <Link href="/" style={{ textDecoration: "none" }} aria-label="Retour à l'accueil HOOMY.MA">
+          <LogoHoomy />
+        </Link>
+      </div>
+
       {/* En-tête */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-normal mb-2" style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}>

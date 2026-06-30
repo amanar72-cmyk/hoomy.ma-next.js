@@ -162,7 +162,7 @@ function Badges({ transaction, verifie }: { transaction: string; verifie: boolea
       >
         {transaction === "location" ? "À louer" : "À vendre"}
       </span>
-      {verifie && (
+      {verifie ? (
         <span
           className="text-xs font-medium px-3 py-1.5 rounded-full w-fit flex items-center gap-1.5"
           style={{ background: "rgba(255,255,255,0.92)", color: "var(--primaire-clair)", backdropFilter: "blur(4px)" }}
@@ -171,6 +171,13 @@ function Badges({ transaction, verifie }: { transaction: string; verifie: boolea
             <polyline points="20 6 9 17 4 12" />
           </svg>
           Vérifié HOOMY
+        </span>
+      ) : (
+        <span
+          className="text-xs font-medium px-3 py-1.5 rounded-full w-fit flex items-center gap-1.5"
+          style={{ background: "rgba(15,76,58,0.85)", color: "#fff", backdropFilter: "blur(4px)" }}
+        >
+          🔒 En cours de traitement
         </span>
       )}
     </div>

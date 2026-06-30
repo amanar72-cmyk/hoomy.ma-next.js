@@ -8,6 +8,7 @@ import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier"
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import { createClient } from "@/lib/supabase/client";
 import { appliquerWatermark } from "@/lib/images/watermark";
+import { appliquerFlou } from "@/lib/images/flou";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,11 +27,15 @@ type BienComplet = {
   surface: number;
   equipements: string[] | null;
   photos: string[] | null;
+  photos_originales: string[] | null;
   verifie: boolean;
   statut: string | null;
   latitude: number | null;
   longitude: number | null;
 };
+
+// URL publique (floutée tant que non validée) + chemin nette dans le bucket privé.
+type PhotoEdition = { url: string; cheminPrive: string };
 
 // ── Helpers UI ───────────────────────────────────────────────────────────────
 
@@ -83,7 +88,9 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
   const [sallesBain, setSallesBain] = useState(bien.salles_bain.toString());
   const [surface, setSurface] = useState(bien.surface.toString());
   const [equipements, setEquipements] = useState<string[]>(bien.equipements ?? []);
-  const [photos, setPhotos] = useState<string[]>(bien.photos ?? []);
+  const [photos, setPhotos] = useState<PhotoEdition[]>(
+    (bien.photos ?? []).map((url, i) => ({ url, cheminPrive: bien.photos_originales?.[i] ?? "" }))
+  );
   const [nouvelleUrl, setNouvelleUrl] = useState("");
   const [verifie, setVerifie] = useState(bien.verifie);
   const [statut, setStatut] = useState(bien.statut ?? "");
@@ -107,7 +114,7 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
   }
 
   function supprimerPhoto(url: string) {
-    setPhotos((prev) => prev.filter((p) => p !== url));
+    setPhotos((prev) => prev.filter((p) => p.url !== url));
   }
 
   function monterPhoto(i: number) {
@@ -123,11 +130,12 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
       setErreurPhoto("Veuillez saisir une URL valide avant de cliquer Ajouter.");
       return;
     }
-    if (photos.includes(url)) {
+    if (photos.some((p) => p.url === url)) {
       setErreurPhoto("Cette URL est déjà dans la liste.");
       return;
     }
-    setPhotos((prev) => [...prev, url]);
+    // URL collée manuellement : pas d'original privé associé (supposée déjà publique/sûre).
+    setPhotos((prev) => [...prev, { url, cheminPrive: "" }]);
     setNouvelleUrl("");
     setErreurPhoto(null);
   }
@@ -150,25 +158,43 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const prefix = user?.id ?? "admin";
-    const nouvellesUrls: string[] = [];
+    const nouvellesPhotos: PhotoEdition[] = [];
     for (const fichier of liste) {
       const chemin = `${prefix}/${Date.now()}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      let aUploader: File | Blob = fichier;
+      let nette: File | Blob = fichier;
       try {
-        aUploader = await appliquerWatermark(fichier);
+        nette = await appliquerWatermark(fichier);
       } catch (err) {
         console.warn("[HOOMY] Watermark échoué, upload original :", err);
       }
-      const { data, error } = await supabase.storage.from("biens").upload(chemin, aUploader);
+
+      // 1. Version NETTE → bucket privé
+      const { error: erreurPrive } = await supabase.storage.from("biens-prive").upload(chemin, nette);
+      if (erreurPrive) {
+        setErreurPhoto(`Erreur envoi sécurisé "${fichier.name}" : ${erreurPrive.message}`);
+        setUploadEnCours(false);
+        return;
+      }
+
+      // 2. Version FLOUTÉE → bucket public
+      let floutee: Blob;
+      try {
+        floutee = await appliquerFlou(nette);
+      } catch {
+        setErreurPhoto(`Erreur lors du floutage de "${fichier.name}".`);
+        setUploadEnCours(false);
+        return;
+      }
+      const { data, error } = await supabase.storage.from("biens").upload(chemin, floutee);
       if (error) {
         setErreurPhoto(`Erreur upload "${fichier.name}" : ${error.message}`);
         setUploadEnCours(false);
         return;
       }
       const { data: { publicUrl } } = supabase.storage.from("biens").getPublicUrl(data.path);
-      nouvellesUrls.push(publicUrl);
+      nouvellesPhotos.push({ url: publicUrl, cheminPrive: chemin });
     }
-    setPhotos((prev) => [...prev, ...nouvellesUrls]);
+    setPhotos((prev) => [...prev, ...nouvellesPhotos]);
     setUploadEnCours(false);
   }
 
@@ -194,7 +220,8 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
         salles_bain: Math.max(0, parseInt(sallesBain) || 0),
         surface: Math.max(0, parseFloat(surface) || 0),
         equipements: equipements.length > 0 ? equipements : null,
-        photos: photos.length > 0 ? photos : null,
+        photos: photos.length > 0 ? photos.map((p) => p.url) : null,
+        photosOriginales: photos.length > 0 ? photos.map((p) => p.cheminPrive) : null,
         verifie,
         statut: statut || null,
         latitude,
@@ -335,11 +362,11 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
       <Section titre={`Photos (${photos.length})`}>
         {photos.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-            {photos.map((url, i) => (
-              <div key={url} className="relative rounded-xl overflow-hidden group"
+            {photos.map((p, i) => (
+              <div key={p.url} className="relative rounded-xl overflow-hidden group"
                 style={{ height: 110, background: "#F4F6F5" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover"
+                <img src={p.url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 {/* Badge photo principale */}
                 {i === 0 && (
@@ -358,7 +385,7 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
                       ↑ Principal
                     </button>
                   )}
-                  <button type="button" onClick={() => supprimerPhoto(url)}
+                  <button type="button" onClick={() => supprimerPhoto(p.url)}
                     className="text-white text-xs px-2.5 py-1 rounded-lg cursor-pointer"
                     style={{ background: "rgba(220,38,38,0.8)" }}>
                     ✕ Supprimer

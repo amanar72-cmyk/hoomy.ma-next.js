@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import ModalZonesAgent from "@/components/admin/ModalZonesAgent";
 import SelectRole from "@/components/admin/SelectRole";
+import SelecteurConseillerAdmin from "@/components/admin/SelecteurConseillerAdmin";
 
 export const metadata: Metadata = {
   title: "Agents — Administration HOOMY.MA",
@@ -106,16 +107,21 @@ export default async function PageAdminAgents({ searchParams }: { searchParams: 
             {agents.length} professionnel{agents.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Link
-          href="/admin/agents/nouveau"
-          className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-          style={{ background: "#111", color: "#fff", textDecoration: "none" }}
-        >
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Inviter un agent
-        </Link>
+        <div className="flex items-center gap-3 flex-wrap">
+          <SelecteurConseillerAdmin
+            conseillers={agents.map((a) => ({ id: a.id, nom_complet: a.nom_complet, role: a.role }))}
+          />
+          <Link
+            href="/admin/agents/nouveau"
+            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            style={{ background: "#111", color: "#fff", textDecoration: "none" }}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Inviter un agent
+          </Link>
+        </div>
       </div>
 
       {/* Recherche */}

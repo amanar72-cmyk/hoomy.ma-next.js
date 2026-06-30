@@ -1,16 +1,30 @@
 import { createClient } from "@/lib/supabase/server";
 import { verifierBien, supprimerBien } from "@/app/admin/actions";
+import { urlsPhotosNettes } from "@/lib/images/photosBien";
 
 export default async function PageAdminVerifications() {
   const supabase = await createClient();
 
-  const { data: biens, count } = await supabase
+  const { data: biensRaw, count } = await supabase
     .from("biens")
-    .select("id, reference, titre, type, transaction, prix, ville, quartier, surface, chambres, photos, cree_le", {
+    .select("id, reference, titre, type, transaction, prix, ville, quartier, surface, chambres, photos, photos_originales, cree_le", {
       count: "exact",
     })
     .eq("verifie", false)
     .order("cree_le", { ascending: true }); // les plus anciens d'abord
+
+  // L'admin doit voir la photo NETTE pour juger de la qualité avant de valider
+  // (URL signée à courte durée — le bucket privé n'est jamais public).
+  const biens = await Promise.all(
+    (biensRaw ?? []).map(async (b) => ({
+      ...b,
+      photos: await urlsPhotosNettes(
+        Array.isArray(b.photos) ? b.photos : [],
+        Array.isArray(b.photos_originales) ? b.photos_originales : [],
+        false
+      ),
+    }))
+  );
 
   function formaterPrix(prix: number, transaction: string) {
     const montant = prix.toLocaleString("fr-MA");

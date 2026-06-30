@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import CarteBienClient, { type BienClient, type InfoAgent } from "@/components/compte/CarteBienClient";
 import EtatVide from "@/components/compte/EtatVide";
+import { urlsPhotosNettes } from "@/lib/images/photosBien";
 
 // ── Définition des onglets ────────────────────────────────────────────────────
 
@@ -62,12 +63,21 @@ export default async function PageMesBiens({
     .from("biens")
     .select(
       "id, reference, slug, titre, type, transaction, prix, ville, quartier, " +
-      "photos, statut, agent_id, date_soumission, date_affectation, verifie"
+      "photos, photos_originales, statut, agent_id, date_soumission, date_affectation, verifie"
     )
     .eq("proprietaire_id", user.id)
     .order("date_soumission", { ascending: false });
 
-  const tousLesBiens = (biensRaw ?? []) as unknown as BienClient[];
+  // Le propriétaire voit toujours ses propres photos nettes, même avant validation
+  // (URL signée à courte durée — le bucket privé n'est jamais public).
+  const tousLesBiens = await Promise.all(
+    ((biensRaw ?? []) as unknown as (BienClient & { photos_originales: string[] | null })[]).map(
+      async (b) => ({
+        ...b,
+        photos: await urlsPhotosNettes(b.photos, b.photos_originales, b.verifie),
+      })
+    )
+  );
 
   // ── Fetch infos complètes des agents (nom, téléphone, email) ─────────────
   const agentIds = [

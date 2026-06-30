@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import AnalytiqueGA from "@/components/AnalytiqueGA";
 import BulleChatConditionnelle from "@/components/chat/BulleChatConditionnelle";
-import BoutonWhatsApp from "@/components/BoutonWhatsApp";
 import { ComparateurProvider } from "@/lib/comparateur/ComparateurContext";
 import BarreComparateur from "@/components/comparateur/BarreComparateur";
 import SplashScreen from "@/components/ui/SplashScreen";
@@ -121,7 +120,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {/* Splash affiché uniquement à la première visite de session (cookie "splash_vu" absent) */}
           <SplashScreen splashDeja={splashDeja} />
           {children}
-          <BoutonWhatsApp />
           <BulleChatConditionnelle />
           {process.env.NEXT_PUBLIC_GA_ID && (
             <AnalytiqueGA gaId={process.env.NEXT_PUBLIC_GA_ID} />

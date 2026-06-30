@@ -12,6 +12,7 @@ import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte"
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import { appliquerWatermark } from "@/lib/images/watermark";
+import { appliquerFlou } from "@/lib/images/flou";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -32,10 +33,14 @@ export type BienEditable = {
   equipements: string[] | null;
   composition: NiveauBien[] | null;
   photos: string[] | null;
+  photos_originales: string[] | null;
   statut: string | null;
   latitude: number | null;
   longitude: number | null;
 };
+
+// URL publique (floutée tant que non validée) + chemin nette dans le bucket privé.
+type PhotoEdition = { url: string; cheminPrive: string };
 
 // ── Helpers UI ────────────────────────────────────────────────────────────────
 
@@ -98,7 +103,9 @@ export default function FormulaireEditionBienAgent({
   const [surface, setSurface] = useState(bien.surface.toString());
   const [equipements, setEquipements] = useState<string[]>(bien.equipements ?? []);
   const [composition, setComposition] = useState<NiveauBien[]>(bien.composition ?? []);
-  const [photos, setPhotos] = useState<string[]>(bien.photos ?? []);
+  const [photos, setPhotos] = useState<PhotoEdition[]>(
+    (bien.photos ?? []).map((url, i) => ({ url, cheminPrive: bien.photos_originales?.[i] ?? "" }))
+  );
   const [latitude, setLatitude] = useState<number | null>(bien.latitude ?? null);
   const [longitude, setLongitude] = useState<number | null>(bien.longitude ?? null);
 
@@ -120,7 +127,7 @@ export default function FormulaireEditionBienAgent({
 
   // ── Photos ───────────────────────────────────────────────────────────────────
   function supprimerPhoto(url: string) {
-    setPhotos((prev) => prev.filter((p) => p !== url));
+    setPhotos((prev) => prev.filter((p) => p.url !== url));
   }
 
   function monterPhoto(i: number) {
@@ -146,19 +153,39 @@ export default function FormulaireEditionBienAgent({
     setUploadEnCours(true);
     setErreur(null);
     const supabase = createClient();
-    const nouvellesUrls: string[] = [];
+    const nouvellesPhotos: PhotoEdition[] = [];
 
     for (const fichier of liste) {
       const chemin = `${agentId}/${Date.now()}-${fichier.name.replace(/\s+/g, "_")}`;
-      let aUploader: File | Blob = fichier;
+      let nette: File | Blob = fichier;
       try {
-        aUploader = await appliquerWatermark(fichier);
+        nette = await appliquerWatermark(fichier);
       } catch (err) {
         console.warn("[HOOMY] Watermark échoué, upload original :", err);
       }
+
+      // 1. Version NETTE → bucket privé (jamais public tant que non validé)
+      const { error: erreurPrive } = await supabase.storage
+        .from("biens-prive")
+        .upload(chemin, nette, { upsert: false });
+      if (erreurPrive) {
+        setErreur(`Erreur envoi sécurisé "${fichier.name}" : ${erreurPrive.message}`);
+        setUploadEnCours(false);
+        return;
+      }
+
+      // 2. Version FLOUTÉE (dérivée de la nette) → bucket public
+      let floutee: Blob;
+      try {
+        floutee = await appliquerFlou(nette);
+      } catch (err) {
+        setErreur(`Erreur lors du floutage de "${fichier.name}".`);
+        setUploadEnCours(false);
+        return;
+      }
       const { data, error } = await supabase.storage
         .from("biens")
-        .upload(chemin, aUploader, { upsert: false });
+        .upload(chemin, floutee, { upsert: false });
 
       if (error) {
         setErreur(`Erreur upload "${fichier.name}" : ${error.message}`);
@@ -166,10 +193,10 @@ export default function FormulaireEditionBienAgent({
         return;
       }
       const { data: { publicUrl } } = supabase.storage.from("biens").getPublicUrl(data.path);
-      nouvellesUrls.push(publicUrl);
+      nouvellesPhotos.push({ url: publicUrl, cheminPrive: chemin });
     }
 
-    setPhotos((prev) => [...prev, ...nouvellesUrls]);
+    setPhotos((prev) => [...prev, ...nouvellesPhotos]);
     setUploadEnCours(false);
   }
 
@@ -204,7 +231,8 @@ export default function FormulaireEditionBienAgent({
       surface: Math.max(0, parseFloat(surface) || 0),
       equipements: equipements.length > 0 ? equipements : null,
       composition: composition.length > 0 ? composition : null,
-      photos: photos.length > 0 ? photos : null,
+      photos: photos.length > 0 ? photos.map((p) => p.url) : null,
+      photosOriginales: photos.length > 0 ? photos.map((p) => p.cheminPrive) : null,
       latitude,
       longitude,
     };
@@ -397,15 +425,15 @@ export default function FormulaireEditionBienAgent({
         {/* Grille des photos existantes */}
         {photos.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-            {photos.map((url, i) => (
+            {photos.map((p, i) => (
               <div
-                key={url}
+                key={p.url}
                 className="relative rounded-xl overflow-hidden group"
                 style={{ height: 110, background: "#F4F6F5" }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={url}
+                  src={p.url}
                   alt={`Photo ${i + 1}`}
                   className="w-full h-full object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
@@ -434,7 +462,7 @@ export default function FormulaireEditionBienAgent({
                   )}
                   <button
                     type="button"
-                    onClick={() => supprimerPhoto(url)}
+                    onClick={() => supprimerPhoto(p.url)}
                     className="text-white text-xs px-2.5 py-1 rounded-lg cursor-pointer"
                     style={{ background: "rgba(220,38,38,0.8)" }}
                   >

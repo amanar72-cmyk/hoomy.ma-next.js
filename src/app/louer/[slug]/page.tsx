@@ -36,14 +36,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const titre = `${data.titre} — À louer à ${data.ville} | HOOMY.MA`;
   const description = `${data.titre} à louer à ${data.ville}. Loyer : ${Number(data.prix).toLocaleString("fr-FR")} DH/mois.`;
   const ogImage = `/api/og?slug=${slug}`;
+  const pageUrl = `/louer/${slug}`;
   return {
     title: titre,
     description,
+    alternates: { canonical: pageUrl },
     openGraph: {
       title: titre,
       description,
-      images: [{ url: ogImage, width: 1200, height: 630 }],
+      url: pageUrl,
       type: "website",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: data.titre }],
     },
     twitter: {
       card: "summary_large_image",

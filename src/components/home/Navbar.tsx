@@ -5,7 +5,6 @@ import ToggleTheme from "@/components/ui/ToggleTheme";
 import NavbarShell from "./NavbarShell";
 import MenuMobileHamburger from "./MenuMobileHamburger";
 import LogoHoomy from "./LogoHoomy";
-import SelecteurLangue from "./SelecteurLangue";
 
 export default async function Navbar() {
   // Lecture de la session côté serveur — pas de flash non-authentifié
@@ -70,9 +69,6 @@ export default async function Navbar() {
         <div className="flex items-center gap-2">
           {/* Thème jour/nuit */}
           <ToggleTheme />
-
-          {/* Sélecteur de langue — desktop ET mobile, visible dans la barre */}
-          <SelecteurLangue />
 
           {user ? (
             <>

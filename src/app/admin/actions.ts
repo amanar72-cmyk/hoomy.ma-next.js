@@ -3,12 +3,37 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { envoyerNotificationPush } from "@/lib/push/notifications";
+import { promouvoirPhotosNettes } from "@/lib/images/promouvoirPhotos";
 
 // ── Biens ────────────────────────────────────────────────────────────────────
 
 export async function verifierBien(id: string) {
   const supabase = await createClient();
-  await supabase.from("biens").update({ verifie: true }).eq("id", id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
+
+  const { data: bien } = await supabase
+    .from("biens")
+    .select("verifie, photos_originales")
+    .eq("id", id)
+    .single();
+
+  const updates: { verifie: boolean; photos?: string[] } = { verifie: true };
+
+  // Bien encore non validé avec des photos en attente côté privé : on les promeut
+  // en version nette publique (le flou n'a plus lieu d'être une fois validé).
+  if (bien && !bien.verifie) {
+    const photosOriginales = (bien.photos_originales as string[] | null) ?? [];
+    if (photosOriginales.length > 0) {
+      const urlsNettes = await promouvoirPhotosNettes(photosOriginales);
+      const reussies = urlsNettes.filter((u): u is string => Boolean(u));
+      if (reussies.length > 0) updates.photos = reussies;
+    }
+  }
+
+  await supabase.from("biens").update(updates).eq("id", id);
   revalidatePath("/admin");
   revalidatePath("/admin/biens");
   revalidatePath("/admin/verifications");
@@ -47,6 +72,7 @@ type DonneesBien = {
   surface: number;
   equipements: string[] | null;
   photos: string[] | null;
+  photosOriginales: string[] | null;
   verifie: boolean;
   statut: string | null;
   latitude: number | null;
@@ -61,7 +87,33 @@ export async function modifierBien(bienId: string, donnees: DonneesBien) {
   const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
   if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
 
-  const { error } = await supabase.from("biens").update(donnees).eq("id", bienId);
+  const { data: bienActuel } = await supabase.from("biens").select("verifie").eq("id", bienId).single();
+
+  const { photosOriginales, ...reste } = donnees;
+  const updates: Record<string, unknown> = { ...reste, photos_originales: photosOriginales };
+
+  // Passage non-validé → validé dans la même soumission : promouvoir les photos privées en public.
+  // Zip par index avec donnees.photos pour ne remplacer QUE les entrées ayant un original privé
+  // (les URLs collées manuellement, sans original, restent inchangées).
+  if (donnees.verifie && bienActuel && !bienActuel.verifie) {
+    const photosActuelles = donnees.photos ?? [];
+    const originaux = photosOriginales ?? [];
+    const indices: number[] = [];
+    const chemins: string[] = [];
+    originaux.forEach((chemin, i) => {
+      if (chemin) { indices.push(i); chemins.push(chemin); }
+    });
+    if (chemins.length > 0) {
+      const urlsNettes = await promouvoirPhotosNettes(chemins);
+      const photosFinales = [...photosActuelles];
+      indices.forEach((idx, j) => {
+        if (urlsNettes[j]) photosFinales[idx] = urlsNettes[j] as string;
+      });
+      updates.photos = photosFinales;
+    }
+  }
+
+  const { error } = await supabase.from("biens").update(updates).eq("id", bienId);
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin");

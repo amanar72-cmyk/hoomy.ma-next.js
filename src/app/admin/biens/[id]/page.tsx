@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import FormulaireEditionBien from "@/components/admin/FormulaireEditionBien";
 import { affecterBienAgent } from "@/app/admin/actions";
 import PhotoGalerie from "@/components/ui/PhotoGalerie";
+import { urlsPhotosNettes } from "@/lib/images/photosBien";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -81,7 +82,12 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
   }
 
   // ── Données pour le mode lecture ───────────────────────────────────────────
-  const photos      = (Array.isArray(bien.photos)      ? bien.photos      : []) as string[];
+  // L'admin voit toujours les photos nettes, même avant validation (URL signée).
+  const photos = await urlsPhotosNettes(
+    Array.isArray(bien.photos) ? bien.photos : [],
+    Array.isArray(bien.photos_originales) ? bien.photos_originales : [],
+    bien.verifie
+  );
   const equipements = (Array.isArray(bien.equipements) ? bien.equipements : []) as string[];
   const statutInfo  = BADGE_STATUT[bien.statut ?? ""] ?? { label: bien.statut ?? "—", bg: "#F5F5F5", color: "#777" };
 

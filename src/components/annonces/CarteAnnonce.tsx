@@ -199,7 +199,7 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
               {bien.transaction === "location" ? "À louer" : "À vendre"}
             </span>
 
-            {bien.verifie && (
+            {bien.verifie ? (
               <span
                 className="text-xs font-medium px-2.5 py-1 rounded-full w-fit flex items-center gap-1 leading-none"
                 style={{
@@ -210,6 +210,13 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
               >
                 <IcVerif />
                 Vérifié
+              </span>
+            ) : (
+              <span
+                className="text-xs font-medium px-2.5 py-1 rounded-full w-fit leading-none"
+                style={{ background: "rgba(15,76,58,0.85)", color: "#fff", backdropFilter: "blur(6px)" }}
+              >
+                🔒 En cours de traitement
               </span>
             )}
           </div>

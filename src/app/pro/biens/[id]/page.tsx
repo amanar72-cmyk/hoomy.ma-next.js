@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import FormulaireEditionBienAgent, { type BienEditable } from "@/components/pro/FormulaireEditionBienAgent";
 import PhotoGalerie from "@/components/ui/PhotoGalerie";
+import { urlsPhotosNettes } from "@/lib/images/photosBien";
 
 export const metadata: Metadata = {
   title: "Fiche bien — Espace Pro HOOMY.MA",
@@ -37,7 +38,7 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
     .from("biens")
     .select(
       "id, reference, slug, titre, description, type, transaction, prix, ville, quartier, " +
-      "chambres, salles_bain, surface, equipements, composition, photos, statut, agent_id, latitude, longitude, cree_le, verifie"
+      "chambres, salles_bain, surface, equipements, composition, photos, photos_originales, statut, agent_id, latitude, longitude, cree_le, verifie"
     )
     .eq("id", id)
     .single();
@@ -100,7 +101,13 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
   }
 
   // ── Mode lecture ───────────────────────────────────────────────────────────
-  const photos = (Array.isArray(bien.photos) ? bien.photos : []) as string[];
+  // L'agent assigné voit toujours les photos nettes, même avant validation
+  // (URL signée à courte durée tant que le bien n'est pas encore validé).
+  const photos = await urlsPhotosNettes(
+    Array.isArray(bien.photos) ? bien.photos : [],
+    Array.isArray(bien.photos_originales) ? bien.photos_originales : [],
+    bien.verifie
+  );
   const equipements = (Array.isArray(bien.equipements) ? bien.equipements : []) as string[];
   const estPublie = bien.statut === "finalise" || bien.statut === "transacte";
   const lienAnnonce = estPublie && bien.slug
