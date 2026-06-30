@@ -28,13 +28,23 @@ export async function envoyerNotificationPush(
   userId: string,
   payload: PayloadPush,
 ): Promise<void> {
-  initialiserVapid();
+  try {
+    initialiserVapid();
+  } catch (err) {
+    console.error("[push] Configuration VAPID invalide :", err instanceof Error ? err.message : err);
+    return;
+  }
+
   const admin = createAdminClient();
-  const { data: subs } = await admin
+  const { data: subs, error: erreurLecture } = await admin
     .from("push_subscriptions")
     .select("id, endpoint, p256dh, auth")
     .eq("user_id", userId);
 
+  if (erreurLecture) {
+    console.error("[push] Erreur lecture push_subscriptions :", erreurLecture.message);
+    return;
+  }
   if (!subs || subs.length === 0) return;
 
   const message = JSON.stringify(payload);
@@ -47,13 +57,18 @@ export async function envoyerNotificationPush(
           message,
         );
       } catch (err: unknown) {
-        if (
-          typeof err === "object" &&
-          err !== null &&
-          "statusCode" in err &&
-          (err as { statusCode: number }).statusCode === 410
-        ) {
+        const statusCode =
+          typeof err === "object" && err !== null && "statusCode" in err
+            ? (err as { statusCode: number }).statusCode
+            : undefined;
+        if (statusCode === 410) {
+          // Abonnement expiré côté navigateur — on nettoie, pas une erreur à signaler.
           await admin.from("push_subscriptions").delete().eq("id", sub.id);
+        } else {
+          console.error(
+            `[push] Échec d'envoi vers ${sub.endpoint.slice(0, 60)}... :`,
+            err instanceof Error ? err.message : err,
+          );
         }
       }
     }),
@@ -61,13 +76,23 @@ export async function envoyerNotificationPush(
 }
 
 export async function envoyerNotificationAuxAdmins(payload: PayloadPush): Promise<void> {
-  initialiserVapid();
+  try {
+    initialiserVapid();
+  } catch (err) {
+    console.error("[push] Configuration VAPID invalide :", err instanceof Error ? err.message : err);
+    return;
+  }
+
   const admin = createAdminClient();
-  const { data: admins } = await admin
+  const { data: admins, error: erreurLecture } = await admin
     .from("profils")
     .select("id")
     .eq("role", "admin");
 
+  if (erreurLecture) {
+    console.error("[push] Erreur lecture profils admins :", erreurLecture.message);
+    return;
+  }
   if (!admins || admins.length === 0) return;
 
   await Promise.allSettled(admins.map((a) => envoyerNotificationPush(a.id, payload)));

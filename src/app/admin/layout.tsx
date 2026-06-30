@@ -42,7 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         nomAdmin={profil.nom_complet ?? user.email ?? "Admin"}
         avatarUrl={profil.avatar_url ?? null}
       />
-      <main className="flex-1 overflow-auto" style={{ minHeight: "100vh" }}>
+      <main className="flex-1 overflow-auto mt-[52px] lg:mt-0" style={{ minHeight: "100vh" }}>
         {children}
       </main>
 

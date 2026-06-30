@@ -7,6 +7,7 @@ import {
   envoyerNotificationAuxAdmins,
   type PayloadPush,
 } from "@/lib/push/notifications";
+import { notifierNouvelleActiviteLead } from "@/lib/email/notifications";
 
 export type DonneesDemandeVisite = {
   bienId: string;
@@ -44,9 +45,22 @@ export async function soumettreDemandeVisite(donnees: DonneesDemandeVisite) {
     corps: `${donnees.nomClient} — ${donnees.titreBien}`,
     url: "/pro/leads",
   };
-  const taches: Promise<void>[] = [envoyerNotificationAuxAdmins(payload)];
+  const taches: Promise<void>[] = [
+    envoyerNotificationAuxAdmins(payload),
+    notifierNouvelleActiviteLead({
+      type: "visite",
+      titreBien: donnees.titreBien,
+      nomClient: donnees.nomClient,
+      emailClient: donnees.emailClient,
+      telephoneClient: donnees.telephoneClient,
+      message: donnees.message,
+      dateSouhaitee: donnees.dateSouhaitee,
+    }),
+  ];
   if (donnees.agentId) taches.push(envoyerNotificationPush(donnees.agentId, payload));
-  await Promise.allSettled(taches);
+  for (const resultat of await Promise.allSettled(taches)) {
+    if (resultat.status === "rejected") console.error("[notifications] soumettreDemandeVisite :", resultat.reason);
+  }
 }
 
 export type DonneesMessage = {
@@ -82,7 +96,20 @@ export async function soumettreMessage(donnees: DonneesMessage) {
     corps: `${donnees.nomClient} — ${donnees.titreBien}`,
     url: "/pro/leads",
   };
-  const taches: Promise<void>[] = [envoyerNotificationAuxAdmins(payload)];
+  const taches: Promise<void>[] = [
+    envoyerNotificationAuxAdmins(payload),
+    notifierNouvelleActiviteLead({
+      type: "message",
+      titreBien: donnees.titreBien,
+      nomClient: donnees.nomClient,
+      emailClient: donnees.emailClient,
+      telephoneClient: donnees.telephoneClient,
+      message: donnees.message,
+      dateSouhaitee: null,
+    }),
+  ];
   if (donnees.agentId) taches.push(envoyerNotificationPush(donnees.agentId, payload));
-  await Promise.allSettled(taches);
+  for (const resultat of await Promise.allSettled(taches)) {
+    if (resultat.status === "rejected") console.error("[notifications] soumettreMessage :", resultat.reason);
+  }
 }

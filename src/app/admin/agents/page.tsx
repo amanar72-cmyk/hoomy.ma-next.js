@@ -201,7 +201,7 @@ export default async function PageAdminAgents({ searchParams }: { searchParams: 
                 <div className="flex flex-wrap gap-4 items-start">
 
                   {/* Avatar + identité */}
-                  <div className="flex items-center gap-3 flex-shrink-0" style={{ minWidth: 220 }}>
+                  <div className="flex items-center gap-3 flex-shrink-0 min-w-[160px] sm:min-w-[220px]">
                     {agent.avatar_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={agent.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
@@ -239,11 +239,11 @@ export default async function PageAdminAgents({ searchParams }: { searchParams: 
 
                   {/* Compteurs */}
                   <div className="flex gap-4 flex-shrink-0">
-                    <div className="text-center" style={{ minWidth: 52 }}>
+                    <div className="text-center min-w-[40px] sm:min-w-[52px]">
                       <p className="text-lg font-bold" style={{ color: "#111" }}>{nbBiens}</p>
                       <p className="text-xs" style={{ color: "#BBB" }}>biens</p>
                     </div>
-                    <div className="text-center" style={{ minWidth: 52 }}>
+                    <div className="text-center min-w-[40px] sm:min-w-[52px]">
                       <p className="text-lg font-bold" style={{ color: "#111" }}>{nbLeads}</p>
                       <p className="text-xs" style={{ color: "#BBB" }}>leads</p>
                     </div>

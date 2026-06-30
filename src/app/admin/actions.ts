@@ -278,8 +278,15 @@ export async function affecterBienAgent(bienId: string, formData: FormData) {
     date_affectation: agentId ? new Date().toISOString() : null,
   };
 
-  if (["brouillon", "affecte"].includes(statutActuel ?? "")) {
-    updates.statut = agentId ? "affecte" : "brouillon";
+  if (agentId) {
+    // Affectation manuelle : sort toujours le bien de la file ouverte
+    // (sinon il reste visible dans /pro/file alors qu'il a déjà un agent).
+    updates.dans_file = false;
+    if (["brouillon", "affecte", "dans_la_file", "en_attente_affectation"].includes(statutActuel ?? "")) {
+      updates.statut = "affecte";
+    }
+  } else if (["brouillon", "affecte"].includes(statutActuel ?? "")) {
+    updates.statut = "brouillon";
   }
 
   const { error } = await supabase.from("biens").update(updates).eq("id", bienId);
@@ -300,7 +307,7 @@ export async function affecterBienAgent(bienId: string, formData: FormData) {
       titre: "Nouveau bien affecté",
       corps: bien?.titre ?? "Un bien vous a été affecté.",
       url: `/pro/biens/${bienId}`,
-    }).catch(() => {});
+    }).catch((err) => console.error("[push] affecterBienAgent :", err instanceof Error ? err.message : err));
   }
 }
 

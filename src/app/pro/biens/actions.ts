@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { notifierNouveauBien } from "@/lib/email/notifications";
 
 // ── Slug / référence ──────────────────────────────────────────────────────────
 
@@ -55,8 +56,11 @@ export async function accepterBien(bienId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Non authentifié.");
 
-  const { error } = await supabase.rpc("accepter_bien", { bien_id: bienId });
+  const { data, error } = await supabase.rpc("accepter_bien", { bien_id: bienId });
   if (error) throw new Error(error.message);
+  if (data && typeof data === "object" && "success" in data && !data.success) {
+    throw new Error((data as { message?: string }).message ?? "Ce bien n'est plus disponible.");
+  }
 
   revalidatePath("/pro/file");
   revalidatePath("/pro/biens");
@@ -113,6 +117,17 @@ export async function creerBienAgent(donnees: DonneesBienAgent): Promise<{ id: s
   if (error || !bien) throw new Error(error?.message ?? "Erreur lors de la création.");
 
   revalidatePath("/pro/biens");
+
+  // Notification email best-effort — ne doit jamais faire échouer la création.
+  await notifierNouveauBien({
+    titre: donnees.titre,
+    ville: donnees.ville,
+    prix: donnees.prix,
+    transaction: donnees.transaction,
+    reference,
+    auteur: `${user.email ?? "Agent HOOMY.MA"} (agent)`,
+  });
+
   return { id: bien.id };
 }
 

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { NiveauBien } from "@/components/partage/CompositionNiveaux";
+import { notifierNouveauBien } from "@/lib/email/notifications";
 
 function normaliserPourSlug(s: string): string {
   return s
@@ -84,6 +85,16 @@ export async function publierBien(donnees: DonneesBienClient): Promise<{ id: str
   if (error || !bien) throw new Error(error?.message ?? "Erreur lors de la publication.");
 
   revalidatePath("/mon-compte/mes-biens");
+
+  // Notification email best-effort — ne doit jamais faire échouer la publication.
+  await notifierNouveauBien({
+    titre: donnees.titre,
+    ville: donnees.ville,
+    prix: donnees.prix,
+    transaction: donnees.transaction,
+    reference,
+    auteur: user.email ?? "Client HOOMY.MA",
+  });
 
   return { id: bien.id };
 }

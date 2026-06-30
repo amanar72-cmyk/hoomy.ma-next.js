@@ -10,7 +10,7 @@ export default async function PageAdminVerifications() {
     .select("id, reference, titre, type, transaction, prix, ville, quartier, surface, chambres, photos, photos_originales, cree_le", {
       count: "exact",
     })
-    .eq("verifie", false)
+    .eq("statut", "en_validation")
     .order("cree_le", { ascending: true }); // les plus anciens d'abord
 
   // L'admin doit voir la photo NETTE pour juger de la qualité avant de valider
