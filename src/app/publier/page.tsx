@@ -1,21 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import WizardPublication from "@/components/publier/WizardPublication";
 
 export default async function PagePublier() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/connexion?redirect=/publier");
-  }
-
   return (
     <main
       className="min-h-screen"
       style={{ background: "linear-gradient(160deg,#f0f7f4 0%,#FAF7F0 60%,#f5efe3 100%)" }}
     >
-      <WizardPublication userId={user.id} />
+      <WizardPublication userId={user?.id ?? null} />
     </main>
   );
 }

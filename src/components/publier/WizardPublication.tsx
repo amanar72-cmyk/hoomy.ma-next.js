@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { publierBien } from "@/app/publier/actions";
@@ -11,10 +11,12 @@ import CompositionNiveaux, { type NiveauBien } from "@/components/partage/Compos
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type PhotoUploadee = {
+type PhotoWizard = {
   id: string;
   url: string;
   nom: string;
+  uploadee: boolean;
+  fichier?: File;
 };
 
 type DonneesWizard = {
@@ -27,7 +29,7 @@ type DonneesWizard = {
   salles_bain: number;
   equipements: string[];
   composition: NiveauBien[];
-  photos: PhotoUploadee[];
+  photos: PhotoWizard[];
   titre: string;
   description: string;
   prix: number;
@@ -35,7 +37,7 @@ type DonneesWizard = {
   longitude: number | null;
 };
 
-const ETAPE_LABELS = [
+const ETAPE_LABELS_BASE = [
   "Transaction",
   "Type de bien",
   "Localisation",
@@ -69,11 +71,11 @@ const FORMATS_ACCEPTES = ["image/jpeg", "image/png", "image/webp"];
 
 // ── Barre de progression ──────────────────────────────────────────────────────
 
-function BarreProgression({ etape, total }: { etape: number; total: number }) {
+function BarreProgression({ etape, total, labels }: { etape: number; total: number; labels: string[] }) {
   return (
     <div className="w-full mb-8">
       <div className="flex items-center justify-between mb-3">
-        {ETAPE_LABELS.map((label, i) => {
+        {labels.map((label, i) => {
           const num = i + 1;
           const estActif = num === etape;
           const estFait = num < etape;
@@ -228,7 +230,11 @@ function PageSucces() {
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export default function WizardPublication({ userId }: { userId: string }) {
+export default function WizardPublication({ userId }: { userId: string | null }) {
+  // Anonyme : une étape "Compte" est ajoutée à la fin du parcours.
+  const TOTAL_ETAPES = userId ? 6 : 7;
+  const labels = userId ? ETAPE_LABELS_BASE : [...ETAPE_LABELS_BASE, "Compte"];
+
   const [etape, setEtape] = useState(1);
   const [succes, setSucces] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -258,6 +264,15 @@ export default function WizardPublication({ userId }: { userId: string }) {
   const [erreurUpload, setErreurUpload] = useState<string | null>(null);
   const inputFichierRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+
+  // ── Étape "Compte" (visiteurs anonymes uniquement) ────────────────────────
+  const [modeCompte, setModeCompte] = useState<"creer" | "connecter">("creer");
+  const [nomCompte, setNomCompte] = useState("");
+  const [emailCompte, setEmailCompte] = useState("");
+  const [telephoneCompte, setTelephoneCompte] = useState("");
+  const [motDePasseCompte, setMotDePasseCompte] = useState("");
+  const [confirmationCompte, setConfirmationCompte] = useState("");
+  const [attenteConfirmationEmail, setAttenteConfirmationEmail] = useState(false);
 
   const mettreAJour = useCallback(<K extends keyof DonneesWizard>(champ: K, val: DonneesWizard[K]) => {
     setDonnees((prev) => ({ ...prev, [champ]: val }));
@@ -302,7 +317,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
     setEtape((e) => e - 1);
   };
 
-  // ── Upload photos ─────────────────────────────────────────────────────────
+  // ── Upload / mise en attente des photos ───────────────────────────────────
 
   const traiterFichiers = async (fichiers: File[]) => {
     setErreurUpload(null);
@@ -311,8 +326,8 @@ export default function WizardPublication({ userId }: { userId: string }) {
       setErreurUpload(`Maximum ${MAX_PHOTOS} photos atteint.`);
       return;
     }
-    const aUploader = fichiers.slice(0, restant);
-    const invalides = aUploader.filter(
+    const aTraiter = fichiers.slice(0, restant);
+    const invalides = aTraiter.filter(
       (f) => !FORMATS_ACCEPTES.includes(f.type) || f.size > MAX_TAILLE_MB * 1024 * 1024
     );
     if (invalides.length > 0) {
@@ -320,21 +335,35 @@ export default function WizardPublication({ userId }: { userId: string }) {
       return;
     }
 
-    setUploadEnCours(true);
-    const nouvellesPhotos: PhotoUploadee[] = [];
+    // Visiteur anonyme : les fichiers sont gardés en mémoire, l'envoi réel se fait
+    // à la création du compte (dernière étape), une fois un utilisateur authentifié connu.
+    if (!userId) {
+      const enAttente: PhotoWizard[] = aTraiter.map((fichier) => ({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        url: URL.createObjectURL(fichier),
+        nom: fichier.name,
+        uploadee: false,
+        fichier,
+      }));
+      setDonnees((prev) => ({ ...prev, photos: [...prev.photos, ...enAttente] }));
+      return;
+    }
 
-    for (const fichier of aUploader) {
+    setUploadEnCours(true);
+    const nouvellesPhotos: PhotoWizard[] = [];
+
+    for (const fichier of aTraiter) {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       setUploadsProgression((prev) => ({ ...prev, [id]: 0 }));
 
       const chemin = `${userId}/${Date.now()}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      let aUploader: File | Blob = fichier;
+      let aEnvoyer: File | Blob = fichier;
       try {
-        aUploader = await appliquerWatermark(fichier);
+        aEnvoyer = await appliquerWatermark(fichier);
       } catch (err) {
         console.warn("[HOOMY] Watermark échoué, upload original :", err);
       }
-      const { data, error } = await supabase.storage.from("biens").upload(chemin, aUploader);
+      const { data, error } = await supabase.storage.from("biens").upload(chemin, aEnvoyer);
 
       if (error) {
         setErreurUpload(`Erreur lors de l'upload de "${fichier.name}" : ${error.message}`);
@@ -343,7 +372,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
       }
 
       const { data: urlData } = supabase.storage.from("biens").getPublicUrl(data.path);
-      nouvellesPhotos.push({ id, url: urlData.publicUrl, nom: fichier.name });
+      nouvellesPhotos.push({ id, url: urlData.publicUrl, nom: fichier.name, uploadee: true });
       setUploadsProgression((prev) => { const n = { ...prev }; delete n[id]; return n; });
     }
 
@@ -354,7 +383,11 @@ export default function WizardPublication({ userId }: { userId: string }) {
   };
 
   const supprimerPhoto = (id: string) => {
-    setDonnees((prev) => ({ ...prev, photos: prev.photos.filter((p) => p.id !== id) }));
+    setDonnees((prev) => {
+      const cible = prev.photos.find((p) => p.id === id);
+      if (cible && !cible.uploadee) URL.revokeObjectURL(cible.url);
+      return { ...prev, photos: prev.photos.filter((p) => p.id !== id) };
+    });
   };
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -368,38 +401,176 @@ export default function WizardPublication({ userId }: { userId: string }) {
 
   const onDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
-  // ── Soumission finale ─────────────────────────────────────────────────────
+  // ── Finalisation : envoi des photos en attente + publication ─────────────
 
+  const finaliserUploadsEtPublier = async (uid: string) => {
+    const photosFinales: PhotoWizard[] = [];
+    for (const photo of donnees.photos) {
+      if (photo.uploadee || !photo.fichier) { photosFinales.push(photo); continue; }
+      const chemin = `${uid}/${Date.now()}-${photo.fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      let aEnvoyer: File | Blob = photo.fichier;
+      try {
+        aEnvoyer = await appliquerWatermark(photo.fichier);
+      } catch (err) {
+        console.warn("[HOOMY] Watermark échoué, upload original :", err);
+      }
+      const { data, error } = await supabase.storage.from("biens").upload(chemin, aEnvoyer);
+      if (error) throw new Error(`Erreur lors de l'envoi de la photo « ${photo.nom} » : ${error.message}`);
+      const { data: urlData } = supabase.storage.from("biens").getPublicUrl(data.path);
+      URL.revokeObjectURL(photo.url);
+      photosFinales.push({ ...photo, url: urlData.publicUrl, uploadee: true, fichier: undefined });
+    }
+
+    await publierBien({
+      transaction: donnees.transaction,
+      type: donnees.type,
+      ville: donnees.ville,
+      quartier: donnees.quartier,
+      surface: donnees.surface,
+      chambres: donnees.chambres,
+      salles_bain: donnees.salles_bain,
+      equipements: donnees.equipements,
+      composition: donnees.composition,
+      photos: photosFinales.map((p) => p.url),
+      titre: donnees.titre,
+      description: donnees.description,
+      prix: donnees.prix,
+      latitude: donnees.latitude,
+      longitude: donnees.longitude,
+    });
+    setSucces(true);
+  };
+
+  // Soumission directe — visiteur déjà connecté en arrivant sur la page.
   const soumettre = async () => {
     const err = validerEtape();
     if (err) { setErreur(err); return; }
     setErreur(null);
     setEnSoumission(true);
     try {
-      await publierBien({
-        transaction: donnees.transaction,
-        type: donnees.type,
-        ville: donnees.ville,
-        quartier: donnees.quartier,
-        surface: donnees.surface,
-        chambres: donnees.chambres,
-        salles_bain: donnees.salles_bain,
-        equipements: donnees.equipements,
-        composition: donnees.composition,
-        photos: donnees.photos.map((p) => p.url),
-        titre: donnees.titre,
-        description: donnees.description,
-        prix: donnees.prix,
-        latitude: donnees.latitude,
-        longitude: donnees.longitude,
-      });
-      setSucces(true);
+      await finaliserUploadsEtPublier(userId as string);
     } catch (e: unknown) {
       setErreur(e instanceof Error ? e.message : "Une erreur est survenue.");
     } finally {
       setEnSoumission(false);
     }
   };
+
+  // Création de compte → publication automatique si la session est établie immédiatement,
+  // sinon attente de la confirmation par email (écouteur ci-dessous).
+  async function creerCompteEtPublier() {
+    if (!nomCompte.trim()) { setErreur("Le nom complet est requis."); return; }
+    if (!emailCompte.includes("@")) { setErreur("Adresse email invalide."); return; }
+    if (!telephoneCompte.trim()) { setErreur("Le numéro de téléphone est requis."); return; }
+    if (motDePasseCompte.length < 6) { setErreur("Mot de passe trop court (min. 6 caractères)."); return; }
+    if (motDePasseCompte !== confirmationCompte) { setErreur("Les mots de passe ne correspondent pas."); return; }
+
+    setErreur(null);
+    setEnSoumission(true);
+
+    try {
+      const base = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const { data, error } = await supabase.auth.signUp({
+        email: emailCompte.trim().toLowerCase(),
+        password: motDePasseCompte,
+        options: {
+          data: { nom_complet: nomCompte.trim(), telephone: telephoneCompte.trim() },
+          emailRedirectTo: `${base}/auth/callback?next=/publier`,
+        },
+      });
+
+      if (error) {
+        const msg = error.message?.toLowerCase() ?? "";
+        if (msg.includes("already registered") || msg.includes("already exists")) {
+          setErreur("Cette adresse email est déjà utilisée. Connectez-vous plutôt.");
+        } else if (msg.includes("password")) {
+          setErreur("Mot de passe invalide — utilisez au moins 6 caractères.");
+        } else {
+          setErreur(error.message || "Une erreur est survenue. Veuillez réessayer.");
+        }
+        return;
+      }
+
+      if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+        setErreur("Cette adresse email est déjà utilisée. Connectez-vous plutôt.");
+        return;
+      }
+
+      if (data.session && data.user) {
+        await finaliserUploadsEtPublier(data.user.id);
+        return;
+      }
+
+      // Confirmation email requise — publication automatique dès la confirmation (voir écouteur).
+      setAttenteConfirmationEmail(true);
+    } catch (e: unknown) {
+      setErreur(e instanceof Error ? e.message : "Une erreur est survenue.");
+    } finally {
+      setEnSoumission(false);
+    }
+  }
+
+  // Connexion d'un client existant → publication immédiate.
+  async function seConnecterEtPublier() {
+    if (!emailCompte.includes("@") || !motDePasseCompte) {
+      setErreur("Veuillez renseigner votre email et votre mot de passe.");
+      return;
+    }
+    setErreur(null);
+    setEnSoumission(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: emailCompte.trim().toLowerCase(),
+        password: motDePasseCompte,
+      });
+      if (error || !data.session || !data.user) {
+        setErreur("Email ou mot de passe incorrect.");
+        return;
+      }
+      await finaliserUploadsEtPublier(data.user.id);
+    } catch (e: unknown) {
+      setErreur(e instanceof Error ? e.message : "Une erreur est survenue.");
+    } finally {
+      setEnSoumission(false);
+    }
+  }
+
+  // Nouvelle vérification manuelle (si l'écouteur cross-onglet n'a pas capté la confirmation).
+  async function verifierConfirmation() {
+    setErreur(null);
+    setEnSoumission(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setAttenteConfirmationEmail(false);
+        await finaliserUploadsEtPublier(user.id);
+      } else {
+        setErreur("Compte pas encore confirmé. Cliquez sur le lien reçu par email, puis réessayez.");
+      }
+    } catch (e: unknown) {
+      setErreur(e instanceof Error ? e.message : "Une erreur est survenue.");
+    } finally {
+      setEnSoumission(false);
+    }
+  }
+
+  // Écoute la confirmation d'email depuis un autre onglet : publie automatiquement
+  // dès que la session s'établit, sans que l'utilisateur ait à revenir manuellement.
+  useEffect(() => {
+    if (!attenteConfirmationEmail) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        subscription.unsubscribe();
+        setAttenteConfirmationEmail(false);
+        setEnSoumission(true);
+        finaliserUploadsEtPublier(session.user.id)
+          .catch((e: unknown) => setErreur(e instanceof Error ? e.message : "Une erreur est survenue."))
+          .finally(() => setEnSoumission(false));
+      }
+    });
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attenteConfirmationEmail]);
 
   // ── Rendu étapes ──────────────────────────────────────────────────────────
 
@@ -413,6 +584,8 @@ export default function WizardPublication({ userId }: { userId: string }) {
   };
 
   const nbUploadsEnCours = Object.keys(uploadsProgression).length;
+  const inp: React.CSSProperties = { borderColor: "#E0DAC8", color: "#1f2a24" };
+  const inpCls = "w-full border rounded-xl px-4 py-3 text-sm";
 
   const contenu = () => {
     if (succes) return <PageSucces />;
@@ -589,6 +762,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
             </h2>
             <p className="text-sm mb-6" style={{ color: "#9DB8AD" }}>
               Ajoutez jusqu&apos;à {MAX_PHOTOS} photos ({donnees.photos.length}/{MAX_PHOTOS}) — JPG, PNG ou WebP, max {MAX_TAILLE_MB} Mo chacune.
+              {!userId && " Elles seront envoyées à la dernière étape, lors de la création de votre compte."}
             </p>
 
             {/* Zone drag & drop */}
@@ -759,10 +933,140 @@ export default function WizardPublication({ userId }: { userId: string }) {
           </div>
         );
 
+      // ── Étape 7 : Compte (visiteurs anonymes uniquement) ──────────────────
+      case 7:
+        if (attenteConfirmationEmail) {
+          return (
+            <div className="flex flex-col items-center text-center py-10 px-4">
+              <div className="text-5xl mb-5">📬</div>
+              <h2 className="text-xl font-normal mb-3" style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}>
+                Vérifiez votre email
+              </h2>
+              <p className="text-sm leading-relaxed max-w-sm mb-2" style={{ color: "#3D4A42" }}>
+                Un lien de confirmation a été envoyé à <strong>{emailCompte}</strong>. Cliquez dessus pour activer votre compte.
+              </p>
+              <p className="text-xs max-w-sm mb-6" style={{ color: "#9DB8AD" }}>
+                Gardez cette page ouverte : votre annonce sera publiée automatiquement dès la confirmation.
+              </p>
+              <button
+                type="button"
+                onClick={verifierConfirmation}
+                disabled={enSoumission}
+                className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+                style={{ background: "#0F4C3A", color: "#fff" }}
+              >
+                {enSoumission ? "Vérification…" : "J'ai confirmé mon email →"}
+              </button>
+            </div>
+          );
+        }
+        return (
+          <div>
+            <button
+              type="button"
+              onClick={allerEtapePrecedente}
+              className="text-xs mb-4 hover:underline cursor-pointer"
+              style={{ color: "#9DB8AD" }}
+            >
+              ← Modifier mon annonce
+            </button>
+            <h2 className="text-xl font-normal mb-2" style={{ fontFamily: "var(--font-marcellus),serif", color: "#0F4C3A" }}>
+              Plus qu'une étape !
+            </h2>
+            <p className="text-sm mb-6" style={{ color: "#9DB8AD" }}>
+              Créez votre compte HOOMY pour publier votre annonce et suivre son avancement.
+            </p>
+
+            {/* Bascule créer / se connecter */}
+            <div className="flex rounded-xl overflow-hidden border mb-5" style={{ borderColor: "#E0DAC8" }}>
+              <button
+                type="button"
+                onClick={() => { setModeCompte("creer"); setErreur(null); }}
+                className="flex-1 py-2.5 text-sm font-medium transition-colors cursor-pointer"
+                style={{ background: modeCompte === "creer" ? "#0F4C3A" : "#fff", color: modeCompte === "creer" ? "#fff" : "#3D4A42" }}
+              >
+                Créer un compte
+              </button>
+              <button
+                type="button"
+                onClick={() => { setModeCompte("connecter"); setErreur(null); }}
+                className="flex-1 py-2.5 text-sm font-medium transition-colors cursor-pointer"
+                style={{ background: modeCompte === "connecter" ? "#0F4C3A" : "#fff", color: modeCompte === "connecter" ? "#fff" : "#3D4A42" }}
+              >
+                Se connecter
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {modeCompte === "creer" && (
+                <input
+                  type="text"
+                  value={nomCompte}
+                  onChange={(e) => setNomCompte(e.target.value)}
+                  placeholder="Nom complet *"
+                  className={inpCls}
+                  style={inp}
+                />
+              )}
+              <input
+                type="email"
+                value={emailCompte}
+                onChange={(e) => setEmailCompte(e.target.value)}
+                placeholder="Votre email *"
+                className={inpCls}
+                style={inp}
+              />
+              {modeCompte === "creer" && (
+                <input
+                  type="tel"
+                  value={telephoneCompte}
+                  onChange={(e) => setTelephoneCompte(e.target.value)}
+                  placeholder="Votre téléphone *"
+                  className={inpCls}
+                  style={inp}
+                />
+              )}
+              <input
+                type="password"
+                value={motDePasseCompte}
+                onChange={(e) => setMotDePasseCompte(e.target.value)}
+                placeholder={modeCompte === "creer" ? "Mot de passe (min. 6 caractères) *" : "Mot de passe *"}
+                className={inpCls}
+                style={inp}
+              />
+              {modeCompte === "creer" && (
+                <input
+                  type="password"
+                  value={confirmationCompte}
+                  onChange={(e) => setConfirmationCompte(e.target.value)}
+                  placeholder="Confirmer le mot de passe *"
+                  className={inpCls}
+                  style={inp}
+                />
+              )}
+
+              <button
+                type="button"
+                onClick={modeCompte === "creer" ? creerCompteEtPublier : seConnecterEtPublier}
+                disabled={enSoumission}
+                className="w-full py-3 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60 mt-1 cursor-pointer"
+                style={{ background: "#D4AF37", color: "#0F4C3A" }}
+              >
+                {enSoumission
+                  ? "Publication en cours…"
+                  : modeCompte === "creer" ? "Créer mon compte et publier ✓" : "Me connecter et publier ✓"}
+              </button>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
   };
+
+  // Masque la navigation générique sur l'étape Compte (elle gère ses propres actions).
+  const masquerNavGenerique = etape === TOTAL_ETAPES && !userId;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
@@ -774,7 +1078,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
         <p className="text-sm" style={{ color: "#9DB8AD" }}>Déposez votre annonce en quelques minutes</p>
       </div>
 
-      {!succes && <BarreProgression etape={etape} total={6} />}
+      {!succes && <BarreProgression etape={etape} total={TOTAL_ETAPES} labels={labels} />}
 
       {/* Carte du wizard */}
       <div className="rounded-2xl p-6 sm:p-8" style={{ background: "#fff", boxShadow: "0 4px 32px rgba(15,76,58,0.10)" }}>
@@ -788,7 +1092,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
         )}
 
         {/* Navigation */}
-        {!succes && (
+        {!succes && !masquerNavGenerique && (
           <div className="flex justify-between mt-8 gap-3">
             {etape > 1 ? (
               <button
@@ -803,7 +1107,7 @@ export default function WizardPublication({ userId }: { userId: string }) {
               <div />
             )}
 
-            {etape < 6 ? (
+            {etape < TOTAL_ETAPES ? (
               <button
                 type="button"
                 onClick={allerEtapeSuivante}
