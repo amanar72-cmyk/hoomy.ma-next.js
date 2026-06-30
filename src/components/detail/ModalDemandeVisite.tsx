@@ -52,8 +52,8 @@ export default function ModalDemandeVisite({ bienId, agentId, titreBien, onClose
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nom.trim() || !email.trim() || !date) {
-      setErreur("Nom, email et date sont requis.");
+    if (!nom.trim() || !email.trim() || !telephone.trim() || !date) {
+      setErreur("Nom, email, téléphone et date sont requis.");
       return;
     }
 
@@ -77,7 +77,7 @@ export default function ModalDemandeVisite({ bienId, agentId, titreBien, onClose
         titreBien,
         nomClient: nom.trim(),
         emailClient: email.trim(),
-        telephoneClient: telephone.trim() || null,
+        telephoneClient: telephone.trim(),
         dateSouhaitee: date,
         message: messageComplet || null,
       });
@@ -196,7 +196,8 @@ export default function ModalDemandeVisite({ bienId, agentId, titreBien, onClose
               type="tel"
               value={telephone}
               onChange={(e) => setTelephone(e.target.value)}
-              placeholder="Votre téléphone"
+              required
+              placeholder="Votre téléphone *"
               className={cls}
               style={inp}
             />

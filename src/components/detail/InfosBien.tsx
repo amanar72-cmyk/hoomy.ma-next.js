@@ -100,7 +100,7 @@ function emojiPiece(type: string): string {
 function SectionComposition({ composition }: { composition: NiveauBien[] }) {
   if (composition.length === 0) return null;
   return (
-    <section className="mb-12">
+    <section className="mb-9">
       <h2
         className="text-xl font-normal mb-6"
         style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
@@ -207,7 +207,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
       </p>
 
       {/* ── Caractéristiques — style emoji moderne ────────────────────── */}
-      <div className="flex flex-wrap gap-3 mb-10">
+      <div className="flex flex-wrap gap-3 mb-8">
         {bien.surface > 0 && (
           <div
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
@@ -269,11 +269,11 @@ export default function InfosBien({ bien }: { bien: Bien }) {
       </div>
 
       {/* ── Séparateur ────────────────────────────────────────────────── */}
-      <div className="mb-10" style={{ height: 1, background: "linear-gradient(to right, #D4AF37, transparent)" }} />
+      <div className="mb-8" style={{ height: 1, background: "linear-gradient(to right, #D4AF37, transparent)" }} />
 
       {/* ── Équipements ───────────────────────────────────────────────── */}
       {equipements.length > 0 && (
-        <section className="mb-12">
+        <section className="mb-9">
           <h2 className="text-xl font-normal mb-6"
             style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
             Équipements &amp; prestations
@@ -307,7 +307,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
 
       {/* ── Estimation des frais — vente uniquement ───────────────────── */}
       {estVente && frais && (
-        <section className="mb-10">
+        <section className="mb-8">
           <h2 className="text-xl font-normal mb-5"
             style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
             💰 Estimation du coût total
@@ -407,24 +407,6 @@ export default function InfosBien({ bien }: { bien: Bien }) {
           </div>
         </section>
       )}
-
-      {/* ── Honoraires de commercialisation ───────────────────────────── */}
-      <section
-        className="mb-10 rounded-2xl px-5 py-4 flex items-start gap-3"
-        style={{ background: "var(--fond-accent)", border: "1px solid #EDE7D7" }}
-      >
-        <span className="text-xl flex-shrink-0 mt-0.5">🤝</span>
-        <div>
-          <p className="text-sm font-semibold mb-1" style={{ color: "var(--primaire)" }}>
-            Commercialisé par HOOMY.MA
-          </p>
-          <p className="text-xs leading-relaxed" style={{ color: "var(--texte-secondaire)" }}>
-            Ce bien est présenté par nos conseillers immobiliers. Des honoraires de mise
-            en relation peuvent s'appliquer selon les conditions convenues lors de votre
-            prise de contact. N'hésitez pas à nous contacter pour en savoir plus.
-          </p>
-        </div>
-      </section>
 
     </div>
   );

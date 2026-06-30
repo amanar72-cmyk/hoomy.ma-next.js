@@ -49,8 +49,8 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nom.trim() || !email.trim() || !message.trim()) {
-      setErreur("Nom, email et message sont requis.");
+    if (!nom.trim() || !email.trim() || !telephone.trim() || !message.trim()) {
+      setErreur("Nom, email, téléphone et message sont requis.");
       return;
     }
 
@@ -64,7 +64,7 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
         titreBien,
         nomClient: nom.trim(),
         emailClient: email.trim(),
-        telephoneClient: telephone.trim() || null,
+        telephoneClient: telephone.trim(),
         message: message.trim(),
       });
     } catch {
@@ -180,7 +180,8 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
               type="tel"
               value={telephone}
               onChange={(e) => setTelephone(e.target.value)}
-              placeholder="Votre téléphone (facultatif)"
+              required
+              placeholder="Votre téléphone *"
               className={cls}
               style={inp}
             />

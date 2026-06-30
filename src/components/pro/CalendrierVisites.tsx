@@ -107,7 +107,7 @@ export default function CalendrierVisites({
 
       {/* ── Calendrier ────────────────────────────────────────────────────── */}
       <div
-        className="lg:col-span-2 rounded-2xl p-5"
+        className="lg:col-span-2 rounded-2xl p-3 sm:p-5"
         style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
       >
         {/* Navigation mois */}
@@ -142,14 +142,14 @@ export default function CalendrierVisites({
         {/* Jours de la semaine */}
         <div className="grid grid-cols-7 mb-2">
           {JOURS.map((j) => (
-            <div key={j} className="text-center text-xs font-medium py-1" style={{ color: "#9DB8AD" }}>
-              {j}
+            <div key={j} className="text-center text-[11px] sm:text-xs font-medium py-1" style={{ color: "#9DB8AD" }}>
+              {j.slice(0, 2)}
             </div>
           ))}
         </div>
 
         {/* Grille */}
-        <div className="grid grid-cols-7 gap-0.5">
+        <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
           {Array.from({ length: nbRangees * 7 }).map((_, i) => {
             const jour = i - decalage + 1;
             if (jour < 1 || jour > dernier.getDate()) {
@@ -173,11 +173,11 @@ export default function CalendrierVisites({
                     : estAujourdhui
                       ? "#F0FAF4"
                       : "transparent",
-                  minHeight: 44,
+                  minHeight: 46,
                 }}
               >
                 <span
-                  className="text-sm font-medium"
+                  className="text-sm sm:text-base font-medium"
                   style={{
                     color: estSelectionne ? "#fff" : estAujourdhui ? "#0F4C3A" : "#1f2a24",
                     fontWeight: estAujourdhui || aVisite ? 600 : 400,

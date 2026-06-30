@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import ModalDemandeVisite from "@/components/detail/ModalDemandeVisite";
+import { CONTACT } from "@/lib/contact";
 
 type Props = {
   prix: number;
@@ -23,7 +24,7 @@ export default function BarreMobileContact({
   ville,
   bienId,
   agentId,
-  telephone = "212600000000",
+  telephone = CONTACT.whatsappNumero,
 }: Props) {
   const [pageUrl, setPageUrl] = useState("");
   const [favori, setFavori] = useState(false);

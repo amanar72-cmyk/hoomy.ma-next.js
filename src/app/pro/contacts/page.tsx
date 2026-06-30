@@ -29,7 +29,7 @@ export default function PageProContacts() {
         </button>
       </div>
 
-      <div className="rounded-2xl border overflow-hidden"
+      <div className="rounded-2xl border overflow-x-auto"
         style={{ background: "#fff", borderColor: "#F0EDE5" }}>
         <table className="w-full text-sm min-w-[600px]">
           <thead>

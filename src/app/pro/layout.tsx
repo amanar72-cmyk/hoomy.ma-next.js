@@ -46,7 +46,7 @@ export default async function ProLayout({ children }: { children: React.ReactNod
         avatarUrl={profil.avatar_url ?? null}
       />
 
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0 mt-[52px] lg:mt-0">
         <HeaderPro
           nomUtilisateur={nom}
           role={profil.role}

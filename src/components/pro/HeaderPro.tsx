@@ -44,13 +44,12 @@ export default function HeaderPro({ nomUtilisateur, role }: Props) {
 
   return (
     <header
-      className="flex items-center justify-between px-6"
+      className="flex items-center justify-between px-6 top-[52px] lg:top-0"
       style={{
         background: "#fff",
         borderBottom: "1px solid #EBEBEB",
         height: 56,
         position: "sticky",
-        top: 0,
         zIndex: 20,
       }}
     >
@@ -78,11 +77,11 @@ export default function HeaderPro({ nomUtilisateur, role }: Props) {
             >
               {initiales}
             </div>
-            <div className="hidden sm:block text-left">
+            <div className="text-left">
               <p className="text-xs font-semibold leading-tight" style={{ color: "#111" }}>
                 {nomUtilisateur.split(" ")[0]}
               </p>
-              <p className="text-xs capitalize leading-tight" style={{ color: "#999" }}>{role}</p>
+              <p className="hidden sm:block text-xs capitalize leading-tight" style={{ color: "#999" }}>{role}</p>
             </div>
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#999" strokeWidth="2.5"
               className="hidden sm:block" style={{ marginLeft: 2 }}>

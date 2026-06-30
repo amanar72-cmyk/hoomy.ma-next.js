@@ -5,6 +5,7 @@ import Link from "next/link";
 import ModalDemandeVisite from "@/components/detail/ModalDemandeVisite";
 import ModalEnvoyerMessage from "@/components/detail/ModalEnvoyerMessage";
 import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
+import { CONTACT } from "@/lib/contact";
 
 type Props = {
   prix: number;
@@ -141,7 +142,7 @@ export default function CarteContact({ prix, transaction, titre, chemin, bienId,
           </button>
 
           <a
-            href={`https://wa.me/212600000000?text=${messageWA}`}
+            href={`https://wa.me/${CONTACT.whatsappNumero}?text=${messageWA}`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-md hover:-translate-y-px"

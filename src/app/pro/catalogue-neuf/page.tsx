@@ -14,9 +14,9 @@ export default function PageProCatalogueNeuf() {
         </p>
       </div>
 
-      <div className="rounded-2xl border overflow-hidden"
+      <div className="rounded-2xl border overflow-x-auto"
         style={{ background: "#fff", borderColor: "#F0EDE5" }}>
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[760px]">
           <thead>
             <tr style={{ background: "#F4F6F5", borderBottom: "1px solid #F0EDE5" }}>
               {["Programme", "Promoteur", "Ville", "Type", "Prix à partir de", "Livraison", "Statut"].map((c) => (
