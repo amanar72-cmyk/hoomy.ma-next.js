@@ -10,10 +10,10 @@ function obtenirTransporteur(): nodemailer.Transporter {
   const host = process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT;
   const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const pass = process.env.SMTP_PASSWORD ?? process.env.SMTP_PASS;
 
   if (!host || !port || !user || !pass) {
-    throw new Error("Variables SMTP manquantes (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)");
+    throw new Error("Variables SMTP manquantes (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD)");
   }
 
   transporteur = nodemailer.createTransport({

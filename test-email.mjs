@@ -11,13 +11,13 @@ import nodemailer from "nodemailer";
 const host = process.env.SMTP_HOST;
 const port = Number(process.env.SMTP_PORT ?? "465");
 const user = process.env.SMTP_USER;
-const pass = process.env.SMTP_PASS;
+const pass = process.env.SMTP_PASSWORD ?? process.env.SMTP_PASS;
 
 console.log("── Variables SMTP chargées ──────────────────────");
 console.log("SMTP_HOST :", host  ?? "⚠️  MANQUANTE");
 console.log("SMTP_PORT :", port);
 console.log("SMTP_USER :", user  ?? "⚠️  MANQUANTE");
-console.log("SMTP_PASS :", pass  ? "****" + pass.slice(-3) : "⚠️  MANQUANTE");
+console.log("SMTP_PASSWORD :", pass  ? "****" + pass.slice(-3) : "⚠️  MANQUANTE");
 console.log("secure    :", port === 465, "(true = SSL implicite, false = STARTTLS)");
 console.log("────────────────────────────────────────────────\n");
 
