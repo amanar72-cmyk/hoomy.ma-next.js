@@ -177,7 +177,7 @@ function Badges({ transaction, verifie }: { transaction: string; verifie: boolea
           className="text-xs font-medium px-3 py-1.5 rounded-full w-fit flex items-center gap-1.5"
           style={{ background: "rgba(15,76,58,0.85)", color: "#fff", backdropFilter: "blur(4px)" }}
         >
-          🔒 En cours de traitement
+          Bientôt disponible
         </span>
       )}
     </div>

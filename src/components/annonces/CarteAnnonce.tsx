@@ -216,7 +216,7 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
                 className="text-xs font-medium px-2.5 py-1 rounded-full w-fit leading-none"
                 style={{ background: "rgba(15,76,58,0.85)", color: "#fff", backdropFilter: "blur(6px)" }}
               >
-                🔒 En cours de traitement
+                Bientôt disponible
               </span>
             )}
           </div>

@@ -190,7 +190,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
             className="text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1"
             style={{ background: "var(--primaire)", color: "#fff" }}
           >
-            🔒 En cours de traitement
+            Bientôt disponible
           </span>
         )}
       </div>
@@ -203,8 +203,8 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         >
           <span className="flex-shrink-0 mt-0.5">ℹ️</span>
           <span>
-            Cette annonce est en cours de traitement par nos équipes. Les photos sont temporairement
-            floutées et seront visibles en clair dès la validation du bien.
+            Cette annonce sera bientôt disponible. Les photos sont temporairement floutées et
+            seront visibles en clair dès la validation par nos équipes.
           </span>
         </div>
       )}
