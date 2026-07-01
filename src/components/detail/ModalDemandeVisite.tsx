@@ -19,6 +19,7 @@ export default function ModalDemandeVisite({ bienId, agentId, titreBien, onClose
   const [date, setDate] = useState("");
   const [creneau, setCreneau] = useState("matin");
   const [message, setMessage] = useState("");
+  const [siteWeb, setSiteWeb] = useState(""); // honeypot — invisible pour les humains
   const [chargement, setChargement] = useState(false);
   const [succes, setSucces] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -80,6 +81,7 @@ export default function ModalDemandeVisite({ bienId, agentId, titreBien, onClose
         telephoneClient: telephone.trim(),
         dateSouhaitee: date,
         message: messageComplet || null,
+        siteWeb,
       });
     } catch {
       setErreur("Une erreur est survenue. Veuillez réessayer.");
@@ -174,6 +176,16 @@ export default function ModalDemandeVisite({ bienId, agentId, titreBien, onClose
               </div>
             )}
 
+            {/* Honeypot anti-bot — invisible pour les humains, les bots le remplissent */}
+            <input
+              type="text"
+              value={siteWeb}
+              onChange={(e) => setSiteWeb(e.target.value)}
+              autoComplete="off"
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }}
+            />
             <input
               type="text"
               value={nom}

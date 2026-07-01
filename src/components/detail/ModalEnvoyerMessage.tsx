@@ -16,6 +16,7 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
   const [message, setMessage] = useState("");
+  const [siteWeb, setSiteWeb] = useState(""); // honeypot — invisible pour les humains
   const [chargement, setChargement] = useState(false);
   const [succes, setSucces] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -66,6 +67,7 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
         emailClient: email.trim(),
         telephoneClient: telephone.trim(),
         message: message.trim(),
+        siteWeb,
       });
     } catch {
       setErreur("Une erreur est survenue. Veuillez réessayer.");
@@ -158,6 +160,16 @@ export default function ModalEnvoyerMessage({ bienId, agentId, titreBien, onClos
               </div>
             )}
 
+            {/* Honeypot anti-bot — invisible pour les humains, les bots le remplissent */}
+            <input
+              type="text"
+              value={siteWeb}
+              onChange={(e) => setSiteWeb(e.target.value)}
+              autoComplete="off"
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }}
+            />
             <input
               type="text"
               value={nom}
