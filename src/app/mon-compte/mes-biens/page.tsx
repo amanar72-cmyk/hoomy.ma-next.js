@@ -88,15 +88,16 @@ export default async function PageMesBiens({
   if (agentIds.length > 0) {
     const { data: agents } = await supabase
       .from("profils")
-      .select("id, nom_complet, telephone, email")
+      .select("id, nom_complet, telephone, email_contact, avatar_url")
       .in("id", agentIds);
     agentsMap = Object.fromEntries(
       (agents ?? []).map((a) => [
         a.id,
         {
-          nom:       a.nom_complet ?? "Conseiller",
-          telephone: a.telephone   ?? null,
-          email:     a.email       ?? null,
+          nom:        a.nom_complet    ?? "Conseiller",
+          telephone:  a.telephone      ?? null,
+          email:      a.email_contact  ?? null,
+          avatar_url: a.avatar_url     ?? null,
         },
       ])
     );
