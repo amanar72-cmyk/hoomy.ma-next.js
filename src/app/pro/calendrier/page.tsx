@@ -17,10 +17,9 @@ type Visite = {
   nom_client: string;
   email_client: string;
   telephone_client: string | null;
-  date_souhaitee: string;
+  date_souhaitee: string | null;
   message: string | null;
   statut: string;
-  cree_le: string;
   biens: {
     id: string;
     titre: string;
@@ -48,13 +47,13 @@ function dateStr(offsetDays: number): string {
   return d.toISOString().split("T")[0];
 }
 
-function formaterDateLongue(s: string) {
-  return new Date(s + "T12:00:00Z").toLocaleDateString("fr-MA", {
-    weekday: "long", day: "numeric", month: "long",
-  });
+function dateValide(s: string | null): s is string {
+  if (!s) return false;
+  return !isNaN(new Date(s + "T12:00:00Z").getTime());
 }
 
-function formaterDateTuile(s: string) {
+function formaterDateTuile(s: string | null) {
+  if (!dateValide(s)) return { num: "—", mois: "—", jour: "—" };
   const d = new Date(s + "T12:00:00Z");
   return {
     num:  d.getDate().toString(),
@@ -78,14 +77,11 @@ export default async function PageProCalendrier({ searchParams }: { searchParams
   if (!user) redirect("/connexion");
 
   const aujourd_hui = dateStr(0);
-  const demain      = dateStr(1);
-  const dans6jours  = dateStr(6);
 
-  // Visites (date_souhaitee non null = type visite)
   let query = supabase
     .from("demandes_visite")
     .select(
-      "id, nom_client, email_client, telephone_client, date_souhaitee, message, statut, cree_le, " +
+      "id, nom_client, email_client, telephone_client, date_souhaitee, message, statut, " +
       "biens(id, titre, reference, ville, quartier, photos, slug, transaction)"
     )
     .eq("agent_id", user.id)
@@ -100,26 +96,20 @@ export default async function PageProCalendrier({ searchParams }: { searchParams
   const { data: raw } = await query;
   const visites = (raw ?? []) as unknown as Visite[];
 
-  // Total à venir (pour le sous-titre)
-  const { data: comptesRaw } = await supabase
-    .from("demandes_visite")
-    .select("id", { count: "exact" })
-    .eq("agent_id", user.id)
-    .not("date_souhaitee", "is", null)
-    .gte("date_souhaitee", aujourd_hui);
-  const totalAVenir = comptesRaw?.length ?? 0;
-
-  // Groupement (vue à venir uniquement)
+  // Groupement par période (vue à venir uniquement)
   type Groupe = { cle: string; label: string; accent: boolean; visites: Visite[] };
   let groupes: Groupe[] = [];
 
   if (!vuePast) {
+    const demain     = dateStr(1);
+    const dans6jours = dateStr(6);
     const g: Record<string, Visite[]> = { auj: [], dem: [], sem: [], suite: [] };
     for (const v of visites) {
-      if      (v.date_souhaitee === aujourd_hui) g.auj.push(v);
-      else if (v.date_souhaitee === demain)      g.dem.push(v);
-      else if (v.date_souhaitee <= dans6jours)   g.sem.push(v);
-      else                                        g.suite.push(v);
+      const ds = v.date_souhaitee ?? "";
+      if      (ds === aujourd_hui) g.auj.push(v);
+      else if (ds === demain)      g.dem.push(v);
+      else if (ds <= dans6jours)   g.sem.push(v);
+      else                         g.suite.push(v);
     }
     groupes = [
       { cle: "auj",   label: "Aujourd'hui",  accent: true,  visites: g.auj   },
@@ -138,8 +128,9 @@ export default async function PageProCalendrier({ searchParams }: { searchParams
           <h1 className="text-xl font-semibold mb-0.5" style={{ color: "#111" }}>
             Calendrier des visites
           </h1>
-          <p className="text-sm capitalize" style={{ color: "#999" }}>
-            {totalAVenir} visite{totalAVenir !== 1 ? "s" : ""} à venir
+          <p className="text-sm" style={{ color: "#999" }}>
+            {visites.length} visite{visites.length !== 1 ? "s" : ""}{" "}
+            {vuePast ? "passées" : "à venir"}
           </p>
         </div>
       </div>
@@ -155,9 +146,9 @@ export default async function PageProCalendrier({ searchParams }: { searchParams
             href={btn.href}
             className="py-2 px-5 rounded-xl text-sm font-medium transition-all whitespace-nowrap"
             style={{
-              background:    btn.actif ? "#fff" : "transparent",
-              color:         btn.actif ? "#111" : "#888",
-              boxShadow:     btn.actif ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+              background:     btn.actif ? "#fff" : "transparent",
+              color:          btn.actif ? "#111" : "#888",
+              boxShadow:      btn.actif ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
               textDecoration: "none",
             }}
           >
@@ -195,31 +186,28 @@ export default async function PageProCalendrier({ searchParams }: { searchParams
       {/* Vue PASSÉES — liste simple */}
       {vuePast && visites.length > 0 && (
         <div className="flex flex-col gap-3">
-          {visites.map((v) => {
-            const tuile = formaterDateTuile(v.date_souhaitee);
-            const badge = BADGE_STATUT[v.statut] ?? { label: v.statut, bg: "#F5F5F5", color: "#777" };
-            const photo = (v.biens?.photos as string[] | null)?.[0] ?? null;
-            return (
-              <CarteVisite
-                key={v.id}
-                visite={v} tuile={tuile} badge={badge} photo={photo}
-                marquerEnCours={changerStatutLead.bind(null, v.id, "confirmee")}
-                marquerTraite={changerStatutLead.bind(null, v.id, "realisee")}
-                marquerNouvel={changerStatutLead.bind(null, v.id, "nouvelle")}
-              />
-            );
-          })}
+          {visites.map((v) => (
+            <CarteVisite
+              key={v.id}
+              visite={v}
+              tuile={formaterDateTuile(v.date_souhaitee)}
+              badge={BADGE_STATUT[v.statut] ?? { label: v.statut, bg: "#F5F5F5", color: "#777" }}
+              photo={(v.biens?.photos as string[] | null)?.[0] ?? null}
+              marquerEnCours={changerStatutLead.bind(null, v.id, "confirmee")}
+              marquerTraite={changerStatutLead.bind(null, v.id, "realisee")}
+              marquerNouvel={changerStatutLead.bind(null, v.id, "nouvelle")}
+            />
+          ))}
         </div>
       )}
 
-      {/* Vue À VENIR — groupée */}
+      {/* Vue À VENIR — groupée par période */}
       {!vuePast && groupes.map((groupe) => (
         <div key={groupe.cle} className="mb-8">
-          {/* Séparateur de groupe */}
           <div className="flex items-center gap-3 mb-3">
             <span
-              className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: groupe.accent ? "#D4AF37" : "#999", flexShrink: 0 }}
+              className="text-xs font-semibold uppercase tracking-wider flex-shrink-0"
+              style={{ color: groupe.accent ? "#D4AF37" : "#999" }}
             >
               {groupe.label}
             </span>
@@ -229,20 +217,18 @@ export default async function PageProCalendrier({ searchParams }: { searchParams
             </span>
           </div>
           <div className="flex flex-col gap-3">
-            {groupe.visites.map((v) => {
-              const tuile = formaterDateTuile(v.date_souhaitee);
-              const badge = BADGE_STATUT[v.statut] ?? { label: v.statut, bg: "#F5F5F5", color: "#777" };
-              const photo = (v.biens?.photos as string[] | null)?.[0] ?? null;
-              return (
-                <CarteVisite
-                  key={v.id}
-                  visite={v} tuile={tuile} badge={badge} photo={photo}
-                  marquerEnCours={changerStatutLead.bind(null, v.id, "confirmee")}
-                  marquerTraite={changerStatutLead.bind(null, v.id, "realisee")}
-                  marquerNouvel={changerStatutLead.bind(null, v.id, "nouvelle")}
-                />
-              );
-            })}
+            {groupe.visites.map((v) => (
+              <CarteVisite
+                key={v.id}
+                visite={v}
+                tuile={formaterDateTuile(v.date_souhaitee)}
+                badge={BADGE_STATUT[v.statut] ?? { label: v.statut, bg: "#F5F5F5", color: "#777" }}
+                photo={(v.biens?.photos as string[] | null)?.[0] ?? null}
+                marquerEnCours={changerStatutLead.bind(null, v.id, "confirmee")}
+                marquerTraite={changerStatutLead.bind(null, v.id, "realisee")}
+                marquerNouvel={changerStatutLead.bind(null, v.id, "nouvelle")}
+              />
+            ))}
           </div>
         </div>
       ))}
@@ -255,13 +241,8 @@ export default async function PageProCalendrier({ searchParams }: { searchParams
 type TuileDateProps = { num: string; mois: string; jour: string };
 
 function CarteVisite({
-  visite,
-  tuile,
-  badge,
-  photo,
-  marquerEnCours,
-  marquerTraite,
-  marquerNouvel,
+  visite, tuile, badge, photo,
+  marquerEnCours, marquerTraite, marquerNouvel,
 }: {
   visite: Visite;
   tuile: TuileDateProps;
@@ -299,19 +280,13 @@ function CarteVisite({
 
           {/* Bien */}
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            {/* Miniature */}
             {photo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={photo} alt=""
-                className="rounded-lg object-cover flex-shrink-0"
-                style={{ width: 36, height: 28 }}
-              />
+              <img src={photo} alt="" className="rounded-lg object-cover flex-shrink-0"
+                style={{ width: 36, height: 28 }} />
             ) : (
-              <div
-                className="rounded-lg flex-shrink-0 flex items-center justify-center"
-                style={{ width: 36, height: 28, background: "#F5F5F5" }}
-              >
+              <div className="rounded-lg flex-shrink-0 flex items-center justify-center"
+                style={{ width: 36, height: 28, background: "#F5F5F5" }}>
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#CCC" strokeWidth="1.2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 </svg>
@@ -354,10 +329,8 @@ function CarteVisite({
 
           {/* Statut + message */}
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className="text-xs font-medium px-2 py-0.5 rounded-full"
-              style={{ background: badge.bg, color: badge.color }}
-            >
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full"
+              style={{ background: badge.bg, color: badge.color }}>
               {badge.label}
             </span>
             {visite.message && (

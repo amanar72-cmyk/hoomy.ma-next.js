@@ -84,9 +84,13 @@ export async function GET(
     contactTelephone = demande.telephone_client ?? null;
   }
 
+  if (!demande.date_souhaitee) {
+    return new Response("Date de visite non définie pour cette demande.", { status: 422 });
+  }
+
   const ics = genererICS({
     id:              demande.id,
-    dateSouhaitee:   demande.date_souhaitee ?? "",
+    dateSouhaitee:   demande.date_souhaitee,
     titreBien:       bien?.titre       ?? "Visite",
     referenceBien:   bien?.reference   ?? null,
     villeBien:       bien?.ville       ?? "",

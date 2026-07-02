@@ -19,6 +19,12 @@ function echapper(s: string): string {
     .replace(/\n/g, "\\n");
 }
 
+function dateUtcValide(dateStr: string): boolean {
+  if (!dateStr) return false;
+  const d = new Date(dateStr + "T12:00:00Z");
+  return !isNaN(d.getTime());
+}
+
 function icsDate(dateStr: string): string {
   return dateStr.replace(/-/g, "");
 }
@@ -30,6 +36,10 @@ function icsDatePlusUn(dateStr: string): string {
 }
 
 export function genererICS(d: DonneesICS): string {
+  if (!dateUtcValide(d.dateSouhaitee)) {
+    throw new Error(`Date invalide pour la visite ${d.id} : "${d.dateSouhaitee}"`);
+  }
+
   const summary = d.referenceBien
     ? `Visite — ${d.titreBien} (${d.referenceBien})`
     : `Visite — ${d.titreBien}`;

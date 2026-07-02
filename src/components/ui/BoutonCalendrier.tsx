@@ -12,6 +12,7 @@ type Props = {
 
 function dateGoogleCalendar(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00Z");
+  if (isNaN(d.getTime())) return "";
   const fin = new Date(d);
   fin.setUTCDate(fin.getUTCDate() + 1);
   const fmt = (dt: Date) => dt.toISOString().split("T")[0].replace(/-/g, "");

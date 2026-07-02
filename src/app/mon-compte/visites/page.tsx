@@ -299,10 +299,10 @@ export default async function PageMesVisites({
                         Voir l&apos;annonce
                       </Link>
                     )}
-                    {montrerBoutonCalendrier && (
+                    {montrerBoutonCalendrier && d.date_souhaitee && (
                       <BoutonCalendrier
                         visitId={d.id}
-                        date={d.date_souhaitee!}
+                        date={d.date_souhaitee}
                         titre={d.biens?.titre ?? "Visite"}
                         reference={d.biens?.reference ?? null}
                         location={locationBien}
