@@ -27,21 +27,9 @@ function appliquerLangue(map: mapboxgl.Map, langue: LangueMapbox) {
   });
 }
 
-// ── Position décalée (150–250 m, déterministe par UUID) ───────────────────────
-function decalerPosition(lat: number, lng: number, bienId: string) {
-  const hex = bienId.replace(/-/g, "");
-  const angleSeed    = parseInt(hex.slice(0, 8), 16);
-  const distanceSeed = parseInt(hex.slice(8, 16), 16);
-  const angle      = (angleSeed / 0xffffffff) * 2 * Math.PI;
-  const distanceM  = 150 + (distanceSeed / 0xffffffff) * 100;
-  const R = 6371000;
-  const dLat = (distanceM / R) * (180 / Math.PI) * Math.cos(angle);
-  const dLng =
-    (distanceM / (R * Math.cos((lat * Math.PI) / 180))) *
-    (180 / Math.PI) *
-    Math.sin(angle);
-  return { lat: lat + dLat, lng: lng + dLng };
-}
+// NOTE : le décalage de position est désormais calculé CÔTÉ SERVEUR
+// (src/lib/geo/floutage.ts, dérivé d'un secret) — ce composant reçoit des
+// coordonnées déjà approximatives et ne fait plus aucun floutage client.
 
 // ── GeoJSON cercle de protection (~350 m) ─────────────────────────────────────
 function cercleGeoJSON(lat: number, lng: number, rayonM: number) {
@@ -137,7 +125,8 @@ export default function MapboxLocalisation({
     if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) return;
     if (!containerRef.current || mapRef.current) return;
 
-    const pos = decalerPosition(latitude, longitude, bienId);
+    // Coordonnées déjà floutées côté serveur — utilisées telles quelles
+    const pos = { lat: latitude, lng: longitude };
     const estSombre = document.documentElement.getAttribute("data-theme") === "dark";
 
     const map = new mapboxgl.Map({

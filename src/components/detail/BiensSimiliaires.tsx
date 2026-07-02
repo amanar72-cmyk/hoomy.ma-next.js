@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import type { Bien } from "@/lib/types";
+import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 import CarteAnnonce from "@/components/annonces/CarteAnnonce";
 
 type Props = {
@@ -22,7 +22,7 @@ type Props = {
 // Score max théorique : 8
 
 function calculerScore(
-  candidat: Bien,
+  candidat: BienPublic,
   ref: { type: string; quartier: string | null; prix: number; chambres: number }
 ): number {
   let score = 0;
@@ -45,20 +45,20 @@ export default async function BiensSimiliaires({
   // ── Phase 1 : même transaction + même ville (candidats primaires) ──────────
   const { data: villeData } = await supabase
     .from("biens")
-    .select("*")
+    .select(COLONNES_BIEN_PUBLIC) // jamais latitude/longitude côté public
     .eq("transaction", transaction)
     .eq("ville", ville)
     .neq("id", idExclu)
     .limit(20);
 
-  let candidats = (villeData ?? []) as Bien[];
+  const candidats = (villeData ?? []) as unknown as BienPublic[];
 
   // ── Phase 2 : élargissement si < 3 résultats ──────────────────────────────
   // Cherche le même type dans d'autres villes pour toujours avoir des suggestions
   if (candidats.length < 3) {
     const { data: typeData } = await supabase
       .from("biens")
-      .select("*")
+      .select(COLONNES_BIEN_PUBLIC) // jamais latitude/longitude côté public
       .eq("transaction", transaction)
       .eq("type", type)
       .neq("id", idExclu)
@@ -66,7 +66,7 @@ export default async function BiensSimiliaires({
       .limit(15);
 
     const ids = new Set(candidats.map((b) => b.id));
-    for (const b of (typeData ?? []) as Bien[]) {
+    for (const b of (typeData ?? []) as unknown as BienPublic[]) {
       if (!ids.has(b.id)) candidats.push(b);
     }
   }

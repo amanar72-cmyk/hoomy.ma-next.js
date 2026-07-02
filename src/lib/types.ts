@@ -22,6 +22,28 @@ export type Bien = {
   cree_le: string;
 };
 
+// Bien tel qu'exposé aux composants client publics : SANS coordonnées exactes.
+// Les coordonnées ne circulent que côté serveur (floutage dans lib/geo/floutage.ts).
+export type BienPublic = Omit<Bien, "latitude" | "longitude">;
+
+// Colonnes à sélectionner pour tout affichage public — jamais latitude/longitude.
+export const COLONNES_BIEN_PUBLIC =
+  "id, reference, slug, titre, description, type, transaction, prix, ville, quartier, " +
+  "chambres, salles_bain, surface, equipements, photos, composition, verifie, cree_le";
+
+// Point affiché sur la carte des listes : coordonnées APPROXIMATIVES uniquement
+// (floutées côté serveur dans lib/geo/floutage.ts — jamais les exactes).
+export type PointCarte = {
+  id: string;
+  slug: string | null;
+  titre: string;
+  prix: number;
+  transaction: string;
+  photo: string | null;
+  latApprox: number;
+  lngApprox: number;
+};
+
 // Valeurs courantes des filtres de recherche
 export type FiltresActifs = {
   ville: string;

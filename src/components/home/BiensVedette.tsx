@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formaterPrix } from "@/lib/format";
-import type { Bien } from "@/lib/types";
+import type { BienPublic } from "@/lib/types";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ function IcPin() {
 
 // ── Carte épurée — photo · prix · ville·quartier · référence ──────────────────
 
-function CarteCarrousel({ bien }: { bien: Bien }) {
+function CarteCarrousel({ bien }: { bien: BienPublic }) {
   const chemin = `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug ?? bien.id}`;
   const localisation = bien.quartier ? `${bien.ville} · ${bien.quartier}` : bien.ville;
   const prix = formaterPrix(bien.prix, bien.transaction);
@@ -172,7 +172,7 @@ function CarteCarrousel({ bien }: { bien: Bien }) {
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export default function BiensVedette({ biens }: { biens: Bien[] }) {
+export default function BiensVedette({ biens }: { biens: BienPublic[] }) {
   const [survol, setSurvol]             = useState(false);
   const [maintien, setMaintien]         = useState(false);
   const [motionReduit, setMotionReduit] = useState(false);

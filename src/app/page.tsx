@@ -7,7 +7,7 @@ import PourquoiHoomy from "@/components/home/PourquoiHoomy";
 import ParcoursVendeur from "@/components/home/ParcoursVendeur";
 import Footer from "@/components/home/Footer";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
-import type { Bien } from "@/lib/types";
+import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export default async function Accueil() {
   const [{ data: dataBiens }, { data: dataVilles }] = await Promise.all([
     supabase
       .from("biens")
-      .select("*")
+      .select(COLONNES_BIEN_PUBLIC) // jamais latitude/longitude côté public
       .order("cree_le", { ascending: false })
       .limit(10),
     supabase
@@ -27,7 +27,7 @@ export default async function Accueil() {
       .in("ville", VILLES_COMPTAGE),
   ]);
 
-  const biens = (dataBiens ?? []) as Bien[];
+  const biens = (dataBiens ?? []) as unknown as BienPublic[];
 
   // Agrégation côté serveur — même condition de visibilité que /acheter et /louer
   const comptesParVille: Record<string, number> = {};

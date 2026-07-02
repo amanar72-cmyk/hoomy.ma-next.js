@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { notFound, permanentRedirect } from "next/navigation";
 import { formaterPrix } from "@/lib/format";
+import { flouterPosition } from "@/lib/geo/floutage";
 import type { Metadata } from "next";
 import type { Bien } from "@/lib/types";
 import Link from "next/link";
@@ -78,6 +79,12 @@ export default async function PageDetailAchat({ params }: Props) {
     permanentRedirect(`/acheter/${bien.slug}`);
   }
 
+  // Floutage côté serveur : le navigateur ne reçoit jamais la position exacte
+  const positionApprox =
+    bien.latitude != null && bien.longitude != null
+      ? flouterPosition(bien.id, bien.latitude, bien.longitude)
+      : null;
+
   return (
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <TrackVue bienId={bien.id} />
@@ -138,8 +145,8 @@ export default async function PageDetailAchat({ params }: Props) {
       {/* ── Localisation (après les détails et équipements) ───────────────── */}
       <div className="max-w-7xl mx-auto px-6 pb-24 lg:pb-16">
         <CarteLocalisation
-          latitude={bien.latitude}
-          longitude={bien.longitude}
+          latitude={positionApprox?.lat ?? null}
+          longitude={positionApprox?.lng ?? null}
           titre={bien.titre}
           bienId={bien.id}
         />

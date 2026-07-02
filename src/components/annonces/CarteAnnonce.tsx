@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import type { Bien } from "@/lib/types";
+import type { BienPublic } from "@/lib/types";
 import { trackEvenement } from "@/lib/tracking/track";
 import { useComparateur } from "@/lib/comparateur/ComparateurContext";
 import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
-function cheminBien(bien: Bien) {
+function cheminBien(bien: BienPublic) {
   return `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug ?? bien.id}`;
 }
 
@@ -108,7 +108,8 @@ function PlaceholderPhoto() {
 
 // ── Composant ─────────────────────────────────────────────────────────────────
 
-export default function CarteAnnonce({ bien }: { bien: Bien }) {
+// BienPublic : jamais de coordonnées exactes dans les props d'un composant client
+export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
   const [favori, setFavori] = useState(false);
   const userIdRef = useRef<string | null>(null);
   const { biens: biensCompares, ajouter, supprimer, estSelectionne } = useComparateur();

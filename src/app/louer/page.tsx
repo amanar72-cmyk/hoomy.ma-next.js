@@ -5,6 +5,8 @@ import Footer from "@/components/home/Footer";
 import FiltresBar from "@/components/annonces/FiltresBar";
 import CarteAnnonce from "@/components/annonces/CarteAnnonce";
 import TriSelect from "@/components/annonces/TriSelect";
+import VueListeCarte from "@/components/annonces/VueListeCarte";
+import { construirePointsCarte } from "@/lib/geo/floutage";
 import type { Bien, FiltresActifs } from "@/lib/types";
 import { TRI_MAP } from "@/lib/types";
 
@@ -70,6 +72,11 @@ export default async function PageLouer({ searchParams }: Props) {
   const { data } = await query;
   const biens = (data ?? []) as Bien[];
 
+  // Floutage côté serveur : la carte ne reçoit que des coordonnées approximatives,
+  // et les cartes annonces ne reçoivent AUCUNE coordonnée (BienPublic).
+  const pointsCarte = construirePointsCarte(biens);
+  const biensPublics = biens.map(({ latitude, longitude, ...reste }) => reste);
+
   return (
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
@@ -80,6 +87,7 @@ export default async function PageLouer({ searchParams }: Props) {
         total={biens.length}
       />
 
+      <VueListeCarte points={pointsCarte}>
       <div className="max-w-6xl mx-auto px-6 py-8">
 
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 mb-8">
@@ -118,14 +126,15 @@ export default async function PageLouer({ searchParams }: Props) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
-            {biens.map((bien) => (
+          <div className="grille-annonces grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
+            {biensPublics.map((bien) => (
               <CarteAnnonce key={bien.id} bien={bien} />
             ))}
           </div>
         )}
 
       </div>
+      </VueListeCarte>
 
       <Footer />
     </main>

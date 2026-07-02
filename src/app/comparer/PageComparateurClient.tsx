@@ -5,11 +5,11 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formaterPrix, formaterMontant } from "@/lib/format";
-import type { Bien } from "@/lib/types";
+import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type BienComplet = Bien & { charges: number | null };
+type BienComplet = BienPublic & { charges: number | null };
 
 type ScoreMap = Record<string, number>; // `${ville}:${quartier}` → score
 
@@ -175,9 +175,10 @@ export default function PageComparateurClient() {
     async function charger() {
       const supabase = createClient();
 
+      // Colonnes publiques + charges — jamais latitude/longitude côté navigateur
       const { data: biensData, error } = await supabase
         .from("biens")
-        .select("*")
+        .select(`${COLONNES_BIEN_PUBLIC}, charges`)
         .in("id", ids);
 
       if (error || !biensData) {
