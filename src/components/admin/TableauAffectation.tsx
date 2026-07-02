@@ -7,9 +7,9 @@ import {
   useDroppable, useDraggable,
 } from "@dnd-kit/core";
 import {
-import { formaterPrix } from "@/lib/format";
   mettreDansFile, retirerBienAgent, retirerDeFile, affecterAManuel,
 } from "@/app/admin/actions";
+import { formaterPrix } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

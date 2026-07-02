@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { Metadata } from "next";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import FiltresBar from "@/components/annonces/FiltresBar";
@@ -8,6 +9,13 @@ import type { Bien, FiltresActifs } from "@/lib/types";
 import { TRI_MAP } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Louer un bien immobilier au Maroc — Appartements, villas, bureaux | HOOMY.MA",
+  description:
+    "Trouvez votre location au Maroc : appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+  alternates: { canonical: "/louer" },
+};
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

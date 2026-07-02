@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { Metadata } from "next";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import FiltresBar from "@/components/annonces/FiltresBar";
@@ -8,6 +9,13 @@ import type { Bien, FiltresActifs } from "@/lib/types";
 import { TRI_MAP } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Acheter un bien immobilier au Maroc — Appartements, villas, riads | HOOMY.MA",
+  description:
+    "Trouvez votre bien à acheter au Maroc : appartements, villas, riads, bureaux et terrains vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+  alternates: { canonical: "/acheter" },
+};
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

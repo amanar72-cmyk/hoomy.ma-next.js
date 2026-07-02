@@ -1,5 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Metadata } from "next";
 import WizardPublication from "@/components/publier/WizardPublication";
+
+export const metadata: Metadata = {
+  title: "Publier votre annonce immobilière gratuitement | HOOMY.MA",
+  description:
+    "Vendez ou louez votre bien au Maroc avec HOOMY : publication gratuite, photos illimitées, accompagnement par un conseiller dédié.",
+  alternates: { canonical: "/publier" },
+};
 
 export default async function PagePublier() {
   const supabase = await createClient();
