@@ -46,9 +46,9 @@ export default async function PageAdminAffectation() {
     (agentsRaw ?? []) as { id: string; nom_complet: string | null; zones: string[] | null; avatar_url: string | null }[]
   ).map((a) => ({ ...a, nbBiensActifs: chargeMap[a.id] ?? 0 }));
 
-  const att = (enAttente ?? []) as BienFile[];
-  const file = (dansFile ?? []) as BienFile[];
-  const aff = (affectes ?? []) as BienFile[];
+  const att  = (enAttente ?? []) as unknown as BienFile[];
+  const file = (dansFile  ?? []) as unknown as BienFile[];
+  const aff  = (affectes  ?? []) as unknown as BienFile[];
 
   // Profils propriétaires pour afficher nom + téléphone sur les cartes
   const propIds = [
