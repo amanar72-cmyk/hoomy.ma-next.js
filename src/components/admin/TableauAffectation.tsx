@@ -7,6 +7,7 @@ import {
   useDroppable, useDraggable,
 } from "@dnd-kit/core";
 import {
+import { formaterPrix } from "@/lib/format";
   mettreDansFile, retirerBienAgent, retirerDeFile, affecterAManuel,
 } from "@/app/admin/actions";
 
@@ -54,10 +55,6 @@ type ModalState =
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 function formaterDate(d: string | null) {
   if (!d) return null;

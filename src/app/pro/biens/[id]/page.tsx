@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import FormulaireEditionBienAgent, { type BienEditable } from "@/components/pro/FormulaireEditionBienAgent";
 import PhotoGalerie from "@/components/ui/PhotoGalerie";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
+import { formaterPrix } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Fiche bien — Espace Pro HOOMY.MA",
@@ -17,10 +18,6 @@ type Props = {
 
 const STATUTS_MODIFIABLES = ["brouillon", "affecte"];
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 function formaterDate(d: string) {
   return new Date(d).toLocaleDateString("fr-MA", { day: "2-digit", month: "short", year: "numeric" });

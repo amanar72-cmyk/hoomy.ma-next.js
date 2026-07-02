@@ -60,19 +60,23 @@ export default function FormulaireCreationBienAgent() {
     const form = e.currentTarget;
     const fd = new FormData(form);
 
+    const typeResolu = typeSelectionne || String(fd.get("type") ?? "");
+    // Un terrain n'a ni chambres, ni salles de bain, ni équipements bâti
+    const estTerrain = typeResolu === "Terrain";
+
     const donnees: DonneesBienAgent = {
       titre: String(fd.get("titre") ?? "").trim(),
       description: description.trim() || null,
-      type: typeSelectionne || String(fd.get("type") ?? ""),
+      type: typeResolu,
       transaction: transactionSelectionnee || String(fd.get("transaction") ?? ""),
       prix: Number(prixSaisi || fd.get("prix")),
       ville: villeSelectionnee || String(fd.get("ville") ?? ""),
       quartier: quartierSaisi.trim() || String(fd.get("quartier") ?? "").trim() || null,
-      chambres: Number(chambresSaisies || fd.get("chambres")),
-      salles_bain: Number(sallesBainSaisies || fd.get("salles_bain")),
+      chambres: estTerrain ? 0 : Number(chambresSaisies || fd.get("chambres")),
+      salles_bain: estTerrain ? 0 : Number(sallesBainSaisies || fd.get("salles_bain")),
       surface: Number(surfaceSaisie || fd.get("surface")),
-      equipements: equipementsChoisis.length > 0 ? equipementsChoisis : null,
-      composition: composition.length > 0 ? composition : null,
+      equipements: !estTerrain && equipementsChoisis.length > 0 ? equipementsChoisis : null,
+      composition: !estTerrain && composition.length > 0 ? composition : null,
       latitude,
       longitude,
     };
@@ -272,41 +276,46 @@ export default function FormulaireCreationBienAgent() {
             />
           </div>
 
-          <div>
-            <label htmlFor="chambres" className={labelClass} style={labelStyle}>
-              Chambres
-            </label>
-            <input
-              id="chambres"
-              name="chambres"
-              type="number"
-              min="0"
-              className={sel}
-              style={selStyle}
-              value={chambresSaisies}
-              onChange={(e) => setChambresSaisies(e.target.value)}
-            />
-          </div>
+          {typeSelectionne !== "Terrain" && (
+            <>
+              <div>
+                <label htmlFor="chambres" className={labelClass} style={labelStyle}>
+                  Chambres
+                </label>
+                <input
+                  id="chambres"
+                  name="chambres"
+                  type="number"
+                  min="0"
+                  className={sel}
+                  style={selStyle}
+                  value={chambresSaisies}
+                  onChange={(e) => setChambresSaisies(e.target.value)}
+                />
+              </div>
 
-          <div>
-            <label htmlFor="salles_bain" className={labelClass} style={labelStyle}>
-              Salles de bain
-            </label>
-            <input
-              id="salles_bain"
-              name="salles_bain"
-              type="number"
-              min="0"
-              className={sel}
-              style={selStyle}
-              value={sallesBainSaisies}
-              onChange={(e) => setSallesBainSaisies(e.target.value)}
-            />
-          </div>
+              <div>
+                <label htmlFor="salles_bain" className={labelClass} style={labelStyle}>
+                  Salles de bain
+                </label>
+                <input
+                  id="salles_bain"
+                  name="salles_bain"
+                  type="number"
+                  min="0"
+                  className={sel}
+                  style={selStyle}
+                  value={sallesBainSaisies}
+                  onChange={(e) => setSallesBainSaisies(e.target.value)}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* ── Équipements ──────────────────────────────────────────────────── */}
+      {/* ── Équipements — sans objet pour un terrain ─────────────────────── */}
+      {typeSelectionne !== "Terrain" && (
       <div
         className="rounded-2xl p-6"
         style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
@@ -339,8 +348,10 @@ export default function FormulaireCreationBienAgent() {
           })}
         </div>
       </div>
+      )}
 
-      {/* ── Composition par niveau ───────────────────────────────────────── */}
+      {/* ── Composition par niveau — sans objet pour un terrain ──────────── */}
+      {typeSelectionne !== "Terrain" && (
       <div
         className="rounded-2xl p-6"
         style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
@@ -353,6 +364,7 @@ export default function FormulaireCreationBienAgent() {
         </p>
         <CompositionNiveaux valeur={composition} onChange={setComposition} />
       </div>
+      )}
 
       {/* ── Erreur + Soumettre ────────────────────────────────────────────── */}
       {erreur && (

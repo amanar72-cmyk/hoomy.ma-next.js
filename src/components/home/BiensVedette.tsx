@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { formaterPrix } from "@/lib/format";
 import type { Bien } from "@/lib/types";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -30,10 +31,7 @@ function IcPin() {
 function CarteCarrousel({ bien }: { bien: Bien }) {
   const chemin = `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug ?? bien.id}`;
   const localisation = bien.quartier ? `${bien.ville} · ${bien.quartier}` : bien.ville;
-  const prix =
-    bien.prix.toLocaleString("fr-FR") +
-    " DH" +
-    (bien.transaction === "location" ? "/mois" : "");
+  const prix = formaterPrix(bien.prix, bien.transaction);
 
   return (
     <Link

@@ -1,5 +1,6 @@
 // Carte d'un bien pour l'espace Pro
 import BadgeStatut from "./BadgeStatut";
+import { formaterPrix } from "@/lib/format";
 
 type Props = {
   id: string;
@@ -18,10 +19,6 @@ type Props = {
   vues?: number; // mock pour l'instant
 };
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 function formaterDate(date: string) {
   return new Date(date).toLocaleDateString("fr-MA", {
@@ -77,7 +74,7 @@ export default function CarteBienPro({
 
         {/* Infos */}
         <div className="flex items-center gap-3 text-xs" style={{ color: "#6B7A71" }}>
-          {chambres > 0 && (
+          {type !== "Terrain" && chambres > 0 && (
             <span className="flex items-center gap-1">
               <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />

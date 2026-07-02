@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import BadgeStatut from "./BadgeStatut";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
+import { formaterPrix } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,10 +35,6 @@ export type InfoAgent = {
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 function formaterDate(d: string | null) {
   if (!d) return "—";

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import BoutonActionPro from "@/components/pro/BoutonActionPro";
 import { transmettreAuBo } from "./actions";
+import { formaterPrix } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Mes biens — Espace Pro HOOMY.MA",
@@ -57,10 +58,6 @@ const ZONES = [
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 function formaterDate(d: string) {
   return new Date(d).toLocaleDateString("fr-MA", {

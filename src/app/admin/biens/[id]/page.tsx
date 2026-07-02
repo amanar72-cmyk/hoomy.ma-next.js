@@ -5,6 +5,7 @@ import FormulaireEditionBien from "@/components/admin/FormulaireEditionBien";
 import { affecterBienAgent } from "@/app/admin/actions";
 import PhotoGalerie from "@/components/ui/PhotoGalerie";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
+import { formaterPrix } from "@/lib/format";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -19,10 +20,6 @@ const BADGE_STATUT: Record<string, { label: string; bg: string; color: string }>
   transacte:     { label: "Transacté",     bg: "#F3E8FF", color: "#6B21A8" },
 };
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 export default async function PageFicheBien({ params, searchParams }: Props) {
   const { id } = await params;

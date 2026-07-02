@@ -1,9 +1,6 @@
 import { envoyerEmail } from "./envoyerEmail";
+import { formaterPrix } from "@/lib/format";
 
-function formaterPrix(prix: number, transaction: string): string {
-  const montant = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${montant} DH/mois` : `${montant} DH`;
-}
 
 export async function notifierNouveauBien(donnees: {
   titre: string;

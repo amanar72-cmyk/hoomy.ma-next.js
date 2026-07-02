@@ -5,6 +5,7 @@ import Link from "next/link";
 import ModalDemandeVisite from "@/components/detail/ModalDemandeVisite";
 import ModalEnvoyerMessage from "@/components/detail/ModalEnvoyerMessage";
 import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
+import { formaterPrix } from "@/lib/format";
 import { CONTACT } from "@/lib/contact";
 
 type Props = {
@@ -27,7 +28,7 @@ export default function CarteContact({ prix, transaction, titre, chemin, bienId,
     setPageUrl(window.location.href);
   }, []);
 
-  const prixFormate = `${prix.toLocaleString("fr-FR")} DH${transaction === "location" ? "/mois" : ""}`;
+  const prixFormate = formaterPrix(prix, transaction);
   const messageWA = encodeURIComponent(
     `Bonjour, je suis intéressé(e) par "${titre}" affiché à ${prixFormate} sur HOOMY.MA.\n${pageUrl}`
   );

@@ -8,6 +8,7 @@ import ModalZonesAgent from "@/components/admin/ModalZonesAgent";
 import SelectRole from "@/components/admin/SelectRole";
 import SelecteurConseillerAdmin from "@/components/admin/SelecteurConseillerAdmin";
 import { retirerBienAgent } from "@/app/admin/actions";
+import { formaterPrix } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -57,10 +58,6 @@ const ROLE_LABEL: Record<string, string> = {
   agence: "Agence",
 };
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 function formaterDate(d: string) {
   return new Date(d).toLocaleDateString("fr-MA", { day: "2-digit", month: "short", year: "numeric" });

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { formaterPrix } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Mes favoris — Mon espace HOOMY.MA",
@@ -27,10 +28,6 @@ type FavoriRow = {
   biens: BienFavori | null;
 };
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 function cheminBien(b: BienFavori) {
   return `/${b.transaction === "location" ? "louer" : "acheter"}/${b.slug ?? b.id}`;

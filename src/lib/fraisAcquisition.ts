@@ -1,6 +1,8 @@
 // ─── Barème indicatif des frais d'acquisition immobilière au Maroc ─────────────
 // Taux indicatifs — modifiez ici pour mettre à jour tous les affichages du site.
 
+import { formaterMontant } from "@/lib/format";
+
 const DROITS_ENREGISTREMENT = 0.04;       // 4 % du prix
 const CONSERVATION_FONCIERE_TAUX = 0.015; // 1,5 % du prix
 const CONSERVATION_FONCIERE_MIN = 1_000;  // plancher indicatif en DH
@@ -58,5 +60,5 @@ export function calculerFraisAcquisition(prix: number): ResultatFrais {
 }
 
 export function formaterDH(n: number): string {
-  return new Intl.NumberFormat("fr-FR").format(Math.round(n)) + " DH";
+  return formaterMontant(Math.round(n)) + " DH";
 }

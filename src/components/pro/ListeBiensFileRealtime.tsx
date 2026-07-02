@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { accepterBien } from "@/app/pro/biens/actions";
+import { formaterPrix } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -23,10 +24,6 @@ export type BienFile = {
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 function formaterDate(d: string) {
   return new Date(d).toLocaleDateString("fr-MA", {

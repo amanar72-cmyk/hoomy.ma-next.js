@@ -6,6 +6,7 @@ import type { Bien } from "@/lib/types";
 import { trackEvenement } from "@/lib/tracking/track";
 import { useComparateur } from "@/lib/comparateur/ComparateurContext";
 import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
+import { formaterMontant } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
@@ -132,7 +133,7 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
 
   const nbPhotos = bien.photos?.length ?? 0;
   const chemin = cheminBien(bien);
-  const prixBase = bien.prix.toLocaleString("fr-FR");
+  const prixBase = formaterMontant(bien.prix);
 
   function toggleComparateur(e: React.MouseEvent) {
     e.preventDefault();
@@ -289,14 +290,19 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
                 <IcSurface />
                 {bien.surface}&thinsp;m²
               </span>
-              <span className="flex items-center gap-1">
-                <IcChambre />
-                {bien.chambres}&thinsp;ch.
-              </span>
-              <span className="flex items-center gap-1">
-                <IcBain />
-                {bien.salles_bain}&thinsp;sdb
-              </span>
+              {/* Chambres/sdb : sans objet pour un terrain */}
+              {bien.type !== "Terrain" && bien.chambres > 0 && (
+                <span className="flex items-center gap-1">
+                  <IcChambre />
+                  {bien.chambres}&thinsp;ch.
+                </span>
+              )}
+              {bien.type !== "Terrain" && bien.salles_bain > 0 && (
+                <span className="flex items-center gap-1">
+                  <IcBain />
+                  {bien.salles_bain}&thinsp;sdb
+                </span>
+              )}
             </div>
 
             {bien.reference && (

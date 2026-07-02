@@ -2,11 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import CarteStat from "@/components/admin/CarteStat";
 import TableauAdmin from "@/components/admin/TableauAdmin";
+import { formaterPrix } from "@/lib/format";
 
-function formaterPrix(prix: number, transaction: string) {
-  const montant = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${montant} DH/mois` : `${montant} DH`;
-}
 
 export default async function PageAdminDashboard() {
   const supabase = await createClient();

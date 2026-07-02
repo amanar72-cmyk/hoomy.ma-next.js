@@ -226,8 +226,8 @@ export default function FormulaireEditionBienAgent({
       prix: prixNum,
       ville,
       quartier: quartier.trim() || null,
-      chambres: Math.max(0, parseInt(chambres) || 0),
-      salles_bain: Math.max(0, parseInt(sallesBain) || 0),
+      chambres: type === "Terrain" ? 0 : Math.max(0, parseInt(chambres) || 0),
+      salles_bain: type === "Terrain" ? 0 : Math.max(0, parseInt(sallesBain) || 0),
       surface: Math.max(0, parseFloat(surface) || 0),
       equipements: equipements.length > 0 ? equipements : null,
       composition: composition.length > 0 ? composition : null,
@@ -359,26 +359,30 @@ export default function FormulaireEditionBienAgent({
               onChangement={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
             />
           </div>
-          <Champ label="Chambres">
-            <input
-              type="number"
-              value={chambres}
-              onChange={(e) => setChambres(e.target.value)}
-              min="0"
-              className={cls}
-              style={inp}
-            />
-          </Champ>
-          <Champ label="Salles de bain">
-            <input
-              type="number"
-              value={sallesBain}
-              onChange={(e) => setSallesBain(e.target.value)}
-              min="0"
-              className={cls}
-              style={inp}
-            />
-          </Champ>
+          {type !== "Terrain" && (
+            <>
+              <Champ label="Chambres">
+                <input
+                  type="number"
+                  value={chambres}
+                  onChange={(e) => setChambres(e.target.value)}
+                  min="0"
+                  className={cls}
+                  style={inp}
+                />
+              </Champ>
+              <Champ label="Salles de bain">
+                <input
+                  type="number"
+                  value={sallesBain}
+                  onChange={(e) => setSallesBain(e.target.value)}
+                  min="0"
+                  className={cls}
+                  style={inp}
+                />
+              </Champ>
+            </>
+          )}
           <Champ label="Surface (m²)">
             <input
               type="number"

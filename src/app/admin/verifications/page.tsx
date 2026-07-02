@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { verifierBien, supprimerBien } from "@/app/admin/actions";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
+import { formaterPrix } from "@/lib/format";
 
 export default async function PageAdminVerifications() {
   const supabase = await createClient();
@@ -26,10 +27,6 @@ export default async function PageAdminVerifications() {
     }))
   );
 
-  function formaterPrix(prix: number, transaction: string) {
-    const montant = prix.toLocaleString("fr-MA");
-    return transaction === "location" ? `${montant} DH/mois` : `${montant} DH`;
-  }
 
   return (
     <div className="p-6 lg:p-10 max-w-7xl mx-auto">

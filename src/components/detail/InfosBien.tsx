@@ -243,7 +243,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
             </div>
           </div>
         )}
-        {bien.chambres > 0 && (
+        {bien.type !== "Terrain" && bien.chambres > 0 && (
           <div
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
             style={{ background: "var(--fond-secondaire)", border: "1px solid #EDE7D7" }}
@@ -259,7 +259,7 @@ export default function InfosBien({ bien }: { bien: Bien }) {
             </div>
           </div>
         )}
-        {bien.salles_bain > 0 && (
+        {bien.type !== "Terrain" && bien.salles_bain > 0 && (
           <div
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
             style={{ background: "var(--fond-secondaire)", border: "1px solid #EDE7D7" }}

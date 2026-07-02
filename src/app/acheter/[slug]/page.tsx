@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { formaterPrix } from "@/lib/format";
 import type { Metadata } from "next";
 import type { Bien } from "@/lib/types";
 import Link from "next/link";
@@ -31,12 +32,14 @@ async function fetchBien(slug: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const { data } = await supabase.from("biens").select("titre, ville, prix").eq("slug", slug).maybeSingle();
+  // Même logique que la page (slug puis UUID) — l'URL canonique reste toujours le slug
+  const data = await fetchBien(slug);
   if (!data) return { title: "Bien non trouvé | HOOMY.MA" };
+  const slugCanonique = data.slug ?? slug;
   const titre = `${data.titre} — À vendre à ${data.ville} | HOOMY.MA`;
-  const description = `${data.titre} à vendre à ${data.ville}. Prix : ${Number(data.prix).toLocaleString("fr-FR")} DH.`;
-  const ogImage = `/api/og?slug=${slug}`;
-  const pageUrl = `/acheter/${slug}`;
+  const description = `${data.titre} à vendre à ${data.ville}. Prix : ${formaterPrix(Number(data.prix), "vente")}.`;
+  const ogImage = `/api/og?slug=${slugCanonique}`;
+  const pageUrl = `/acheter/${slugCanonique}`;
   return {
     title: titre,
     description,
@@ -64,6 +67,16 @@ export default async function PageDetailAchat({ params }: Props) {
   if (!data) notFound();
 
   const bien = data as Bien & { agent_id: string | null };
+
+  // Un bien en location ne doit jamais être servi sous /acheter → URL canonique
+  if (bien.transaction === "location") {
+    permanentRedirect(`/louer/${bien.slug ?? bien.id}`);
+  }
+
+  // Accès par UUID alors qu'un slug existe → redirection permanente vers l'URL slug
+  if (bien.slug && slug !== bien.slug) {
+    permanentRedirect(`/acheter/${bien.slug}`);
+  }
 
   return (
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { formaterPrix, formaterMontant } from "@/lib/format";
 import type { Bien } from "@/lib/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -22,7 +23,7 @@ type AnalyseIA = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatPrix(bien: BienComplet): string {
-  return `${bien.prix.toLocaleString("fr-FR")} DH${bien.transaction === "location" ? "/mois" : ""}`;
+  return formaterPrix(bien.prix, bien.transaction);
 }
 
 function prixM2(bien: BienComplet): number | null {
@@ -530,7 +531,7 @@ export default function PageComparateurClient() {
                     return (
                       <CelluleMeilleure key={b.id} active={active}>
                         <span style={{ borderLeft: "1px solid #F0EDE5", display: "block", padding: "0" }}>
-                          {pm2 !== null ? `${pm2.toLocaleString("fr-FR")} DH/m²` : "—"}
+                          {pm2 !== null ? `${formaterMontant(pm2)} DH/m²` : "—"}
                         </span>
                       </CelluleMeilleure>
                     );
@@ -562,7 +563,7 @@ export default function PageComparateurClient() {
                   <td style={{ ...labelStyle, background: "var(--fond-accent)" }}>Charges</td>
                   {biens.map((b) => (
                     <td key={b.id} style={{ ...cellStyle, background: "var(--fond-principal)", borderLeft: "1px solid #F0EDE5" }}>
-                      {b.charges ? `${b.charges.toLocaleString("fr-FR")} DH/mois` : "—"}
+                      {b.charges ? `${formaterMontant(b.charges)} DH/mois` : "—"}
                     </td>
                   ))}
                 </tr>

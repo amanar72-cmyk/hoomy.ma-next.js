@@ -16,7 +16,7 @@ type Visite = {
   nom_client: string;
   email_client: string;
   telephone_client: string | null;
-  date_souhaitee: string;
+  date_souhaitee: string | null;
   message: string | null;
   statut: string;
   cree_le: string;
@@ -46,7 +46,15 @@ function dateStr(offsetDays: number): string {
   return d.toISOString().split("T")[0];
 }
 
-function formaterDateTuile(s: string) {
+// Une date NULL ou invalide ne doit jamais faire planter la page (RangeError
+// sur toLocaleDateString en Node 18+) — même protection que /pro/calendrier.
+function dateValide(s: string | null): s is string {
+  if (!s) return false;
+  return !isNaN(new Date(s + "T12:00:00Z").getTime());
+}
+
+function formaterDateTuile(s: string | null) {
+  if (!dateValide(s)) return { num: "—", mois: "—", jour: "—" };
   const d = new Date(s + "T12:00:00Z");
   return {
     num:  d.getDate().toString(),
@@ -123,10 +131,11 @@ export default async function PageAdminCalendrier({ searchParams }: { searchPara
   if (!vuePast) {
     const g: Record<string, Visite[]> = { auj: [], dem: [], sem: [], suite: [] };
     for (const v of visites) {
-      if      (v.date_souhaitee === aujourd_hui) g.auj.push(v);
-      else if (v.date_souhaitee === demain)      g.dem.push(v);
-      else if (v.date_souhaitee <= dans6jours)   g.sem.push(v);
-      else                                        g.suite.push(v);
+      const ds = v.date_souhaitee ?? "";
+      if      (ds === aujourd_hui) g.auj.push(v);
+      else if (ds === demain)      g.dem.push(v);
+      else if (ds <= dans6jours)   g.sem.push(v);
+      else                         g.suite.push(v);
     }
     groupes = [
       { cle: "auj",   label: "Aujourd'hui",  accent: true,  visites: g.auj   },

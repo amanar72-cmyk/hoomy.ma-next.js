@@ -1,14 +1,11 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { formaterPrix } from "@/lib/format";
 
 export const runtime = "nodejs";
 
 const SITE = "hoomy.ma";
-
-function formatPrix(prix: number, transaction: string): string {
-  return `${prix.toLocaleString("fr-FR")} DH${transaction === "location" ? "/mois" : ""}`;
-}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -18,11 +15,22 @@ export async function GET(req: NextRequest) {
     return new Response("Paramètre 'slug' manquant", { status: 400 });
   }
 
-  const { data: bien } = await supabase
+  // Recherche par slug, puis par UUID en fallback (même logique que les fiches)
+  const CHAMPS = "slug, titre, prix, transaction, ville, surface, chambres, photos, type";
+  let { data: bien } = await supabase
     .from("biens")
-    .select("titre, prix, transaction, ville, surface, chambres, photos, type")
+    .select(CHAMPS)
     .eq("slug", slug)
-    .single();
+    .maybeSingle();
+
+  if (!bien && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)) {
+    const { data: byId } = await supabase
+      .from("biens")
+      .select(CHAMPS)
+      .eq("id", slug)
+      .maybeSingle();
+    bien = byId;
+  }
 
   if (!bien) {
     return new Response("Bien introuvable", { status: 404 });
@@ -32,10 +40,11 @@ export async function GET(req: NextRequest) {
     Array.isArray(bien.photos) && bien.photos.length > 0 ? bien.photos[0] : null;
 
   const transaction: string = bien.transaction ?? "vente";
-  const bienUrl = `https://${SITE}/${transaction === "location" ? "louer" : "acheter"}/${slug}`;
+  // Le QR code pointe toujours vers l'URL slug canonique
+  const bienUrl = `https://${SITE}/${transaction === "location" ? "louer" : "acheter"}/${bien.slug ?? slug}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(bienUrl)}&size=140x140&bgcolor=ffffff&color=0F4C3A&margin=6&qzone=1`;
 
-  const prixFormate = formatPrix(Number(bien.prix), transaction);
+  const prixFormate = formaterPrix(Number(bien.prix), transaction);
   const transLabel = transaction === "location" ? "À LOUER" : "À VENDRE";
 
   return new ImageResponse(
@@ -205,7 +214,7 @@ export async function GET(req: NextRequest) {
                 {bien.surface} m²
               </span>
             )}
-            {Number(bien.chambres) > 0 && (
+            {bien.type !== "Terrain" && Number(bien.chambres) > 0 && (
               <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 17, display: "flex" }}>
                 {bien.chambres} chambre{Number(bien.chambres) > 1 ? "s" : ""}
               </span>

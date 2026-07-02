@@ -262,6 +262,10 @@ export default function WizardPublication({ userId }: { userId: string | null })
     longitude: null,
   });
 
+  // Les champs bâti (chambres, salles de bain, équipements, composition)
+  // ne s'appliquent pas à un terrain : masqués à la saisie et vidés à l'envoi.
+  const estTerrain = donnees.type === "Terrain";
+
   // Upload photos
   const [uploadEnCours, setUploadEnCours] = useState(false);
   const [uploadsProgression, setUploadsProgression] = useState<Record<string, number>>({});
@@ -458,10 +462,11 @@ export default function WizardPublication({ userId }: { userId: string | null })
       ville: donnees.ville,
       quartier: donnees.quartier,
       surface: donnees.surface,
-      chambres: donnees.chambres,
-      salles_bain: donnees.salles_bain,
-      equipements: donnees.equipements,
-      composition: donnees.composition,
+      // Un terrain n'a ni chambres, ni salles de bain, ni équipements bâti
+      chambres: estTerrain ? 0 : donnees.chambres,
+      salles_bain: estTerrain ? 0 : donnees.salles_bain,
+      equipements: estTerrain ? [] : donnees.equipements,
+      composition: estTerrain ? [] : donnees.composition,
       photos: photosFinales.map((p) => p.url),
       photosOriginales: photosFinales.map((p) => p.cheminPrive),
       titre: donnees.titre,
@@ -737,13 +742,16 @@ export default function WizardPublication({ userId }: { userId: string | null })
               />
             </div>
 
-            {/* Compteurs */}
+            {/* Compteurs — sans objet pour un terrain */}
+            {!estTerrain && (
             <div className="mb-6">
               <Compteur label="Chambres" valeur={donnees.chambres} onChange={(v) => mettreAJour("chambres", v)} min={0} />
               <Compteur label="Salles de bain" valeur={donnees.salles_bain} onChange={(v) => mettreAJour("salles_bain", v)} min={0} />
             </div>
+            )}
 
-            {/* Équipements */}
+            {/* Équipements — sans objet pour un terrain */}
+            {!estTerrain && (
             <div className="mb-6">
               <p className="text-sm font-medium mb-3" style={{ color: "#3D4A42" }}>Équipements</p>
               <div className="flex flex-wrap gap-2">
@@ -767,8 +775,10 @@ export default function WizardPublication({ userId }: { userId: string | null })
                 })}
               </div>
             </div>
+            )}
 
-            {/* Composition par niveau — optionnelle */}
+            {/* Composition par niveau — optionnelle, sans objet pour un terrain */}
+            {!estTerrain && (
             <div>
               <p className="text-sm font-medium mb-1" style={{ color: "#3D4A42" }}>
                 Composition du bien{" "}
@@ -782,6 +792,7 @@ export default function WizardPublication({ userId }: { userId: string | null })
                 onChange={(v) => mettreAJour("composition", v)}
               />
             </div>
+            )}
           </div>
         );
 
@@ -940,19 +951,23 @@ export default function WizardPublication({ userId }: { userId: string | null })
                 <span className="font-medium" style={{ color: "#1f2a24" }}>{donnees.ville}{donnees.quartier ? `, ${donnees.quartier}` : ""}</span>
                 <span style={{ color: "#9DB8AD" }}>Surface</span>
                 <span className="font-medium" style={{ color: "#1f2a24" }}>{donnees.surface} m²</span>
-                <span style={{ color: "#9DB8AD" }}>Chambres</span>
-                <span className="font-medium" style={{ color: "#1f2a24" }}>{donnees.chambres}</span>
-                <span style={{ color: "#9DB8AD" }}>Salles de bain</span>
-                <span className="font-medium" style={{ color: "#1f2a24" }}>{donnees.salles_bain}</span>
+                {!estTerrain && (
+                  <>
+                    <span style={{ color: "#9DB8AD" }}>Chambres</span>
+                    <span className="font-medium" style={{ color: "#1f2a24" }}>{donnees.chambres}</span>
+                    <span style={{ color: "#9DB8AD" }}>Salles de bain</span>
+                    <span className="font-medium" style={{ color: "#1f2a24" }}>{donnees.salles_bain}</span>
+                  </>
+                )}
                 <span style={{ color: "#9DB8AD" }}>Photos</span>
                 <span className="font-medium" style={{ color: "#1f2a24" }}>{donnees.photos.length} photo{donnees.photos.length > 1 ? "s" : ""}</span>
-                {donnees.equipements.length > 0 && (
+                {!estTerrain && donnees.equipements.length > 0 && (
                   <>
                     <span style={{ color: "#9DB8AD" }}>Équipements</span>
                     <span className="font-medium" style={{ color: "#1f2a24" }}>{donnees.equipements.join(", ")}</span>
                   </>
                 )}
-                {donnees.composition.length > 0 && (
+                {!estTerrain && donnees.composition.length > 0 && (
                   <>
                     <span style={{ color: "#9DB8AD" }}>Composition</span>
                     <span className="font-medium" style={{ color: "#1f2a24" }}>

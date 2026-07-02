@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import BoutonSupprimer from "./BoutonSupprimer";
+import { formaterPrix } from "@/lib/format";
 
 const BADGE_STATUT: Record<string, { label: string; bg: string; color: string }> = {
   brouillon:     { label: "Brouillon",     bg: "#F5F5F5", color: "#777" },
@@ -28,10 +29,6 @@ type Props = {
   deverifierFn: () => Promise<void>;
 };
 
-function formaterPrix(prix: number, transaction: string) {
-  const montant = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${montant} DH/mois` : `${montant} DH`;
-}
 
 export default function LigneBienAdmin({
   id, reference, titre, type, transaction, prix, ville, quartier,

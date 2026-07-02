@@ -5,14 +5,11 @@ import LigneBienAdmin from "@/components/admin/LigneBienAdmin";
 import BadgeStatut from "@/components/compte/BadgeStatut";
 import { verifierBien, deverifierBien } from "@/app/admin/actions";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
+import { formaterPrix } from "@/lib/format";
 
 // Statuts "déjà transmis / publiés" — tout le reste est considéré entrant/en cours.
 const STATUTS_NON_ENTRANTS = ["en_validation", "finalise", "transacte", "rejete", "suspendu", "archive"];
 
-function formaterPrixBien(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 type SearchParams = Promise<{
   ville?: string;
@@ -142,7 +139,7 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
                     {b.quartier ? `${b.quartier}, ` : ""}{b.ville}
                   </p>
                   <p className="text-sm font-semibold" style={{ color: "#0F4C3A" }}>
-                    {formaterPrixBien(b.prix, b.transaction)}
+                    {formaterPrix(b.prix, b.transaction)}
                   </p>
                 </div>
               </Link>

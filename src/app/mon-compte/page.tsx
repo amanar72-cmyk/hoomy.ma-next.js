@@ -4,6 +4,7 @@ import Link from "next/link";
 import StatCard from "@/components/compte/StatCard";
 import BadgeStatut from "@/components/compte/BadgeStatut";
 import EtatVide from "@/components/compte/EtatVide";
+import { formaterPrix } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -32,10 +33,6 @@ type BienSuggestion = {
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
-function formaterPrix(prix: number, transaction: string) {
-  const m = prix.toLocaleString("fr-MA");
-  return transaction === "location" ? `${m} DH/mois` : `${m} DH`;
-}
 
 function formaterDate(d: string | null) {
   if (!d) return "—";
