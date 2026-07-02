@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import ActionsLead from "@/components/pro/ActionsLead";
 import { changerStatutLead } from "@/app/pro/actions";
+import BoutonCalendrier from "@/components/ui/BoutonCalendrier";
 
 export const metadata: Metadata = {
   title: "Calendrier des visites — Espace Pro HOOMY.MA",
@@ -27,6 +28,8 @@ type Visite = {
     ville: string;
     quartier: string | null;
     photos: string[] | null;
+    slug: string | null;
+    transaction: string;
   } | null;
 };
 
@@ -83,7 +86,7 @@ export default async function PageProCalendrier({ searchParams }: { searchParams
     .from("demandes_visite")
     .select(
       "id, nom_client, email_client, telephone_client, date_souhaitee, message, statut, cree_le, " +
-      "biens(id, titre, reference, ville, quartier, photos)"
+      "biens(id, titre, reference, ville, quartier, photos, slug, transaction)"
     )
     .eq("agent_id", user.id)
     .not("date_souhaitee", "is", null);
@@ -375,6 +378,26 @@ function CarteVisite({
           marquerTraite={marquerTraite}
           marquerNouvel={marquerNouvel}
         />
+        {visite.statut === "confirmee" && visite.date_souhaitee && (
+          <div className="mt-3 pt-3" style={{ borderTop: "1px solid #F5F5F5" }}>
+            <BoutonCalendrier
+              visitId={visite.id}
+              date={visite.date_souhaitee}
+              titre={visite.biens?.titre ?? "Visite"}
+              reference={visite.biens?.reference ?? null}
+              location={
+                visite.biens?.quartier
+                  ? `${visite.biens.quartier}, ${visite.biens.ville}`
+                  : (visite.biens?.ville ?? "")
+              }
+              lienFiche={
+                visite.biens?.slug
+                  ? `https://hoomy.ma/${visite.biens.transaction === "location" ? "louer" : "acheter"}/${visite.biens.slug}`
+                  : "https://hoomy.ma"
+              }
+            />
+          </div>
+        )}
       </div>
     </article>
   );

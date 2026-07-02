@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import BoutonCalendrier from "@/components/ui/BoutonCalendrier";
 
 export const metadata: Metadata = {
   title: "Mes visites — Mon espace HOOMY.MA",
@@ -23,6 +24,7 @@ type DemandeVisite = {
     photos: string[] | null;
     transaction: string;
     ville: string;
+    quartier: string | null;
     slug: string | null;
   } | null;
 };
@@ -57,7 +59,7 @@ export default async function PageMesVisites({
     .from("demandes_visite")
     .select(
       "id, agent_id, date_souhaitee, date_confirmee, statut, cree_le, message, " +
-      "biens(titre, reference, photos, transaction, ville, slug)"
+      "biens(titre, reference, photos, transaction, ville, quartier, slug)"
     )
     .eq("client_id", user.id)
     .order("cree_le", { ascending: false });
@@ -195,9 +197,16 @@ export default async function PageMesVisites({
             const photo = (d.biens?.photos as string[] | null)?.[0] ?? null;
             const statutConf = STATUTS_CONFIG[d.statut] ?? { label: d.statut, bg: "#F3F4F6", color: "#374151" };
             const agentNom = d.agent_id ? (agentsMap[d.agent_id] ?? null) : null;
-            const lienBien = d.biens?.slug
-              ? `/${d.biens.transaction === "location" ? "louer" : "acheter"}/${d.biens.slug}`
-              : null;
+            const prefixe = d.biens?.transaction === "location" ? "louer" : "acheter";
+            const lienBien = d.biens?.slug ? `/${prefixe}/${d.biens.slug}` : null;
+            const lienFiche = d.biens?.slug
+              ? `https://hoomy.ma/${prefixe}/${d.biens.slug}`
+              : "https://hoomy.ma";
+            const locationBien = d.biens
+              ? (d.biens.quartier ? `${d.biens.quartier}, ${d.biens.ville}` : d.biens.ville)
+              : "";
+            const montrerBoutonCalendrier =
+              d.statut === "confirmee" && !!d.date_souhaitee;
 
             return (
               <article
@@ -271,23 +280,35 @@ export default async function PageMesVisites({
                   </div>
                 </div>
 
-                {lienBien && (
+                {(lienBien || montrerBoutonCalendrier) && (
                   <div
-                    className="px-4 pb-3 pt-0"
+                    className="px-4 pb-3 pt-2 flex flex-wrap items-center gap-3"
                     style={{ borderTop: "1px solid #F8F5EE" }}
                   >
-                    <Link
-                      href={lienBien}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl mt-2 hover:opacity-80 transition-opacity"
-                      style={{ background: "#F0EDE5", color: "#0F4C3A", textDecoration: "none" }}
-                    >
-                      <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                      Voir l&apos;annonce
-                    </Link>
+                    {lienBien && (
+                      <Link
+                        href={lienBien}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl hover:opacity-80 transition-opacity"
+                        style={{ background: "#F0EDE5", color: "#0F4C3A", textDecoration: "none" }}
+                      >
+                        <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                        Voir l&apos;annonce
+                      </Link>
+                    )}
+                    {montrerBoutonCalendrier && (
+                      <BoutonCalendrier
+                        visitId={d.id}
+                        date={d.date_souhaitee!}
+                        titre={d.biens?.titre ?? "Visite"}
+                        reference={d.biens?.reference ?? null}
+                        location={locationBien}
+                        lienFiche={lienFiche}
+                      />
+                    )}
                   </div>
                 )}
               </article>
