@@ -36,11 +36,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/?erreur=acces-refuse");
   }
 
+  // Badge « leads nouveaux » dans la navigation
+  const { count: nbLeadsNouveaux } = await supabase
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .eq("statut", "nouveau");
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#F7F7F7" }}>
       <SidebarAdmin
         nomAdmin={profil.nom_complet ?? user.email ?? "Admin"}
         avatarUrl={profil.avatar_url ?? null}
+        nbLeadsNouveaux={nbLeadsNouveaux ?? 0}
       />
       <main className="flex-1 overflow-auto mt-[52px] lg:mt-0" style={{ minHeight: "100vh" }}>
         {children}

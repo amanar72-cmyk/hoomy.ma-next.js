@@ -87,6 +87,7 @@ const NAV_ADMIN = [
   { href: "/admin/verifications", ico: "verif",        label: "Vérifications" },
   { href: "/admin/affectation",   ico: "file",         label: "File d'affectation" },
   { href: "/admin/leads",         ico: "leads",        label: "Leads" },
+  { href: "/admin/demandes",      ico: "clients",      label: "Demandes" },
   { href: "/admin/calendrier",    ico: "calendrier",   label: "Calendrier" },
   { href: "/admin/agents",        ico: "agents",       label: "Agents" },
   { href: "/admin/clients",       ico: "clients",      label: "Clients" },
@@ -98,11 +99,12 @@ const NAV_ADMIN = [
 type Props = {
   nomAdmin: string;
   avatarUrl: string | null;
+  nbLeadsNouveaux?: number; // badge sur l'entrée « Leads »
 };
 
 // ── Composant ─────────────────────────────────────────────────────────────────
 
-export default function SidebarAdmin({ nomAdmin, avatarUrl }: Props) {
+export default function SidebarAdmin({ nomAdmin, avatarUrl, nbLeadsNouveaux = 0 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuMobile, setMenuMobile] = useState(false);
@@ -166,6 +168,15 @@ export default function SidebarAdmin({ nomAdmin, avatarUrl }: Props) {
               {Ico[item.ico as keyof typeof Ico]}
             </span>
             {item.label}
+            {/* Badge leads nouveaux */}
+            {item.href === "/admin/leads" && nbLeadsNouveaux > 0 && (
+              <span
+                className="ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: "#D4AF37", color: "#111", fontSize: 10, minWidth: 18, textAlign: "center" }}
+              >
+                {nbLeadsNouveaux > 99 ? "99+" : nbLeadsNouveaux}
+              </span>
+            )}
           </Link>
         ))}
       </nav>

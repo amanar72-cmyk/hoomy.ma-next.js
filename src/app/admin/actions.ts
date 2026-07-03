@@ -330,7 +330,7 @@ export async function changerStatutLeadAdmin(leadId: string, statut: string) {
     .eq("id", leadId);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/admin/leads");
+  revalidatePath("/admin/demandes");
   revalidatePath("/admin");
 }
 
