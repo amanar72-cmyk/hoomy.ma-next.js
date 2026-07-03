@@ -7,6 +7,7 @@ import PourquoiHoomy from "@/components/home/PourquoiHoomy";
 import ParcoursVendeur from "@/components/home/ParcoursVendeur";
 import Footer from "@/components/home/Footer";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
+import ApparitionScroll from "@/components/ui/ApparitionScroll";
 import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -39,11 +40,20 @@ export default async function Accueil() {
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
       <HeroSection />
-      <ParcoursVendeur />
-      <PourquoiHoomy />
-      <BiensVedette biens={biens} />
+      {/* Apparitions discrètes au scroll — hero exclu (LCP) */}
+      <ApparitionScroll>
+        <ParcoursVendeur />
+      </ApparitionScroll>
+      <ApparitionScroll>
+        <PourquoiHoomy />
+      </ApparitionScroll>
+      <ApparitionScroll>
+        <BiensVedette biens={biens} />
+      </ApparitionScroll>
       <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
-      <SectionVilles comptesParVille={comptesParVille} />
+      <ApparitionScroll>
+        <SectionVilles comptesParVille={comptesParVille} />
+      </ApparitionScroll>
       <Footer />
     </main>
   );

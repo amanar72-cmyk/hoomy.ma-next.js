@@ -8,6 +8,7 @@ import { useComparateur } from "@/lib/comparateur/ComparateurContext";
 import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
 import { formaterMontant } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
+import { afficherToast } from "@/components/ui/Toaster";
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
@@ -135,6 +136,8 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
   const nbPhotos = bien.photos?.length ?? 0;
   const chemin = cheminBien(bien);
   const prixBase = formaterMontant(bien.prix);
+  // Bien publié il y a moins de 7 jours
+  const estNouveau = Date.now() - new Date(bien.cree_le).getTime() < 7 * 86400000;
 
   function toggleComparateur(e: React.MouseEvent) {
     e.preventDefault();
@@ -150,6 +153,7 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
         transaction: bien.transaction,
         slug: bien.slug ?? bien.id,
       });
+      afficherToast("Ajouté à la comparaison");
     }
   }
 
@@ -190,6 +194,14 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
 
           {/* ── Badges gauche ── */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 pointer-events-none">
+            {estNouveau && (
+              <span
+                className="badge-nouveau text-xs font-semibold px-2.5 py-1 rounded-full w-fit leading-none"
+                style={{ background: "var(--accent)", color: "var(--primaire)" }}
+              >
+                Nouveau
+              </span>
+            )}
             <span
               className="text-xs font-semibold px-2.5 py-1 rounded-full w-fit leading-none"
               style={
@@ -372,9 +384,18 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
           e.preventDefault();
           e.stopPropagation();
           const uid = userIdRef.current;
+          // Visiteur non connecté : rien n'est sauvegardé → invite claire,
+          // sans fausse mise à jour visuelle
+          if (!uid) {
+            afficherToast("Connectez-vous pour sauvegarder vos favoris", {
+              lien: "/connexion",
+              libelleLien: "Se connecter",
+            });
+            return;
+          }
           // Mise à jour optimiste
           setFavori((f) => !f);
-          if (!uid) return;
+          afficherToast(favori ? "Retiré des favoris" : "Ajouté aux favoris");
           const supabase = createClient();
           if (!favori) {
             await supabase.from("favoris").insert({ user_id: uid, bien_id: bien.id });

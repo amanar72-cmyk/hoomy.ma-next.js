@@ -7,6 +7,7 @@ import BulleChatConditionnelle from "@/components/chat/BulleChatConditionnelle";
 import { ComparateurProvider } from "@/lib/comparateur/ComparateurContext";
 import BarreComparateur from "@/components/comparateur/BarreComparateur";
 import SplashScreen from "@/components/ui/SplashScreen";
+import Toaster from "@/components/ui/Toaster";
 
 const marcellus = Marcellus({ subsets: ["latin"], weight: "400", variable: "--font-marcellus" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -125,6 +126,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <AnalytiqueGA gaId={process.env.NEXT_PUBLIC_GA_ID} />
           )}
           <BarreComparateur />
+          <Toaster />
         </ComparateurProvider>
       </body>
     </html>

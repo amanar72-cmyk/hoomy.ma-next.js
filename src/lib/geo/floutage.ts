@@ -30,15 +30,21 @@ type BienGeolocalisable = {
 
 // ── Secret serveur ────────────────────────────────────────────────────────────
 
-function secretFloutage(): string {
+let alerteEmise = false;
+
+// Fail-soft : un secret absent ne doit JAMAIS faire tomber les pages en 500.
+// Sans secret, aucune coordonnée n'est produite (les cartes sont simplement
+// désactivées) — on ne retombe jamais sur les coordonnées exactes.
+function secretFloutage(): string | null {
   const s = process.env.FLOUTAGE_SECRET;
-  if (!s) {
-    throw new Error(
-      "FLOUTAGE_SECRET manquant — variable d'environnement serveur requise " +
-      "pour flouter les coordonnées (à définir dans .env.local et sur l'hébergeur)."
+  if (!s && !alerteEmise) {
+    alerteEmise = true;
+    console.error(
+      "[floutage] FLOUTAGE_SECRET manquant — cartes désactivées et coordonnées masquées. " +
+      "Définir cette variable d'environnement sur l'hébergeur puis redémarrer."
     );
   }
-  return s;
+  return s ?? null;
 }
 
 // ── Floutage ──────────────────────────────────────────────────────────────────
@@ -50,13 +56,17 @@ const DISTANCE_MAX_M = 250;
 /**
  * Décale une position de 150 à 250 m dans une direction stable pour un bien
  * donné. Arrondi à 5 décimales (~1 m) : transmettre plus de précision est inutile.
+ * Renvoie null si FLOUTAGE_SECRET est absent (fail-soft, jamais de crash).
  */
 export function flouterPosition(
   bienId: string,
   latitude: number,
   longitude: number
-): { lat: number; lng: number } {
-  const h = createHash("sha256").update(`${bienId}:${secretFloutage()}`).digest();
+): { lat: number; lng: number } | null {
+  const secret = secretFloutage();
+  if (!secret) return null;
+
+  const h = createHash("sha256").update(`${bienId}:${secret}`).digest();
   const angle = (h.readUInt32BE(0) / 0xffffffff) * 2 * Math.PI;
   const distanceM =
     DISTANCE_MIN_M + (h.readUInt32BE(4) / 0xffffffff) * (DISTANCE_MAX_M - DISTANCE_MIN_M);
@@ -84,6 +94,7 @@ export function construirePointsCarte(biens: BienGeolocalisable[]): PointCarte[]
   for (const b of biens) {
     if (typeof b.latitude !== "number" || typeof b.longitude !== "number") continue;
     const pos = flouterPosition(b.id, b.latitude, b.longitude);
+    if (!pos) continue; // secret absent → aucun point, carte simplement désactivée
     points.push({
       id: b.id,
       slug: b.slug,

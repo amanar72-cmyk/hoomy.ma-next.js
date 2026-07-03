@@ -12,12 +12,44 @@ import type { PointCarte } from "@/lib/types";
 
 const CarteBiens = dynamic(() => import("./CarteBiens"), {
   ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center" style={{ background: "#EDF3EF" }}>
-      <p className="text-sm" style={{ color: "#9DB8AD" }}>Chargement de la carte…</p>
-    </div>
-  ),
+  // Le fallback est transparent : l'aperçu statique placé derrière reste visible
+  loading: () => null,
 });
+
+// Aperçu Mapbox Static affiché instantanément pendant le téléchargement du
+// chunk mapbox-gl (une simple <img>, ~30 Ko, uniquement à l'ouverture).
+function ApercuCarteStatique({ points }: { points: PointCarte[] }) {
+  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  if (!token || points.length === 0) return null;
+
+  const lats = points.map((p) => p.latApprox);
+  const lngs = points.map((p) => p.lngApprox);
+  const lat = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const lng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+  // Zoom approché depuis l'étendue des points (clampé ville ↔ pays)
+  const span = Math.max(
+    Math.max(...lats) - Math.min(...lats),
+    (Math.max(...lngs) - Math.min(...lngs)) * Math.cos((lat * Math.PI) / 180),
+    0.005
+  );
+  const zoom = Math.min(12, Math.max(4.5, Math.log2(360 / span) - 2.2));
+
+  const url =
+    `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/` +
+    `${lng.toFixed(4)},${lat.toFixed(4)},${zoom.toFixed(1)},0/640x960@2x` +
+    `?access_token=${token}&logo=false&attribution=false`;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt=""
+      aria-hidden="true"
+      className="absolute inset-0 w-full h-full object-cover"
+      style={{ filter: "saturate(0.9)" }}
+    />
+  );
+}
 
 function IcCarte() {
   return (
@@ -77,8 +109,14 @@ export default function VueListeCarte({ points, children }: Props) {
             className="hidden lg:block flex-1 sticky"
             style={{ top: 72, height: "calc(100vh - 72px)", animation: "hoomy-carte-in 0.45s ease" }}
           >
-            <div className="w-full h-full overflow-hidden" style={{ borderLeft: "1px solid var(--bordure-legere)" }}>
-              <CarteBiens points={points} />
+            <div
+              className="relative w-full h-full overflow-hidden"
+              style={{ borderLeft: "1px solid var(--bordure-legere)", background: "#EDF3EF" }}
+            >
+              <ApercuCarteStatique points={points} />
+              <div className="absolute inset-0">
+                <CarteBiens points={points} />
+              </div>
             </div>
           </aside>
         )}
@@ -100,7 +138,10 @@ export default function VueListeCarte({ points, children }: Props) {
       {/* ── Vue carte plein écran mobile ──────────────────────────────────── */}
       {pleinEcran && (
         <div className="lg:hidden fixed inset-0" style={{ zIndex: 10002, background: "#EDF3EF" }}>
-          <CarteBiens points={points} />
+          <ApercuCarteStatique points={points} />
+          <div className="absolute inset-0">
+            <CarteBiens points={points} />
+          </div>
           <button
             type="button"
             onClick={() => setPleinEcran(false)}

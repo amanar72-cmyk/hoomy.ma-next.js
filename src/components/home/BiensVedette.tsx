@@ -32,6 +32,8 @@ function CarteCarrousel({ bien }: { bien: BienPublic }) {
   const chemin = `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug ?? bien.id}`;
   const localisation = bien.quartier ? `${bien.ville} · ${bien.quartier}` : bien.ville;
   const prix = formaterPrix(bien.prix, bien.transaction);
+  // Bien publié il y a moins de 7 jours
+  const estNouveau = Date.now() - new Date(bien.cree_le).getTime() < 7 * 86400000;
 
   return (
     <Link
@@ -113,6 +115,27 @@ function CarteCarrousel({ bien }: { bien: BienPublic }) {
           >
             {bien.transaction === "location" ? "À louer" : "À vendre"}
           </span>
+
+          {/* Badge Nouveau — bien < 7 jours */}
+          {estNouveau && (
+            <span
+              className="badge-nouveau"
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                background: "var(--accent)",
+                color: "var(--primaire)",
+                fontSize: 10,
+                fontWeight: 700,
+                padding: "4px 10px",
+                borderRadius: 99,
+                letterSpacing: "0.03em",
+              }}
+            >
+              Nouveau
+            </span>
+          )}
         </div>
 
         {/* ── Infos ──────────────────────────────────────────────────────── */}

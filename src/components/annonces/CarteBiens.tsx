@@ -34,6 +34,8 @@ type Props = { points: PointCarte[] };
 export default function CarteBiens({ points }: Props) {
   const mapRef = useRef<MapRef>(null);
   const [selection, setSelection] = useState<PointCarte | null>(null);
+  // Fondu depuis l'aperçu statique une fois la carte interactive prête
+  const [prete, setPrete] = useState(false);
 
   // GeoJSON cluster-ready — les propriétés portent la mini-carte
   const geojson = useMemo(
@@ -82,6 +84,10 @@ export default function CarteBiens({ points }: Props) {
     `/${p.transaction === "location" ? "louer" : "acheter"}/${p.slug ?? p.id}`;
 
   return (
+    <div
+      className="w-full h-full"
+      style={{ opacity: prete ? 1 : 0, transition: "opacity 0.5s ease" }}
+    >
     <Map
       ref={mapRef}
       mapboxAccessToken={TOKEN}
@@ -89,6 +95,7 @@ export default function CarteBiens({ points }: Props) {
       initialViewState={{ bounds, fitBoundsOptions: { padding: 70, maxZoom: 14 } }}
       style={{ width: "100%", height: "100%" }}
       interactiveLayerIds={["clusters", "zones"]}
+      onLoad={() => setPrete(true)}
       onClick={onClick}
       onMouseEnter={() => { const c = mapRef.current?.getCanvas(); if (c) c.style.cursor = "pointer"; }}
       onMouseLeave={() => { const c = mapRef.current?.getCanvas(); if (c) c.style.cursor = ""; }}
@@ -213,5 +220,6 @@ export default function CarteBiens({ points }: Props) {
         }
       `}</style>
     </Map>
+    </div>
   );
 }
