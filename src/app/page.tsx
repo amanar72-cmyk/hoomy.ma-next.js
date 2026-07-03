@@ -8,6 +8,7 @@ import ParcoursVendeur from "@/components/home/ParcoursVendeur";
 import Footer from "@/components/home/Footer";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
 import ApparitionScroll from "@/components/ui/ApparitionScroll";
+import SectionLead from "@/components/home/SectionLead";
 import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,9 @@ export default async function Accueil() {
       <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
       <ApparitionScroll>
         <SectionVilles comptesParVille={comptesParVille} />
+      </ApparitionScroll>
+      <ApparitionScroll>
+        <SectionLead />
       </ApparitionScroll>
       <Footer />
     </main>

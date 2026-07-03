@@ -14,6 +14,7 @@ import CarteLocalisation from "@/components/detail/CarteLocalisation";
 import BiensSimiliaires from "@/components/detail/BiensSimiliaires";
 import TrackVue from "@/components/tracking/TrackVue";
 import BarreMobileContact from "@/components/detail/BarreMobileContact";
+import RappelBien from "@/components/leads/RappelBien";
 
 export const dynamic = "force-dynamic";
 
@@ -124,6 +125,8 @@ export default async function PageDetailLocation({ params }: Props) {
           {/* Colonne gauche — détails + équipements */}
           <div className="flex-1 min-w-0">
             <InfosBien bien={bien} />
+            {/* Qualification de lead — bien_id + type de projet pré-remplis */}
+            <RappelBien bienId={bien.id} titreBien={bien.titre} transaction={bien.transaction} />
           </div>
 
           {/* Colonne droite — carte contact sticky (desktop) */}
