@@ -55,7 +55,10 @@ function urlPhotoTransformee(objectUrl: string): string | null {
   return (
     objectUrl.replace(marqueur, "/storage/v1/render/image/public/") +
     (objectUrl.includes("?") ? "&" : "?") +
-    "width=1200&quality=85&resize=cover"
+    // La carte OG est vue en PETIT dans l'aperçu WhatsApp : une source modérée
+    // (640 px) reste nette à l'affichage tout en réduisant fortement l'entropie
+    // du PNG rendu en 1200×380 → sortie < 600 Ko et moins de CPU (anti-503).
+    "width=640&quality=80&resize=cover"
   );
 }
 
@@ -115,21 +118,16 @@ export async function GET(req: NextRequest) {
   const transLabel = transaction === "location" ? "À LOUER" : "À VENDRE";
   const bienUrl = `https://${SITE}/${transaction === "location" ? "louer" : "acheter"}/${bien.slug ?? slug}`;
 
-  // Photo : on privilégie l'ORIGINALE (source propre → PNG de sortie plus léger,
-  // les artefacts d'un JPEG re-compressé alourdissent au contraire le PNG sans
-  // perte). La transformée Supabase (haute qualité) sert de garde-fou pour les
-  // photos géantes, afin de ne pas télécharger plusieurs Mo. Fallback : sans photo.
+  // Photo : on privilégie la version TRANSFORMÉE (résolution modérée, haute
+  // qualité) — propre mais légèrement adoucie → PNG de sortie beaucoup plus
+  // léger (cible < 600 Ko) et moins de CPU (marge anti-503). Fallback sur
+  // l'originale si la transform n'est pas disponible, puis carte sans photo.
   const objectUrl = Array.isArray(bien.photos) && bien.photos.length > 0 ? bien.photos[0] : null;
   let photo: string | null = null;
   if (objectUrl) {
-    photo = await imageEnDataUrl(objectUrl, TIMEOUT_PHOTO_MS);
-    // Si l'originale est très lourde (> ~1,2 Mo en base64), on repasse par une
-    // version transformée haute qualité pour limiter le poids.
-    if (photo && photo.length > 1_600_000) {
-      const transformee = urlPhotoTransformee(objectUrl);
-      const legere = transformee ? await imageEnDataUrl(transformee, TIMEOUT_PHOTO_MS) : null;
-      if (legere) photo = legere;
-    }
+    const transformee = urlPhotoTransformee(objectUrl);
+    if (transformee) photo = await imageEnDataUrl(transformee, TIMEOUT_PHOTO_MS);
+    if (!photo) photo = await imageEnDataUrl(objectUrl, TIMEOUT_PHOTO_MS);
   }
 
   // QR local (jamais bloquant)
