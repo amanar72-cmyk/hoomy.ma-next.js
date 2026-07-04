@@ -6,36 +6,61 @@
 // cercles de zone, jamais de pin exact.
 
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useRef, useState, useMemo, useCallback } from "react";
+import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import Map, { Source, Layer, Popup, NavigationControl } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
-import type { GeoJSONSource, MapMouseEvent } from "mapbox-gl";
+import type { GeoJSONSource, MapMouseEvent, ExpressionSpecification } from "mapbox-gl";
 import Link from "next/link";
 import { formaterPrix } from "@/lib/format";
 import type { PointCarte } from "@/lib/types";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
-// Rayon du cercle de zone : ~350 m convertis en pixels selon le zoom
-// (métrique exacte via interpolation exponentielle base 2, latitude Maroc ~31°).
-// Le ["max", 7, …] garantit un point visible même dézoomé.
+// Rayon du cercle de zone : ~350 m rendus en pixels selon le zoom.
+//
+// Mapbox impose que ["zoom"] soit l'entrée DIRECTE d'un interpolate/step de
+// NIVEAU SUPÉRIEUR — impossible de l'envelopper dans un max(). On obtient donc
+// le plancher de visibilité (7 px quand on est dézoomé) via le clamping natif
+// d'interpolate : en dessous du premier palier, la sortie reste constante.
+// Au-dessus, l'interpolation exponentielle base 2 reproduit exactement la
+// relation métrique 350 m ∝ 2^zoom (latitude Maroc ~31°).
 const RAYON_ZONE_M = 350;
+const RAYON_MIN_PX = 7;
 const METRES_PAR_PX_Z0 = 156543.03392 * Math.cos((31 * Math.PI) / 180);
-const RAYON_ZONE_EXPR = [
-  "max", 7,
-  ["interpolate", ["exponential", 2], ["zoom"],
-    0, RAYON_ZONE_M / METRES_PAR_PX_Z0,
-    22, (RAYON_ZONE_M * 2 ** 22) / METRES_PAR_PX_Z0,
-  ],
+// Zoom auquel 350 m valent exactement 7 px → plancher en dessous de ce zoom.
+const ZOOM_PLANCHER = Math.log2((RAYON_MIN_PX * METRES_PAR_PX_Z0) / RAYON_ZONE_M);
+const RAYON_ZONE_EXPR: ExpressionSpecification = [
+  "interpolate",
+  ["exponential", 2],
+  ["zoom"],
+  ZOOM_PLANCHER, RAYON_MIN_PX,
+  22, (RAYON_ZONE_M * 2 ** 22) / METRES_PAR_PX_Z0,
 ];
 
 type Props = { points: PointCarte[] };
 
 export default function CarteBiens({ points }: Props) {
   const mapRef = useRef<MapRef>(null);
+  const conteneurRef = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useState<PointCarte | null>(null);
   // Fondu depuis l'aperçu statique une fois la carte interactive prête
   const [prete, setPrete] = useState(false);
+
+  // Mapbox a besoin de dimensions stables : le canvas s'initialise parfois avant
+  // que le panneau (flex-1 + animation d'ouverture) ait sa taille finale, d'où
+  // une carte « déformée ». On force resize() dès que le conteneur est mesuré
+  // puis à chaque changement de taille (ouverture desktop, plein écran mobile,
+  // redimensionnement fenêtre). Le callback se déclenche aussi immédiatement à
+  // l'observation → corrige la forme initiale.
+  useEffect(() => {
+    const el = conteneurRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      mapRef.current?.resize();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // GeoJSON cluster-ready — les propriétés portent la mini-carte
   const geojson = useMemo(
@@ -85,6 +110,7 @@ export default function CarteBiens({ points }: Props) {
 
   return (
     <div
+      ref={conteneurRef}
       className="w-full h-full"
       style={{ opacity: prete ? 1 : 0, transition: "opacity 0.5s ease" }}
     >
@@ -95,7 +121,7 @@ export default function CarteBiens({ points }: Props) {
       initialViewState={{ bounds, fitBoundsOptions: { padding: 70, maxZoom: 14 } }}
       style={{ width: "100%", height: "100%" }}
       interactiveLayerIds={["clusters", "zones"]}
-      onLoad={() => setPrete(true)}
+      onLoad={() => { setPrete(true); mapRef.current?.resize(); }}
       onClick={onClick}
       onMouseEnter={() => { const c = mapRef.current?.getCanvas(); if (c) c.style.cursor = "pointer"; }}
       onMouseLeave={() => { const c = mapRef.current?.getCanvas(); if (c) c.style.cursor = ""; }}
@@ -117,8 +143,7 @@ export default function CarteBiens({ points }: Props) {
           type="circle"
           filter={["!", ["has", "point_count"]]}
           paint={{
-            /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-            "circle-radius": RAYON_ZONE_EXPR as any,
+            "circle-radius": RAYON_ZONE_EXPR,
             "circle-color": "#0F4C3A",
             "circle-opacity": 0.18,
             "circle-stroke-color": "#0F4C3A",

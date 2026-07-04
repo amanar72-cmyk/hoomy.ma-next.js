@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useTheme } from "@/lib/theme/useTheme";
 
 // ── Persistance via cookie (1 an, SameSite=Lax) ───────────────────────────────
@@ -47,9 +48,31 @@ function IcLune() {
 
 // ── Composant ─────────────────────────────────────────────────────────────────
 
+// Base de style commune (identique serveur ↔ premier rendu client).
+const STYLE_BASE: React.CSSProperties = {
+  width: 36,
+  height: 36,
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  border: "1.5px solid var(--bordure)",
+  flexShrink: 0,
+  outline: "none",
+  transition: "background 0.2s, color 0.2s, border-color 0.2s",
+};
+
 export default function ToggleTheme() {
   const theme = useTheme();
   const estNuit = theme === "dark";
+
+  // Le thème réel n'est connu de façon fiable qu'après montage (le serveur rend
+  // toujours "light", le client lit data-theme posé par le script anti-flash).
+  // Tant que non monté, on rend un placeholder neutre stable → même HTML des
+  // deux côtés, zéro warning d'hydratation.
+  const [monte, setMonte] = useState(false);
+  useEffect(() => setMonte(true), []);
 
   function basculer() {
     const nouveau = estNuit ? "light" : "dark";
@@ -61,6 +84,20 @@ export default function ToggleTheme() {
     window.setTimeout(() => html.classList.remove("en-transition"), 400);
   }
 
+  // ── Placeholder neutre (avant montage) ──────────────────────────────────────
+  // Mêmes dimensions, aucun élément dépendant du thème (ni icône, ni couleur
+  // conditionnelle), aria-label générique.
+  if (!monte) {
+    return (
+      <button
+        type="button"
+        aria-label="Changer de thème"
+        style={{ ...STYLE_BASE, background: "transparent", color: "var(--texte-secondaire)" }}
+      />
+    );
+  }
+
+  // ── Rendu réel (après montage) ──────────────────────────────────────────────
   return (
     <button
       type="button"
@@ -68,19 +105,9 @@ export default function ToggleTheme() {
       aria-label={estNuit ? "Activer le mode jour" : "Activer le mode nuit"}
       title={estNuit ? "Mode jour" : "Mode nuit"}
       style={{
-        width: 36,
-        height: 36,
-        borderRadius: "50%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        border: "1.5px solid var(--bordure)",
+        ...STYLE_BASE,
         background: estNuit ? "rgba(212,175,55,0.12)" : "transparent",
         color: estNuit ? "var(--accent)" : "var(--texte-secondaire)",
-        flexShrink: 0,
-        outline: "none",
-        transition: "background 0.2s, color 0.2s, border-color 0.2s",
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLButtonElement).style.background = estNuit

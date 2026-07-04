@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Marcellus, Outfit } from "next/font/google";
 import { cookies } from "next/headers";
+import Script from "next/script";
 import "./globals.css";
 import AnalytiqueGA from "@/components/AnalytiqueGA";
 import BulleChatConditionnelle from "@/components/chat/BulleChatConditionnelle";
@@ -56,8 +57,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // modifie data-theme avant hydratation (première visite dark mode système)
     <html lang="fr" data-theme={theme} suppressHydrationWarning>
       <head>
-        {/* Anti-flash : s'exécute de façon synchrone avant tout rendu CSS */}
-        <script dangerouslySetInnerHTML={{ __html: SCRIPT_ANTI_FLASH }} />
+        {/* Anti-flash : exécuté avant le paint via next/script (beforeInteractive)
+            — évite le <script> rendu comme composant React (warning d'hydratation)
+            tout en garantissant la pose de data-theme avant le premier rendu. */}
+        <Script
+          id="anti-flash-theme"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: SCRIPT_ANTI_FLASH }}
+        />
         {/* Données structurées Schema.org — Organization + RealEstateAgent + WebSite */}
         <script
           type="application/ld+json"
