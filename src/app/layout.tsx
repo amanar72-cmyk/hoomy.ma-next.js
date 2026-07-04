@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     title: "HOOMY.MA — L'immobilier premium au Maroc",
     description:
       "Appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+    // og:image par défaut : géré par la convention fichier src/app/opengraph-image.tsx
+    // (1200×630, dégradé Vert Royal + logo) pour toutes les pages sans OG propre.
+    // Les fiches biens définissent leur propre carte via /api/og.
   },
 
   twitter: {
