@@ -322,10 +322,13 @@ export default function HeroSection() {
         </div>
 
         {/* ── Formulaire de recherche ─────────────────────────────────────── */}
+        {/* key={mode} : le panneau remonte à chaque bascule → crossfade CSS doux
+            (hero-crossfade), sans toucher le LCP (déclenché uniquement au clic). */}
         {mode !== "estimer" ? (
           <form
+            key={mode}
             onSubmit={chercher}
-            className="rounded-2xl p-4 md:p-5 text-left"
+            className="rounded-2xl p-4 md:p-5 text-left hero-crossfade"
             style={{
               background: "var(--fond-secondaire)",
               boxShadow: "0 8px 40px rgba(0,0,0,0.22)",

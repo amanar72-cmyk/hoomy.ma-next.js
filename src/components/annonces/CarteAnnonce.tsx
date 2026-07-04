@@ -112,6 +112,7 @@ function PlaceholderPhoto() {
 // BienPublic : jamais de coordonnées exactes dans les props d'un composant client
 export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
   const [favori, setFavori] = useState(false);
+  const [coeurAnime, setCoeurAnime] = useState(false); // micro-pop à l'ajout
   const userIdRef = useRef<string | null>(null);
   const { biens: biensCompares, ajouter, supprimer, estSelectionne } = useComparateur();
 
@@ -159,7 +160,7 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
 
   return (
     <article
-      className="group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_56px_rgba(15,76,58,0.15)]"
+      className="carte-annonce group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_56px_rgba(15,76,58,0.15)]"
       style={{
         background: "var(--fond-secondaire)",
         border: "1px solid #EDE7D7",
@@ -395,6 +396,7 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
           }
           // Mise à jour optimiste
           setFavori((f) => !f);
+          if (!favori) setCoeurAnime(true); // pop uniquement à l'ajout
           afficherToast(favori ? "Retiré des favoris" : "Ajouté aux favoris");
           const supabase = createClient();
           if (!favori) {
@@ -413,7 +415,13 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
           outline: favori ? "1.5px solid rgba(212,175,55,0.4)" : "none",
         }}
       >
-        <IcCoeur plein={favori} />
+        <span
+          className={coeurAnime ? "coeur-pop" : undefined}
+          onAnimationEnd={() => setCoeurAnime(false)}
+          style={{ display: "inline-flex" }}
+        >
+          <IcCoeur plein={favori} />
+        </span>
       </button>
 
     </article>

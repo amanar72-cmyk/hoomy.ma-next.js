@@ -1,23 +1,8 @@
-import Link from "next/link";
-
-const VILLES = [
-  "Casablanca",
-  "Marrakech",
-  "Rabat",
-  "Tanger",
-  "Agadir",
-  "Fès",
-] as const;
+import VillesGrille from "./VillesGrille";
 
 type Props = {
   comptesParVille: Record<string, number>;
 };
-
-function formaterAnnonces(n: number): string {
-  if (n === 0) return "Bientôt disponible";
-  if (n === 1) return "1 annonce";
-  return `${n.toLocaleString("fr-FR")} annonces`;
-}
 
 export default function SectionVilles({ comptesParVille }: Props) {
   return (
@@ -33,39 +18,7 @@ export default function SectionVilles({ comptesParVille }: Props) {
           Découvrez les meilleures opportunités immobilières dans les grandes villes du Maroc.
         </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {VILLES.map((nom) => {
-            const count = comptesParVille[nom] ?? 0;
-            return (
-              <Link
-                key={nom}
-                href={`/acheter?ville=${nom}`}
-                className="relative overflow-hidden rounded-2xl h-40 flex flex-col justify-end p-5 transition-transform hover:scale-[1.02]"
-                style={{
-                  background: "linear-gradient(135deg, #0F4C3A 0%, #146C43 100%)",
-                  textDecoration: "none",
-                }}
-              >
-                {/* Motif décoratif */}
-                <div
-                  className="absolute inset-0 opacity-10"
-                  style={{
-                    backgroundImage: "radial-gradient(circle at 80% 20%, #D4AF37 0%, transparent 60%)",
-                  }}
-                />
-                <p
-                  className="relative text-xl font-normal"
-                  style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--fond-secondaire)" }}
-                >
-                  {nom}
-                </p>
-                <p className="relative text-xs mt-1" style={{ color: "var(--accent)" }}>
-                  {formaterAnnonces(count)}
-                </p>
-              </Link>
-            );
-          })}
-        </div>
+        <VillesGrille comptesParVille={comptesParVille} />
       </div>
     </section>
   );

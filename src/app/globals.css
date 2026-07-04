@@ -229,3 +229,123 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .badge-nouveau { animation: none; }
 }
+
+/* ── Double parcours acheteur/vendeur (accueil) ──────────────────────────── */
+.parcours-carte {
+  position: relative;
+  display: block;
+  padding: 32px;
+  border-radius: 20px;
+  background: var(--fond-secondaire);
+  border: 1px solid #EDE7D7;
+  box-shadow: 0 2px 16px rgba(15, 76, 58, 0.06);
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Liseré Or qui se dessine depuis la gauche au survol */
+.parcours-carte::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--accent), #E9C766);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.parcours-carte:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 48px rgba(15, 76, 58, 0.13);
+}
+.parcours-carte:hover::after { transform: scaleX(1); }
+
+.parcours-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  margin-bottom: 18px;
+  background: var(--fond-vert-leger);
+  color: var(--primaire);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.35s ease, color 0.35s ease;
+}
+.parcours-carte:hover .parcours-icone {
+  transform: translateY(-2px) scale(1.04);
+  background: var(--primaire);
+  color: var(--accent);
+}
+.parcours-fleche {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.parcours-carte:hover .parcours-fleche { transform: translateX(4px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .parcours-carte,
+  .parcours-carte::after,
+  .parcours-icone,
+  .parcours-fleche { transition: none; }
+  .parcours-carte:hover { transform: none; }
+  .parcours-carte:hover::after { transform: scaleX(1); }
+}
+
+/* ── Hero : crossfade doux du panneau à la bascule d'onglet ──────────────── */
+@keyframes hero-crossfade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-crossfade {
+  animation: hero-crossfade 0.18s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-crossfade { animation: none; }
+}
+
+/* ── Carte d'annonce : liseré Or au survol + pop du cœur favori ──────────── */
+.carte-annonce::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--accent), #E9C766);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
+  pointer-events: none;
+}
+.carte-annonce:hover::after { transform: scaleX(1); }
+
+@keyframes coeur-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); }
+  70%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.coeur-pop { animation: coeur-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .carte-annonce::after { transition: none; }
+  .coeur-pop { animation: none; }
+}
+
+/* ── CTA premium : halo Or au survol (bouton « Être rappelé ») ───────────── */
+.cta-halo {
+  transition: transform 0.25s ease, box-shadow 0.35s ease;
+}
+.cta-halo:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25),
+              0 10px 26px rgba(15, 76, 58, 0.28);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta-halo { transition: none; }
+  .cta-halo:hover:not(:disabled) { transform: none; }
+}

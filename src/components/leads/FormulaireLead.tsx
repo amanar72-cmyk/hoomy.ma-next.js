@@ -387,7 +387,7 @@ export default function FormulaireLead({
             <button
               type="submit"
               disabled={enEnvoi}
-              className="flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 hover:shadow-md"
+              className="cta-halo flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-60"
               style={{ background: "#0F4C3A", color: "#fff" }}
             >
               {enEnvoi ? "Envoi en cours…" : "Être rappelé(e)"}
