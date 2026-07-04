@@ -7,7 +7,7 @@
 // - L'URL conserve tous les filtres actifs → cohérence liste ↔ carte.
 // - Ne reçoit que des points FLOUTÉS (PointCarte), jamais de coordonnées exactes.
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import type { PointCarte } from "@/lib/types";
@@ -76,6 +76,9 @@ export default function VueListeCarte({ points, children }: Props) {
   const estCarte = searchParams.get("view") === "map";
   const nb = points.length;
 
+  // Panneau coulissant ouvert → on masque le bouton « Voir en liste »
+  const [feuilleOuverte, setFeuilleOuverte] = useState(false);
+
   // Bascule liste ↔ carte via l'URL, sans rechargement complet, filtres conservés
   function allerVue(vue: "map" | null) {
     const params = new URLSearchParams(searchParams.toString());
@@ -101,14 +104,20 @@ export default function VueListeCarte({ points, children }: Props) {
       <div className="fixed inset-0" style={{ zIndex: 10002, background: "#EDF3EF" }}>
         <ApercuStatique points={points} dim="800x1000" />
         <div className="absolute inset-0">
-          <CarteBiens points={points} />
+          <CarteBiens points={points} onFeuille={setFeuilleOuverte} />
         </div>
         <button
           type="button"
           onClick={() => allerVue(null)}
           aria-label="Revenir à la liste des biens"
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-full cursor-pointer"
-          style={{ background: "#fff", color: "var(--primaire)", boxShadow: "0 8px 28px rgba(0,0,0,0.28)", zIndex: 10003 }}
+          aria-hidden={feuilleOuverte}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-full cursor-pointer transition-opacity"
+          style={{
+            background: "#fff", color: "var(--primaire)",
+            boxShadow: "0 8px 28px rgba(0,0,0,0.28)", zIndex: 10003,
+            opacity: feuilleOuverte ? 0 : 1,
+            pointerEvents: feuilleOuverte ? "none" : "auto",
+          }}
         >
           <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
