@@ -7,35 +7,33 @@
 
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useRef, useState, useMemo, useCallback, useEffect } from "react";
-import Map, { Source, Layer, Popup, NavigationControl } from "react-map-gl/mapbox";
+import MapGL, { Marker, Popup, NavigationControl, GeolocateControl } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
-import type { GeoJSONSource, MapMouseEvent, ExpressionSpecification } from "mapbox-gl";
 import Link from "next/link";
 import { formaterPrix } from "@/lib/format";
 import type { PointCarte } from "@/lib/types";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
-// Rayon du cercle de zone : ~350 m rendus en pixels selon le zoom.
-//
-// Mapbox impose que ["zoom"] soit l'entrée DIRECTE d'un interpolate/step de
-// NIVEAU SUPÉRIEUR — impossible de l'envelopper dans un max(). On obtient donc
-// le plancher de visibilité (7 px quand on est dézoomé) via le clamping natif
-// d'interpolate : en dessous du premier palier, la sortie reste constante.
-// Au-dessus, l'interpolation exponentielle base 2 reproduit exactement la
-// relation métrique 350 m ∝ 2^zoom (latitude Maroc ~31°).
-const RAYON_ZONE_M = 350;
-const RAYON_MIN_PX = 7;
-const METRES_PAR_PX_Z0 = 156543.03392 * Math.cos((31 * Math.PI) / 180);
-// Zoom auquel 350 m valent exactement 7 px → plancher en dessous de ce zoom.
-const ZOOM_PLANCHER = Math.log2((RAYON_MIN_PX * METRES_PAR_PX_Z0) / RAYON_ZONE_M);
-const RAYON_ZONE_EXPR: ExpressionSpecification = [
-  "interpolate",
-  ["exponential", 2],
-  ["zoom"],
-  ZOOM_PLANCHER, RAYON_MIN_PX,
-  22, (RAYON_ZONE_M * 2 ** 22) / METRES_PAR_PX_Z0,
-];
+// Prix compact pour la pilule du marqueur : « 3,2M DH », « 480K DH », « 5K DH/mois ».
+function prixCourt(prix: number, transaction: string): string {
+  let s: string;
+  if (prix >= 1_000_000) {
+    const m = Math.round((prix / 1_000_000) * 10) / 10;
+    s = m.toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + "M";
+  } else if (prix >= 1000) {
+    s = Math.round(prix / 1000) + "K";
+  } else {
+    s = String(prix);
+  }
+  return `${s} DH${transaction === "location" ? "/mois" : ""}`;
+}
+
+// Clustering léger côté client (zéro dépendance) : on projette chaque point
+// flouté en pixels et on regroupe par cellules de CELL px. Recalculé à chaque
+// fin de déplacement/zoom. Suffisant pour des dizaines à centaines de biens.
+const CELL = 64;
+type Amas = { key: string; lng: number; lat: number; count: number; point: PointCarte | null };
 
 type Props = { points: PointCarte[] };
 
@@ -45,6 +43,11 @@ export default function CarteBiens({ points }: Props) {
   const [selection, setSelection] = useState<PointCarte | null>(null);
   // Fondu depuis l'aperçu statique une fois la carte interactive prête
   const [prete, setPrete] = useState(false);
+  // Bascule Normal / Satellite
+  const [satellite, setSatellite] = useState(false);
+  const mapStyle = satellite
+    ? "mapbox://styles/mapbox/satellite-streets-v12"
+    : "mapbox://styles/mapbox/streets-v12";
 
   // Mapbox a besoin de dimensions stables : le canvas s'initialise parfois avant
   // que le panneau (flex-1 + animation d'ouverture) ait sa taille finale, d'où
@@ -62,18 +65,34 @@ export default function CarteBiens({ points }: Props) {
     return () => ro.disconnect();
   }, []);
 
-  // GeoJSON cluster-ready — les propriétés portent la mini-carte
-  const geojson = useMemo(
-    () => ({
-      type: "FeatureCollection" as const,
-      features: points.map((p) => ({
-        type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: [p.lngApprox, p.latApprox] },
-        properties: { ...p },
-      })),
-    }),
-    [points]
-  );
+  // Amas recalculés à chaque déplacement/zoom (et à l'arrivée des biens)
+  const [amas, setAmas] = useState<Amas[]>([]);
+  const recalculer = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const cellules = new Map<string, { slng: number; slat: number; count: number; premier: PointCarte }>();
+    for (const p of points) {
+      const px = map.project([p.lngApprox, p.latApprox]);
+      const cle = `${Math.floor(px.x / CELL)}:${Math.floor(px.y / CELL)}`;
+      const c = cellules.get(cle);
+      if (c) { c.slng += p.lngApprox; c.slat += p.latApprox; c.count++; }
+      else cellules.set(cle, { slng: p.lngApprox, slat: p.latApprox, count: 1, premier: p });
+    }
+    const out: Amas[] = [];
+    for (const [cle, c] of cellules) {
+      out.push({
+        key: cle,
+        lng: c.slng / c.count,
+        lat: c.slat / c.count,
+        count: c.count,
+        point: c.count === 1 ? c.premier : null,
+      });
+    }
+    setAmas(out);
+  }, [points]);
+
+  // Recalcule quand les biens changent (une fois la carte prête)
+  useEffect(() => { recalculer(); }, [recalculer]);
 
   // Cadrage initial sur l'ensemble des biens
   const bounds = useMemo(() => {
@@ -85,98 +104,99 @@ export default function CarteBiens({ points }: Props) {
     ] as [[number, number], [number, number]];
   }, [points]);
 
-  const onClick = useCallback((e: MapMouseEvent) => {
-    const feature = e.features?.[0];
-    if (!feature) { setSelection(null); return; }
-
-    // Cluster → zoom d'expansion
-    if (feature.properties?.cluster) {
-      const clusterId = feature.properties.cluster_id as number;
-      const source = mapRef.current?.getSource("biens") as GeoJSONSource | undefined;
-      source?.getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if (err || zoom == null) return;
-        const [lng, lat] = (feature.geometry as GeoJSON.Point).coordinates;
-        mapRef.current?.easeTo({ center: [lng, lat], zoom: zoom + 0.5, duration: 500 });
-      });
-      return;
-    }
-
-    // Cercle de zone → mini-carte du bien
-    setSelection(feature.properties as unknown as PointCarte);
-  }, []);
-
   const cheminBien = (p: PointCarte) =>
     `/${p.transaction === "location" ? "louer" : "acheter"}/${p.slug ?? p.id}`;
 
   return (
     <div
       ref={conteneurRef}
-      className="w-full h-full"
+      className="w-full h-full relative"
       style={{ opacity: prete ? 1 : 0, transition: "opacity 0.5s ease" }}
     >
-    <Map
+    {/* Toggle Normal / Satellite — haut gauche, style HOOMY */}
+    <button
+      type="button"
+      onClick={() => setSatellite((s) => !s)}
+      aria-label={satellite ? "Vue plan" : "Vue satellite"}
+      className="absolute z-10 top-3 left-3 text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer transition-all hover:shadow-md"
+      style={{
+        background: satellite ? "#0F4C3A" : "rgba(255,255,255,0.95)",
+        color: satellite ? "#fff" : "#0F4C3A",
+        border: "1px solid rgba(15,76,58,0.15)",
+        boxShadow: "0 2px 10px rgba(15,76,58,0.15)",
+        backdropFilter: "blur(6px)",
+      }}
+    >
+      {satellite ? "Plan" : "Satellite"}
+    </button>
+
+    <MapGL
       ref={mapRef}
       mapboxAccessToken={TOKEN}
-      mapStyle="mapbox://styles/mapbox/streets-v12"
+      mapStyle={mapStyle}
       initialViewState={{ bounds, fitBoundsOptions: { padding: 70, maxZoom: 14 } }}
       style={{ width: "100%", height: "100%" }}
-      interactiveLayerIds={["clusters", "zones"]}
-      onLoad={() => { setPrete(true); mapRef.current?.resize(); }}
-      onClick={onClick}
-      onMouseEnter={() => { const c = mapRef.current?.getCanvas(); if (c) c.style.cursor = "pointer"; }}
-      onMouseLeave={() => { const c = mapRef.current?.getCanvas(); if (c) c.style.cursor = ""; }}
+      onLoad={() => { setPrete(true); mapRef.current?.resize(); recalculer(); }}
+      onMoveEnd={recalculer}
+      onClick={() => setSelection(null)}
       attributionControl={false}
     >
       <NavigationControl position="top-right" showCompass={false} />
+      {/* Géolocalisation — « me centrer sur ma position » */}
+      <GeolocateControl
+        position="top-right"
+        showAccuracyCircle={false}
+        trackUserLocation={false}
+        positionOptions={{ enableHighAccuracy: true }}
+      />
 
-      <Source
-        id="biens"
-        type="geojson"
-        data={geojson}
-        cluster
-        clusterMaxZoom={14}
-        clusterRadius={60}
-      >
-        {/* Cercles de zone approximative — Vert Royal semi-transparent */}
-        <Layer
-          id="zones"
-          type="circle"
-          filter={["!", ["has", "point_count"]]}
-          paint={{
-            "circle-radius": RAYON_ZONE_EXPR,
-            "circle-color": "#0F4C3A",
-            "circle-opacity": 0.18,
-            "circle-stroke-color": "#0F4C3A",
-            "circle-stroke-width": 1.5,
-            "circle-stroke-opacity": 0.45,
-          }}
-        />
-
-        {/* Clusters — natifs Mapbox */}
-        <Layer
-          id="clusters"
-          type="circle"
-          filter={["has", "point_count"]}
-          paint={{
-            "circle-color": "#0F4C3A",
-            "circle-radius": ["step", ["get", "point_count"], 18, 10, 24, 30, 30],
-            "circle-opacity": 0.9,
-            "circle-stroke-color": "#D4AF37",
-            "circle-stroke-width": 2,
-          }}
-        />
-        <Layer
-          id="cluster-count"
-          type="symbol"
-          filter={["has", "point_count"]}
-          layout={{
-            "text-field": ["get", "point_count_abbreviated"],
-            "text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
-            "text-size": 13,
-          }}
-          paint={{ "text-color": "#ffffff" }}
-        />
-      </Source>
+      {/* Marqueurs : pilule de prix (bien seul) ou bulle de cluster.
+          Positionnés sur les coordonnées FLOUTÉES — jamais la position exacte. */}
+      {amas.map((a) =>
+        a.count === 1 && a.point ? (
+          <Marker
+            key={a.key}
+            longitude={a.lng}
+            latitude={a.lat}
+            anchor="bottom"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              const p = a.point!;
+              setSelection(p);
+              mapRef.current?.easeTo({
+                center: [a.lng, a.lat],
+                zoom: Math.max(mapRef.current.getZoom(), 13.5),
+                duration: 450,
+              });
+            }}
+          >
+            <div
+              className="pilule-prix"
+              style={
+                selection?.id === a.point.id
+                  ? { background: "#D4AF37", color: "#0F4C3A" }
+                  : { background: "#0F4C3A", color: "#fff" }
+              }
+            >
+              {prixCourt(a.point.prix, a.point.transaction)}
+            </div>
+          </Marker>
+        ) : (
+          <Marker
+            key={a.key}
+            longitude={a.lng}
+            latitude={a.lat}
+            anchor="center"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              const map = mapRef.current;
+              if (map) map.easeTo({ center: [a.lng, a.lat], zoom: map.getZoom() + 2, duration: 450 });
+            }}
+          >
+            <div className="bulle-cluster">{a.count}</div>
+          </Marker>
+        )
+      )}
 
       {/* Mini-carte du bien sélectionné */}
       {selection && (
@@ -233,7 +253,7 @@ export default function CarteBiens({ points }: Props) {
         </Popup>
       )}
 
-      {/* Habillage du popup Mapbox (fond transparent, sans flèche) */}
+      {/* Habillage du popup Mapbox + marqueurs pilule/cluster */}
       <style jsx global>{`
         .hoomy-popup-bien .mapboxgl-popup-content {
           background: transparent;
@@ -243,8 +263,45 @@ export default function CarteBiens({ points }: Props) {
         .hoomy-popup-bien .mapboxgl-popup-tip {
           display: none;
         }
+        .pilule-prix {
+          font-size: 12px;
+          font-weight: 700;
+          line-height: 1;
+          padding: 6px 11px;
+          border-radius: 999px;
+          white-space: nowrap;
+          cursor: pointer;
+          border: 1.5px solid #D4AF37;
+          box-shadow: 0 3px 12px rgba(15, 76, 58, 0.28);
+          transition: transform 0.15s ease;
+          user-select: none;
+        }
+        .pilule-prix:hover {
+          transform: scale(1.06);
+        }
+        .bulle-cluster {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 38px;
+          height: 38px;
+          padding: 0 6px;
+          border-radius: 999px;
+          background: #0F4C3A;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          border: 2px solid #D4AF37;
+          box-shadow: 0 4px 14px rgba(15, 76, 58, 0.32);
+          user-select: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .pilule-prix { transition: none; }
+          .pilule-prix:hover { transform: none; }
+        }
       `}</style>
-    </Map>
+    </MapGL>
     </div>
   );
 }
