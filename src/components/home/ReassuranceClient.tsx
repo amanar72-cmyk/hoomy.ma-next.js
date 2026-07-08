@@ -1,10 +1,10 @@
 "use client";
 
 // Partie interactive de « Pourquoi choisir HOOMY » :
-//  - compteurs de stats RÉELLES animés au premier passage dans le viewport
-//    (quartiers couverts, villes) — rAF + IntersectionObserver, ~0 Ko de dépendance
 //  - révélation échelonnée (stagger 40 ms) des 3 piliers de confiance
 // Tout se désactive proprement sous prefers-reduced-motion.
+// NB : le bandeau de compteurs (quartiers/villes couverts) a été retiré tant que
+// les données de couverture ne sont pas fiables — à réintroduire le moment venu.
 
 import { useEffect, useRef, useState } from "react";
 
@@ -56,34 +56,9 @@ function useEnVue<T extends HTMLElement>(seuil = 0.25) {
   return { ref, enVue };
 }
 
-// ── Compteur animé ────────────────────────────────────────────────────────────
-
-function Compteur({ valeur, actif }: { valeur: number; actif: boolean }) {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (!actif) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setN(valeur); return; }
-    const duree = 1200;
-    const t0 = performance.now();
-    let raf = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - t0) / duree);
-      const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
-      setN(Math.round(eased * valeur));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [actif, valeur]);
-  return <>{n.toLocaleString("fr-FR")}</>;
-}
-
 // ── Composant ─────────────────────────────────────────────────────────────────
 
-type Props = { nbQuartiers: number; nbVilles: number };
-
-export default function ReassuranceClient({ nbQuartiers, nbVilles }: Props) {
-  const stats = useEnVue<HTMLDivElement>(0.4);
+export default function ReassuranceClient() {
   const piliers = useEnVue<HTMLDivElement>(0.2);
 
   // Motion réduit → pas d'entrée décalée, contenu affiché d'emblée
@@ -93,37 +68,8 @@ export default function ReassuranceClient({ nbQuartiers, nbVilles }: Props) {
   }, []);
   const revele = piliers.enVue || motionReduit;
 
-  // Un compteur n'est montré que si la valeur est avantageuse (sinon masqué,
-  // à réactiver au remplissage des données).
-  const statsVisibles = [
-    nbQuartiers >= 50 ? { valeur: nbQuartiers, label: "quartiers couverts" } : null,
-    nbVilles >= 4 ? { valeur: nbVilles, label: "grandes villes" } : null,
-  ].filter((s): s is { valeur: number; label: string } => s !== null);
-
   return (
     <>
-      {/* ── Bandeau de stats réelles ──────────────────────────────────────── */}
-      {statsVisibles.length > 0 && (
-        <div
-          ref={stats.ref}
-          className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4 mb-14"
-        >
-          {statsVisibles.map((s) => (
-            <div key={s.label} className="text-center">
-              <p
-                className="text-4xl md:text-5xl font-normal leading-none mb-1 tabular-nums"
-                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--accent)" }}
-              >
-                <Compteur valeur={s.valeur} actif={stats.enVue} />
-              </p>
-              <p className="text-xs uppercase tracking-wider" style={{ color: "var(--texte-tertiaire)", letterSpacing: "0.1em" }}>
-                {s.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* ── 3 piliers avec révélation échelonnée ──────────────────────────── */}
       <div ref={piliers.ref} className="grid grid-cols-1 md:grid-cols-3 gap-10">
         {POINTS.map(({ Icone, titre, description }, i) => (

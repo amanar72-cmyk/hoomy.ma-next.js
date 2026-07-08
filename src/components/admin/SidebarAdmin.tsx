@@ -61,6 +61,12 @@ const Ico = {
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.4 2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
   ),
+  securite: (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline points="9 12 11 14 15 10" />
+    </svg>
+  ),
   logout: (
     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -92,6 +98,7 @@ const NAV_ADMIN = [
   { href: "/admin/agents",        ico: "agents",       label: "Agents" },
   { href: "/admin/clients",       ico: "clients",      label: "Clients" },
   { href: "/admin/utilisateurs",  ico: "utilisateurs", label: "Utilisateurs" },
+  { href: "/admin/logs",          ico: "securite",     label: "Logs & sécurité" },
 ] as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────

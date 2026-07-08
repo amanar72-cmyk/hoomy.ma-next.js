@@ -2,12 +2,9 @@ import { FondZellige } from "@/components/ui/MotifZellige";
 import ReassuranceClient from "./ReassuranceClient";
 
 // Section serveur : wrapper + fond zellige + titre.
-// Les compteurs animés (stats réelles) et le stagger des piliers sont dans
-// ReassuranceClient (interactivité au scroll).
+// Le stagger des 3 piliers est dans ReassuranceClient (interactivité au scroll).
 
-type Props = { nbQuartiers: number; nbVilles: number };
-
-export default function PourquoiHoomy({ nbQuartiers, nbVilles }: Props) {
+export default function PourquoiHoomy() {
   return (
     <section className="py-16 px-6 relative overflow-hidden" style={{ background: "var(--primaire)" }}>
       {/* Texture zellige en filigrane — blanc pur à 8 % pour fonctionner sur fond vert ET or (mode nuit) */}
@@ -28,7 +25,7 @@ export default function PourquoiHoomy({ nbQuartiers, nbVilles }: Props) {
           La plateforme immobilière de confiance au Maroc.
         </p>
 
-        <ReassuranceClient nbQuartiers={nbQuartiers} nbVilles={nbVilles} />
+        <ReassuranceClient />
       </div>
     </section>
   );

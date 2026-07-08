@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase/client";
+import { journaliserConnexion } from "@/lib/securite/journalConnexion";
 
 export default function FormulaireConnexion() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function FormulaireConnexion() {
         password: motDePasse,
       });
       if (error) {
+        journaliserConnexion({ email: email.trim().toLowerCase(), methode: "mot_de_passe", resultat: "echec", motif: error.message });
         const msg = error.message?.toLowerCase() ?? "";
         if (msg.includes("email not confirmed")) {
           setErreur("Votre email n'est pas encore confirmé. Vérifiez votre boîte mail et cliquez sur le lien de confirmation.");
@@ -40,6 +42,7 @@ export default function FormulaireConnexion() {
         return;
       }
 
+      journaliserConnexion({ email: email.trim().toLowerCase(), methode: "mot_de_passe", resultat: "succes" });
       // Sur hoomy.ma tout le monde est traité comme client — pas de redirection BO
       router.push("/mon-compte");
       router.refresh();
@@ -60,6 +63,7 @@ export default function FormulaireConnexion() {
         options: { redirectTo: `${base}/auth/callback?next=/mon-compte` },
       });
       if (error) {
+        journaliserConnexion({ email: email.trim().toLowerCase() || null, methode: "google", resultat: "echec", motif: error.message });
         setErreur(`Connexion Google impossible : ${error.message}`);
         setChargementGoogle(false);
       }

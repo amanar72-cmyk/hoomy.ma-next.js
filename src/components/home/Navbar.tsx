@@ -54,8 +54,8 @@ export default async function Navbar() {
           <Link href="/neuf" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
             Neuf
           </Link>
-          <Link href="/estimer" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "var(--primaire-clair)" }}>
-            Estimer
+          <Link href="/publier" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "var(--primaire-clair)" }}>
+            Vendre
           </Link>
           <Link href="/simulateur-credit" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
             Crédit

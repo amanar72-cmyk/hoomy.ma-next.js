@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
-type Mode = "acheter" | "louer" | "neuf" | "estimer";
+type Mode = "acheter" | "louer" | "neuf";
 
 const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"] as const;
 const TYPES_BIEN = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"] as const;
@@ -73,17 +73,6 @@ function IcImmeuble() {
   );
 }
 
-function IcGraphique() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="2 20 22 20"/>
-      <line x1="6" y1="20" x2="6" y2="14"/>
-      <line x1="12" y1="20" x2="12" y2="4"/>
-      <line x1="18" y1="20" x2="18" y2="10"/>
-    </svg>
-  );
-}
-
 function IcLocalisation() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -97,7 +86,6 @@ const MODES: { id: Mode; label: string; desc: string; Icone: () => React.ReactEl
   { id: "acheter", label: "Acheter",  desc: "Appartements, villas, riads…",    Icone: IcMaison },
   { id: "louer",   label: "Louer",    desc: "Location longue ou courte durée", Icone: IcCle },
   { id: "neuf",    label: "Neuf",     desc: "Programmes immobiliers neufs",    Icone: IcImmeuble },
-  { id: "estimer", label: "Estimer",  desc: "Connaître la valeur de votre bien", Icone: IcGraphique },
 ];
 
 // ─── Composant principal ───────────────────────────────────────────────────────
@@ -175,7 +163,6 @@ export default function HeroSection() {
   function changerMode(m: Mode) {
     setMode(m);
     setBudgetIdx(0);
-    if (m === "estimer") router.push("/estimer");
   }
 
   // ── Soumission de la recherche (mobile + desktop partagent cette fonction) ────
@@ -324,7 +311,7 @@ export default function HeroSection() {
         {/* ── Formulaire de recherche ─────────────────────────────────────── */}
         {/* key={mode} : le panneau remonte à chaque bascule → crossfade CSS doux
             (hero-crossfade), sans toucher le LCP (déclenché uniquement au clic). */}
-        {mode !== "estimer" ? (
+        {(
           <form
             key={mode}
             onSubmit={chercher}
@@ -687,34 +674,6 @@ export default function HeroSection() {
             </div>
 
           </form>
-        ) : (
-          /* CTA Estimer */
-          <div
-            className="rounded-2xl p-8 text-center"
-            style={{
-              background: "rgba(255,255,255,0.065)",
-              border: "1px solid rgba(255,255,255,0.12)",
-            }}
-          >
-            <p
-              className="text-sm mb-5 leading-relaxed"
-              style={{ color: "rgba(255,255,255,0.8)" }}
-            >
-              Estimez la valeur de votre bien immobilier en quelques minutes grâce à notre
-              algorithme basé sur les données du marché marocain.
-            </p>
-            <Link
-              href="/estimer"
-              className="inline-block px-8 py-3.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{
-                background: "var(--accent)",
-                color: "var(--primaire)",
-                textDecoration: "none",
-              }}
-            >
-              Lancer l'estimation →
-            </Link>
-          </div>
         )}
 
         {/* ── Tags tendances ──────────────────────────────────────────────── */}

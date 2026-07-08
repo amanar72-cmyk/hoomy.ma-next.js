@@ -5,7 +5,7 @@ import FormulaireLead from "@/components/leads/FormulaireLead";
 
 export default function SectionLead() {
   return (
-    <section className="max-w-6xl mx-auto px-6 py-16">
+    <section id="contact-conseiller" className="max-w-6xl mx-auto px-6 py-16 scroll-mt-20">
       <div
         className="rounded-3xl overflow-hidden lg:grid lg:grid-cols-2"
         style={{ background: "var(--fond-secondaire)", border: "1px solid #EDE7D7", boxShadow: "0 8px 40px rgba(15,76,58,0.08)" }}

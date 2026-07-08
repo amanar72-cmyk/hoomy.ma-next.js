@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { journaliserConnexion } from "@/lib/securite/journalConnexion";
 
 const ROLES_PRO = ["admin", "agent", "agence"];
 
@@ -29,6 +30,7 @@ export default function FormulaireConnexionPro() {
       });
 
       if (error) {
+        journaliserConnexion({ email: email.trim().toLowerCase(), methode: "pro", resultat: "echec", motif: error.message });
         setErreur("Email ou mot de passe incorrect.");
         setChargement(false);
         return;
@@ -44,12 +46,14 @@ export default function FormulaireConnexionPro() {
         const role = profil?.role ?? "";
 
         if (!ROLES_PRO.includes(role)) {
+          journaliserConnexion({ email: email.trim().toLowerCase(), methode: "pro", resultat: "echec", motif: "role non autorise (espace pro)" });
           await supabase.auth.signOut();
           setErreur("Accès réservé aux agents et administrateurs HOOMY. Connectez-vous sur hoomy.ma pour votre espace client.");
           setChargement(false);
           return;
         }
 
+        journaliserConnexion({ email: email.trim().toLowerCase(), methode: "pro", resultat: "succes" });
         const destination = role === "admin" ? "/admin" : "/pro";
         router.push(destination);
         router.refresh();

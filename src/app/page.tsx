@@ -9,6 +9,7 @@ import Footer from "@/components/home/Footer";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
 import ApparitionScroll from "@/components/ui/ApparitionScroll";
 import SectionLead from "@/components/home/SectionLead";
+import SectionVendeurs from "@/components/home/SectionVendeurs";
 import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +17,8 @@ export const dynamic = "force-dynamic";
 const VILLES_COMPTAGE = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
 
 export default async function Accueil() {
-  // Trois requêtes en parallèle : biens vedette + comptes par ville + zones couvertes
-  const [{ data: dataBiens }, { data: dataVilles }, { data: dataQuartiers }] = await Promise.all([
+  // Deux requêtes en parallèle : biens vedette + comptes par ville
+  const [{ data: dataBiens }, { data: dataVilles }] = await Promise.all([
     supabase
       .from("biens")
       .select(COLONNES_BIEN_PUBLIC) // jamais latitude/longitude côté public
@@ -27,9 +28,6 @@ export default async function Accueil() {
       .from("biens")
       .select("ville")
       .in("ville", VILLES_COMPTAGE),
-    supabase
-      .from("quartiers")
-      .select("ville"),
   ]);
 
   const biens = (dataBiens ?? []) as unknown as BienPublic[];
@@ -39,10 +37,6 @@ export default async function Accueil() {
   for (const b of dataVilles ?? []) {
     if (b.ville) comptesParVille[b.ville] = (comptesParVille[b.ville] ?? 0) + 1;
   }
-
-  // Stats de couverture réelles (compteurs de la section confiance)
-  const nbQuartiers = (dataQuartiers ?? []).length;
-  const nbVilles = new Set((dataQuartiers ?? []).map((q) => q.ville).filter(Boolean)).size;
 
   return (
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
@@ -57,11 +51,14 @@ export default async function Accueil() {
         <BiensVedette biens={biens} />
       </ApparitionScroll>
       <ApparitionScroll>
-        <PourquoiHoomy nbQuartiers={nbQuartiers} nbVilles={nbVilles} />
+        <PourquoiHoomy />
       </ApparitionScroll>
       <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
       <ApparitionScroll>
         <SectionVilles comptesParVille={comptesParVille} />
+      </ApparitionScroll>
+      <ApparitionScroll>
+        <SectionVendeurs />
       </ApparitionScroll>
       <ApparitionScroll>
         <SectionLead />

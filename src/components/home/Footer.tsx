@@ -17,7 +17,7 @@ const COLONNES = [
       { label: "Acheter", href: "/acheter" },
       { label: "Louer", href: "/louer" },
       { label: "Programmes neufs", href: "/neuf" },
-      { label: "Estimer mon bien", href: "/estimer" },
+      { label: "Vendre mon bien", href: "/publier" },
     ],
   },
   {

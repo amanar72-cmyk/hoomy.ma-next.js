@@ -34,12 +34,12 @@ const PARCOURS = [
     cta: "Voir les biens",
   },
   {
-    href: "/estimer",
+    href: "/publier",
     Icone: IcVendre,
     surtitre: "Vous possédez",
     titre: "Vendre mon bien",
-    desc: "Estimez gratuitement la valeur de votre bien et confiez sa vente à un conseiller dédié.",
-    cta: "Estimer mon bien",
+    desc: "Déposez gratuitement votre bien et confiez sa vente à un conseiller dédié, de A à Z.",
+    cta: "Déposer mon bien",
   },
 ] as const;
 
