@@ -308,6 +308,44 @@ body {
   .hero-crossfade { animation: none; }
 }
 
+/* ── Hero : aura dorée qui « respire » derrière le finder ─────────────────── */
+.hero-aura {
+  position: absolute;
+  top: -140px;
+  left: 50%;
+  width: 640px;
+  height: 640px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.16) 0%, rgba(212, 175, 55, 0.05) 45%, transparent 70%);
+  transform: translateX(-50%);
+  animation: hero-aura-respire 7s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes hero-aura-respire {
+  0%, 100% { opacity: 0.65; transform: translateX(-50%) scale(1); }
+  50%      { opacity: 1;    transform: translateX(-50%) scale(1.12); }
+}
+
+/* ── Hero : cascade d'apparition au chargement (jamais sur le H1 / LCP) ──── */
+@keyframes hero-cascade-monte {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+.hero-cascade {
+  animation: hero-cascade-monte 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Hero : pastille or qui glisse sous l'onglet actif ────────────────────── */
+.hero-pastille {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-aura { animation: none; }
+  .hero-cascade { animation: none; }
+  .hero-pastille { transition: none; }
+}
+
 /* ── Carte d'annonce : liseré Or au survol + pop du cœur favori ──────────── */
 .carte-annonce::after {
   content: "";

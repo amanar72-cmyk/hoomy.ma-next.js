@@ -18,8 +18,8 @@ export const dynamic = "force-dynamic";
 const VILLES_COMPTAGE = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
 
 export default async function Accueil() {
-  // Deux requêtes en parallèle : biens vedette + comptes par ville
-  const [{ data: dataBiens }, { data: dataVilles }] = await Promise.all([
+  // Trois requêtes en parallèle : biens vedette + comptes par ville + total vérifié
+  const [{ data: dataBiens }, { data: dataVilles }, { count: nbBiensVerifies }] = await Promise.all([
     supabase
       .from("biens")
       .select(COLONNES_BIEN_PUBLIC) // jamais latitude/longitude côté public
@@ -29,6 +29,11 @@ export default async function Accueil() {
       .from("biens")
       .select("ville")
       .in("ville", VILLES_COMPTAGE),
+    // Chiffre RÉEL du bandeau de réassurance du hero (aucune stat inventée)
+    supabase
+      .from("biens")
+      .select("id", { count: "exact", head: true })
+      .eq("verifie", true),
   ]);
 
   const biens = (dataBiens ?? []) as unknown as BienPublic[];
@@ -42,7 +47,7 @@ export default async function Accueil() {
   return (
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
-      <HeroSection />
+      <HeroSection nbBiensVerifies={nbBiensVerifies ?? 0} />
       {/* Ordre orienté conversion :
           Hero → Biens en vedette → Double parcours → Villes → Pourquoi HOOMY
           → Bloc vendeurs → Contact. Apparitions au scroll — Hero exclu (LCP).

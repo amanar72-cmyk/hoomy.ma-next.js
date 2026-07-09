@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import React from "react";
 import { createClient } from "@/lib/supabase/client";
+import { FondZellige } from "@/components/ui/MotifZellige";
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
@@ -42,37 +43,6 @@ const TENDANCES = [
 
 // ─── Icônes SVG inline ─────────────────────────────────────────────────────────
 
-function IcMaison() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-      <polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>
-  );
-}
-
-function IcCle() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="7.5" cy="15.5" r="5.5"/>
-      <path d="M21.5 2.5l-9.5 9.5"/>
-      <path d="M15.5 2.5l3 3"/>
-      <path d="M18.5 5.5l3 3"/>
-    </svg>
-  );
-}
-
-function IcImmeuble() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="1"/>
-      <path d="M9 22v-9h6v9"/>
-      <path d="M8 8h.01M12 8h.01M16 8h.01"/>
-      <path d="M8 12h.01M16 12h.01"/>
-    </svg>
-  );
-}
-
 function IcLocalisation() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -82,15 +52,28 @@ function IcLocalisation() {
   );
 }
 
-const MODES: { id: Mode; label: string; desc: string; Icone: () => React.ReactElement }[] = [
-  { id: "acheter", label: "Acheter",  desc: "Appartements, villas, riads…",    Icone: IcMaison },
-  { id: "louer",   label: "Louer",    desc: "Location longue ou courte durée", Icone: IcCle },
-  { id: "neuf",    label: "Neuf",     desc: "Programmes immobiliers neufs",    Icone: IcImmeuble },
+// Onglets compacts du finder (la pastille or glisse sous l'onglet actif)
+const MODES: { id: Mode; label: string }[] = [
+  { id: "acheter", label: "Acheter" },
+  { id: "louer",   label: "Louer" },
+  { id: "neuf",    label: "Neuf" },
 ];
+
+// Bandeau de réassurance — chiffres RÉELS uniquement : le nombre de biens
+// vérifiés vient de Supabase (prop nbBiensVerifies). Valeurs éditables ici :
+const REASSURANCE = {
+  villes: VILLES.length,   // grandes villes couvertes
+  delaiEstimation: "48h",  // promesse d'estimation par un conseiller
+};
 
 // ─── Composant principal ───────────────────────────────────────────────────────
 
-export default function HeroSection() {
+type PropsHero = {
+  // Nombre réel de biens vérifiés (compté en base, côté serveur)
+  nbBiensVerifies?: number;
+};
+
+export default function HeroSection({ nbBiensVerifies = 0 }: PropsHero) {
   const router = useRouter();
 
   // ── État partagé mobile + desktop ──────────────────────────────────────────
@@ -184,7 +167,7 @@ export default function HeroSection() {
 
   const budgets = mode === "louer" ? BUDGETS_LOCATION : BUDGETS_VENTE;
 
-  // Classes/styles réutilisés pour les selects desktop
+  // Classes/styles réutilisés pour les selects (panneau mobile)
   const selectCls =
     "w-full border rounded-xl px-3 py-2.5 text-sm appearance-none focus:outline-none cursor-pointer";
   const selectStyle: React.CSSProperties = {
@@ -193,8 +176,14 @@ export default function HeroSection() {
     background: "var(--fond-secondaire)",
   };
 
-  // Mode actif simplifié pour les onglets mobiles (Acheter / Louer uniquement)
-  const modeActifMobile: "acheter" | "louer" = mode === "louer" ? "louer" : "acheter";
+  // Variante « nue » pour la barre unifiée desktop (les cellules sont séparées
+  // par des filets fins, les champs eux-mêmes n'ont ni bordure ni fond)
+  const selectNuCls = "w-full appearance-none focus:outline-none cursor-pointer text-sm py-1.5";
+  const selectNuStyle: React.CSSProperties = {
+    border: "none",
+    color: "var(--texte-corps)",
+    background: "transparent",
+  };
 
   // Nombre de filtres actifs dans le panneau mobile (pour l'indicateur)
   const nbFiltresActifs = (type ? 1 : 0) + (budgetIdx > 0 ? 1 : 0) + (chambresMin > 0 ? 1 : 0);
@@ -208,13 +197,17 @@ export default function HeroSection() {
 
   return (
     <section
-      className="px-4 py-12 md:py-16"
+      className="px-4 py-12 md:py-16 relative overflow-hidden"
       style={{
         background:
           "linear-gradient(145deg, #0A3528 0%, #0F4C3A 40%, #146C43 80%, #1a6b4a 100%)",
       }}
     >
-      <div className="max-w-4xl mx-auto text-center">
+      {/* Motif zellige discret + aura dorée qui respire (décoratifs, jamais interactifs) */}
+      <FondZellige couleur="rgba(255,255,255,0.05)" opacite={1} taille={84} patternId="zellige-hero" />
+      <div aria-hidden="true" className="hero-aura" />
+
+      <div className="max-w-4xl mx-auto text-center relative">
 
         {/* ── Tagline ─────────────────────────────────────────────────────── */}
         <p
@@ -237,85 +230,63 @@ export default function HeroSection() {
         </p>
 
         {/* ══════════════════════════════════════════════════════════════════
-            4 cartes d'intention — DESKTOP uniquement (hidden en mobile)
+            Onglets compacts Acheter · Louer · Neuf — mobile ET desktop.
+            La pastille or glisse sous l'onglet actif (transform GPU).
         ═══════════════════════════════════════════════════════════════════ */}
-        <div className="hidden md:grid md:grid-cols-4 gap-3 mb-5">
-          {MODES.map(({ id, label, desc, Icone }) => {
-            const actif = mode === id;
-            return (
+        <div className="flex justify-center mb-4 hero-cascade" style={{ animationDelay: "60ms" }}>
+          <div
+            role="tablist"
+            aria-label="Type de recherche"
+            className="relative grid grid-cols-3 p-1 rounded-full w-full"
+            style={{
+              maxWidth: 330,
+              background: "rgba(255,255,255,0.09)",
+              border: "1px solid rgba(255,255,255,0.14)",
+            }}
+          >
+            {/* Pastille or glissante */}
+            <span
+              aria-hidden="true"
+              className="hero-pastille absolute rounded-full"
+              style={{
+                top: 4,
+                bottom: 4,
+                left: 4,
+                width: "calc((100% - 8px) / 3)",
+                background: "linear-gradient(135deg, #E9C766, #D4AF37)",
+                boxShadow: "0 2px 12px rgba(212,175,55,0.4)",
+                transform: `translateX(${MODES.findIndex((m) => m.id === mode) * 100}%)`,
+              }}
+            />
+            {MODES.map(({ id, label }) => (
               <button
                 key={id}
                 type="button"
+                role="tab"
+                aria-selected={mode === id}
                 onClick={() => changerMode(id)}
-                className="flex flex-col items-center justify-center py-5 px-3 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
-                style={
-                  actif
-                    ? {
-                        background: "rgba(212,175,55,0.13)",
-                        border: "1.5px solid rgba(212,175,55,0.65)",
-                        boxShadow: "0 0 20px rgba(212,175,55,0.18), 0 4px 16px rgba(0,0,0,0.15)",
-                      }
-                    : {
-                        background: "rgba(255,255,255,0.065)",
-                        border: "1px solid rgba(255,255,255,0.13)",
-                      }
-                }
+                className="relative z-10 py-2.5 text-sm font-semibold rounded-full cursor-pointer transition-colors duration-200"
+                style={{
+                  color: mode === id ? "#0F4C3A" : "rgba(255,255,255,0.85)",
+                  background: "transparent",
+                  border: "none",
+                }}
               >
-                <span style={{ color: actif ? "var(--accent)" : "rgba(255,255,255,0.65)" }}>
-                  <Icone />
-                </span>
-                <span
-                  className="text-sm font-semibold mt-2.5"
-                  style={{ color: actif ? "var(--accent)" : "rgba(255,255,255,0.9)" }}
-                >
-                  {label}
-                </span>
-                <span
-                  className="text-xs mt-0.5"
-                  style={{ color: actif ? "rgba(212,175,55,0.75)" : "rgba(255,255,255,0.38)" }}
-                >
-                  {desc}
-                </span>
+                {label}
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            2 onglets Acheter / Louer — MOBILE uniquement (md:hidden)
-        ═══════════════════════════════════════════════════════════════════ */}
-        <div
-          className="flex md:hidden mb-4 p-1 gap-1 rounded-2xl"
-          style={{ background: "rgba(255,255,255,0.1)" }}
-        >
-          {(["acheter", "louer"] as const).map((m) => {
-            const actif = modeActifMobile === m;
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => changerMode(m)}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all duration-200"
-                style={
-                  actif
-                    ? { background: "#D4AF37", color: "#0F4C3A" }
-                    : { background: "transparent", color: "rgba(255,255,255,0.78)" }
-                }
-              >
-                {m === "acheter" ? "Acheter" : "Louer"}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── Formulaire de recherche ─────────────────────────────────────── */}
-        {/* key={mode} : le panneau remonte à chaque bascule → crossfade CSS doux
-            (hero-crossfade), sans toucher le LCP (déclenché uniquement au clic). */}
-        {(
+        {/* ── Module finder : barre de recherche unifiée ──────────────────── */}
+        {/* Le wrapper porte la cascade d'entrée (stable) ; key={mode} remonte le
+            form à chaque bascule d'onglet → crossfade CSS doux (hero-crossfade),
+            sans toucher le LCP (déclenché uniquement au clic). */}
+        <div className="hero-cascade" style={{ animationDelay: "120ms" }}>
           <form
             key={mode}
             onSubmit={chercher}
-            className="rounded-2xl p-4 md:p-5 text-left hero-crossfade"
+            className="rounded-2xl p-4 md:px-4 md:py-3.5 text-left hero-crossfade"
             style={{
               background: "var(--fond-secondaire)",
               boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
@@ -359,20 +330,20 @@ export default function HeroSection() {
                 </select>
               </div>
 
-              {/* Bouton Rechercher */}
+              {/* Bouton or pleine largeur (mobile) */}
               <button
                 type="submit"
                 className="w-full rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
                 style={{
                   paddingTop: 16,
                   paddingBottom: 16,
-                  background: "#D4AF37",
+                  background: "linear-gradient(135deg, #E9C766, #D4AF37)",
                   color: "#0F4C3A",
                   marginBottom: 10,
                   fontFamily: "var(--font-outfit), sans-serif",
                 }}
               >
-                Rechercher
+                {mode === "neuf" ? "Voir les biens neufs" : "Voir les biens"}
               </button>
 
               {/* Bouton + Filtres */}
@@ -496,16 +467,16 @@ export default function HeroSection() {
             </div>
 
             {/* ══════════════════════════════════════════════════════════════
-                VERSION DESKTOP — 4 champs en grille (inchangée)
-                (masquée sur mobile)
+                VERSION DESKTOP — barre unifiée : Ville | Secteur | Type | Budget
+                séparés par des filets fins, bouton or (loupe) à droite.
+                Même logique qu'avant : seuls la disposition et l'habillage changent.
             ═════════════════════════════════════════════════════════════ */}
-            <div className="hidden md:block">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div className="hidden md:flex items-stretch">
 
                 {/* Ville */}
-                <div>
+                <div className="flex-1 min-w-0 px-4 py-1">
                   <label
-                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    className="block text-xs font-semibold mb-0.5 uppercase tracking-wide"
                     style={{ color: "var(--texte-tertiaire)" }}
                   >
                     Ville
@@ -513,8 +484,8 @@ export default function HeroSection() {
                   <select
                     value={ville}
                     onChange={(e) => setVille(e.target.value)}
-                    className={selectCls}
-                    style={selectStyle}
+                    className={selectNuCls}
+                    style={selectNuStyle}
                   >
                     <option value="">Toutes les villes</option>
                     {VILLES.map((v) => (
@@ -524,9 +495,13 @@ export default function HeroSection() {
                 </div>
 
                 {/* Secteur — multi-sélection avec dropdown */}
-                <div ref={dropdownRef} className="relative">
+                <div
+                  ref={dropdownRef}
+                  className="relative flex-1 min-w-0 px-4 py-1"
+                  style={{ borderLeft: "1px solid var(--bordure)" }}
+                >
                   <label
-                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    className="block text-xs font-semibold mb-0.5 uppercase tracking-wide"
                     style={{ color: "var(--texte-tertiaire)" }}
                   >
                     Secteur
@@ -539,8 +514,8 @@ export default function HeroSection() {
                       }
                     }}
                     disabled={!ville || chargeQ}
-                    className={`${selectCls} disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-between gap-1`}
-                    style={selectStyle}
+                    className={`${selectNuCls} disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-between gap-1`}
+                    style={selectNuStyle}
                   >
                     <span className="truncate text-left">
                       {!ville
@@ -622,9 +597,12 @@ export default function HeroSection() {
                 </div>
 
                 {/* Type de bien */}
-                <div>
+                <div
+                  className="flex-1 min-w-0 px-4 py-1"
+                  style={{ borderLeft: "1px solid var(--bordure)" }}
+                >
                   <label
-                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    className="block text-xs font-semibold mb-0.5 uppercase tracking-wide"
                     style={{ color: "var(--texte-tertiaire)" }}
                   >
                     Type de bien
@@ -632,8 +610,8 @@ export default function HeroSection() {
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value)}
-                    className={selectCls}
-                    style={selectStyle}
+                    className={selectNuCls}
+                    style={selectNuStyle}
                   >
                     <option value="">Tous les types</option>
                     {TYPES_BIEN.map((t) => (
@@ -643,9 +621,12 @@ export default function HeroSection() {
                 </div>
 
                 {/* Budget */}
-                <div>
+                <div
+                  className="flex-1 min-w-0 px-4 py-1"
+                  style={{ borderLeft: "1px solid var(--bordure)" }}
+                >
                   <label
-                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    className="block text-xs font-semibold mb-0.5 uppercase tracking-wide"
                     style={{ color: "var(--texte-tertiaire)" }}
                   >
                     Budget
@@ -653,31 +634,67 @@ export default function HeroSection() {
                   <select
                     value={budgetIdx}
                     onChange={(e) => setBudgetIdx(Number(e.target.value))}
-                    className={selectCls}
-                    style={selectStyle}
+                    className={selectNuCls}
+                    style={selectNuStyle}
                   >
                     {budgets.map((b, i) => (
                       <option key={i} value={i}>{b.label}</option>
                     ))}
                   </select>
                 </div>
-              </div>
 
-              {/* Bouton soumettre desktop */}
-              <button
-                type="submit"
-                className="w-full py-3.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 cursor-pointer"
-                style={{ background: "var(--accent)", color: "var(--primaire)" }}
-              >
-                {mode === "neuf" ? "Voir les biens neufs" : "Voir les biens"}
-              </button>
+                {/* Bouton or : loupe (desktop) */}
+                <button
+                  type="submit"
+                  aria-label={mode === "neuf" ? "Voir les biens neufs" : "Voir les biens"}
+                  title={mode === "neuf" ? "Voir les biens neufs" : "Voir les biens"}
+                  className="self-center ml-3 flex items-center justify-center rounded-xl flex-shrink-0 cursor-pointer transition-transform duration-200 hover:scale-105 active:scale-95"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    background: "linear-gradient(135deg, #E9C766, #D4AF37)",
+                    color: "var(--primaire)",
+                    border: "none",
+                    boxShadow: "0 4px 16px rgba(212,175,55,0.35)",
+                  }}
+                >
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="21" y1="21" x2="16.2" y2="16.2" />
+                  </svg>
+                </button>
             </div>
 
           </form>
-        )}
+        </div>
+
+        {/* ── Bandeau de réassurance — chiffres réels uniquement ──────────── */}
+        <div
+          className="mt-4 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs hero-cascade"
+          style={{ color: "rgba(255,255,255,0.68)", animationDelay: "200ms" }}
+        >
+          {nbBiensVerifies > 0 && (
+            <>
+              <span>
+                <strong style={{ color: "var(--accent)", fontWeight: 600 }}>{nbBiensVerifies}</strong>
+                {" "}bien{nbBiensVerifies > 1 ? "s" : ""} vérifié{nbBiensVerifies > 1 ? "s" : ""}
+              </span>
+              <span aria-hidden="true" style={{ color: "rgba(212,175,55,0.6)" }}>·</span>
+            </>
+          )}
+          <span>
+            <strong style={{ color: "var(--accent)", fontWeight: 600 }}>{REASSURANCE.villes}</strong>
+            {" "}grandes villes
+          </span>
+          <span aria-hidden="true" style={{ color: "rgba(212,175,55,0.6)" }}>·</span>
+          <span>
+            <strong style={{ color: "var(--accent)", fontWeight: 600 }}>{REASSURANCE.delaiEstimation}</strong>
+            {" "}pour estimer votre bien
+          </span>
+        </div>
 
         {/* ── Tags tendances ──────────────────────────────────────────────── */}
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2 hero-cascade" style={{ animationDelay: "280ms" }}>
           <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
             Tendances :
           </span>
