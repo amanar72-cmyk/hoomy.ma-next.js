@@ -9,7 +9,7 @@ import Footer from "@/components/home/Footer";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
 import ApparitionScroll from "@/components/ui/ApparitionScroll";
 import SectionLead from "@/components/home/SectionLead";
-import SectionVendeurs from "@/components/home/SectionVendeurs";
+import ParcoursProprietaire from "@/components/home/ParcoursProprietaire";
 import { Reveal } from "@/components/ui/Reveal";
 import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 
@@ -56,6 +56,8 @@ export default async function Accueil() {
       <ApparitionScroll>
         <BiensVedette biens={biens} />
       </ApparitionScroll>
+      {/* Parcours propriétaire — anime lui-même ses étapes au scroll (fil d'or) */}
+      <ParcoursProprietaire />
       <Reveal>
         <DoubleParcours />
       </Reveal>
@@ -65,9 +67,6 @@ export default async function Accueil() {
       <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
       <Reveal>
         <PourquoiHoomy />
-      </Reveal>
-      <Reveal>
-        <SectionVendeurs />
       </Reveal>
       <Reveal>
         <SectionLead />
