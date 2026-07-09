@@ -55,10 +55,9 @@ function urlPhotoTransformee(objectUrl: string): string | null {
   return (
     objectUrl.replace(marqueur, "/storage/v1/render/image/public/") +
     (objectUrl.includes("?") ? "&" : "?") +
-    // La carte OG est vue en PETIT dans l'aperçu WhatsApp : une source modérée
-    // (640 px) reste nette à l'affichage tout en réduisant fortement l'entropie
-    // du PNG rendu en 1200×380 → sortie < 600 Ko et moins de CPU (anti-503).
-    "width=640&quality=80&resize=cover"
+    // Design pleine photo : source 800 px, nette une fois étirée en 1200×630 ;
+    // le voile sombre du bas réduit l'entropie du PNG → poids/CPU maîtrisés.
+    "width=800&quality=78&resize=cover"
   );
 }
 
@@ -83,6 +82,26 @@ const REPONSE_IMG = {
     "Cache-Control": "public, immutable, no-transform, max-age=86400",
   },
 } as const;
+
+/**
+ * Convertit le PNG produit par Satori en JPEG (~5–8× plus léger) :
+ * indispensable avec le design pleine photo pour rester sous la limite
+ * d'aperçu WhatsApp (~600 Ko). Repli : PNG d'origine si sharp échoue.
+ */
+async function reponseJpeg(img: ImageResponse): Promise<Response> {
+  const png = Buffer.from(await img.arrayBuffer());
+  try {
+    const sharp = (await import("sharp")).default;
+    const jpeg = await sharp(png).jpeg({ quality: 82 }).toBuffer();
+    return new Response(new Uint8Array(jpeg), {
+      headers: { "Content-Type": "image/jpeg", "Cache-Control": REPONSE_IMG.headers["Cache-Control"] },
+    });
+  } catch {
+    return new Response(new Uint8Array(png), {
+      headers: { "Content-Type": "image/png", "Cache-Control": REPONSE_IMG.headers["Cache-Control"] },
+    });
+  }
+}
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
@@ -136,21 +155,23 @@ export async function GET(req: NextRequest) {
   // Try/catch global : au pire on renvoie une carte dégradée (sans photo) en 200,
   // jamais une 500 qui ferait retomber WhatsApp sur le logo.
   try {
-    return new ImageResponse(
-      (
-        <CarteOG
-          titre={bien.titre}
-          ville={bien.ville}
-          type={bien.type}
-          prixFormate={prixFormate}
-          transLabel={transLabel}
-          surface={bien.surface}
-          chambres={bien.chambres}
-          photo={photo}
-          qr={qr}
-        />
-      ),
-      REPONSE_IMG
+    return await reponseJpeg(
+      new ImageResponse(
+        (
+          <CarteOG
+            titre={bien.titre}
+            ville={bien.ville}
+            type={bien.type}
+            prixFormate={prixFormate}
+            transLabel={transLabel}
+            surface={bien.surface}
+            chambres={bien.chambres}
+            photo={photo}
+            qr={qr}
+          />
+        ),
+        REPONSE_IMG
+      )
     );
   } catch {
     // Ultime filet : carte texte seule (aucune image externe), toujours 200
@@ -175,12 +196,10 @@ export async function GET(req: NextRequest) {
 
 // ── Composant carte ───────────────────────────────────────────────────────────
 
-// Design « bandeau » : photo en haut (~380 px), liseré Or, bas PLEIN Vert Royal.
-// Le grand aplat vert du bas se compresse quasi gratuitement en PNG → sortie
-// bien plus légère (cible 300–600 Ko) et moins de CPU (marge anti-503).
-const H_PHOTO = 380;
-const H_LISERE = 4;
-const H_BAS = 630 - H_PHOTO - H_LISERE; // 246
+// Design « luxe pleine photo » : la photo du bien couvre TOUTE la carte
+// (comme un visuel d'agence haut de gamme), voile dégradé Vert profond pour la
+// lisibilité, fin cadre doré en retrait, prix en Or, QR local en bas à droite.
+// Sans photo : fond dégradé Vert Royal, même mise en page (jamais d'erreur).
 
 function CarteOG({
   titre, ville, type, prixFormate, transLabel, surface, chambres, photo, qr,
@@ -195,66 +214,72 @@ function CarteOG({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "1200px", height: "630px", fontFamily: "sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", position: "relative", width: "1200px", height: "630px", fontFamily: "sans-serif", overflow: "hidden", background: "#0A1F18" }}>
 
-      {/* ── Bandeau photo (haut) ─────────────────────────────────────────── */}
-      <div style={{ display: "flex", position: "relative", width: "1200px", height: `${H_PHOTO}px`, overflow: "hidden" }}>
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="" style={{ width: "1200px", height: `${H_PHOTO}px`, objectFit: "cover" }} />
-        ) : (
-          <div style={{ display: "flex", width: "1200px", height: `${H_PHOTO}px`, background: "linear-gradient(135deg,#146C43 0%,#0F4C3A 60%,#0a2e22 100%)" }} />
-        )}
-        {/* Badge transaction (sur la photo, haut droite) */}
-        <div style={{ position: "absolute", top: 28, right: 40, background: "#D4AF37", borderRadius: "8px", padding: "7px 18px", display: "flex" }}>
-          <span style={{ color: "#0F4C3A", fontSize: 15, fontWeight: 700, letterSpacing: 1.5 }}>{transLabel}</span>
+      {/* ── Photo pleine carte (ou fond Vert Royal en secours) ───────────── */}
+      {photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photo}
+          alt=""
+          style={{ position: "absolute", top: 0, left: 0, width: "1200px", height: "630px", objectFit: "cover" }}
+        />
+      ) : (
+        <div style={{ position: "absolute", top: 0, left: 0, width: "1200px", height: "630px", display: "flex", background: "linear-gradient(135deg,#146C43 0%,#0F4C3A 55%,#0a2e22 100%)" }} />
+      )}
+
+      {/* ── Voiles de lisibilité : dégradé fort en bas, léger en haut ─────── */}
+      <div style={{ position: "absolute", top: 0, left: 0, width: "1200px", height: "630px", display: "flex", background: "linear-gradient(180deg, rgba(7,26,19,0.42) 0%, rgba(7,26,19,0.05) 26%, rgba(7,26,19,0.10) 48%, rgba(7,26,19,0.62) 72%, rgba(7,26,19,0.92) 100%)" }} />
+
+      {/* ── Fin cadre doré en retrait (signature luxe) ────────────────────── */}
+      <div style={{ position: "absolute", top: 20, left: 20, width: "1160px", height: "590px", display: "flex", border: "1.5px solid rgba(212,175,55,0.55)", borderRadius: 6 }} />
+
+      {/* ── Haut : logo à gauche, badge transaction à droite ──────────────── */}
+      <div style={{ position: "absolute", top: 44, left: 52, right: 52, display: "flex", justifyContent: "space-between", alignItems: "center", width: "1096px" }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <span style={{ color: "#D4AF37", fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>HOOMY</span>
+          <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 30, fontWeight: 400 }}>.MA</span>
+        </div>
+        <div style={{ display: "flex", background: "linear-gradient(135deg,#E9C766,#D4AF37)", borderRadius: 999, padding: "9px 24px", boxShadow: "0 4px 18px rgba(0,0,0,0.35)" }}>
+          <span style={{ color: "#0F4C3A", fontSize: 16, fontWeight: 700, letterSpacing: 2 }}>{transLabel}</span>
         </div>
       </div>
 
-      {/* ── Liseré Or ────────────────────────────────────────────────────── */}
-      <div style={{ display: "flex", width: "1200px", height: `${H_LISERE}px`, background: "#D4AF37" }} />
+      {/* ── Bas : infos bien à gauche, QR à droite ────────────────────────── */}
+      <div style={{ position: "absolute", bottom: 44, left: 52, right: 52, display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "1096px" }}>
 
-      {/* ── Bas plein Vert Royal ─────────────────────────────────────────── */}
-      <div style={{ display: "flex", width: "1200px", height: `${H_BAS}px`, background: "#0F4C3A", padding: "28px 44px", justifyContent: "space-between", alignItems: "stretch" }}>
-
-        {/* Colonne gauche : ville·type, titre, prix */}
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, justifyContent: "space-between", paddingRight: 28 }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ color: "#D4AF37", fontSize: 15, fontWeight: 600, letterSpacing: 2, marginBottom: 8, textTransform: "uppercase", display: "flex" }}>
-              {ville} · {type}
+        {/* Colonne infos */}
+        <div style={{ display: "flex", flexDirection: "column", maxWidth: "780px" }}>
+          <span style={{ color: "#D4AF37", fontSize: 16, fontWeight: 600, letterSpacing: 3, textTransform: "uppercase", marginBottom: 10, display: "flex" }}>
+            {ville} · {type}
+          </span>
+          <span style={{ color: "#ffffff", fontSize: 32, fontWeight: 600, lineHeight: 1.25, display: "flex", overflow: "hidden", maxHeight: "80px", textShadow: "0 2px 12px rgba(0,0,0,0.45)" }}>
+            {titre}
+          </span>
+          {/* Filet doré */}
+          <div style={{ display: "flex", width: 68, height: 3, background: "linear-gradient(90deg,#E9C766,#D4AF37)", borderRadius: 2, marginTop: 16, marginBottom: 14 }} />
+          <span style={{ color: "#E9C766", fontSize: 48, fontWeight: 700, display: "flex", textShadow: "0 2px 14px rgba(0,0,0,0.5)" }}>
+            {prixFormate}
+          </span>
+          {specs.length > 0 && (
+            <span style={{ color: "rgba(255,255,255,0.82)", fontSize: 18, display: "flex", marginTop: 8 }}>
+              {specs.join("   ·   ")}
             </span>
-            <span style={{ color: "#ffffff", fontSize: 27, fontWeight: 700, lineHeight: 1.2, display: "flex", maxWidth: "620px", overflow: "hidden", maxHeight: "66px" }}>
-              {titre}
-            </span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ color: "#D4AF37", fontSize: 42, fontWeight: 700, display: "flex" }}>{prixFormate}</span>
-            {specs.length > 0 && (
-              <span style={{ color: "rgba(255,255,255,0.72)", fontSize: 16, display: "flex", marginTop: 6 }}>
-                {specs.join("  ·  ")}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Colonne droite : logo HOOMY + QR local */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={{ color: "#D4AF37", fontSize: 26, fontWeight: 700, letterSpacing: 1 }}>HOOMY</span>
-            <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 26, fontWeight: 400 }}>.MA</span>
-          </div>
-          {qr ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ background: "#ffffff", borderRadius: 12, padding: 8, display: "flex" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qr} alt="QR" style={{ width: 104, height: 104 }} />
-              </div>
-              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, marginTop: 6, display: "flex" }}>Scanner l&apos;annonce</span>
-            </div>
-          ) : (
-            <span style={{ color: "rgba(255,255,255,0.38)", fontSize: 14, display: "flex" }}>{SITE}</span>
           )}
         </div>
+
+        {/* QR local (jamais bloquant) */}
+        {qr ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ background: "#ffffff", borderRadius: 14, padding: 9, display: "flex", boxShadow: "0 6px 24px rgba(0,0,0,0.4)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qr} alt="QR" style={{ width: 108, height: 108 }} />
+            </div>
+            <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, marginTop: 8, display: "flex", letterSpacing: 0.5 }}>Scanner l&apos;annonce</span>
+          </div>
+        ) : (
+          <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 15, display: "flex" }}>{SITE}</span>
+        )}
       </div>
     </div>
   );

@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const slugCanonique = data.slug ?? slug;
   const titre = `${data.titre} — À vendre à ${data.ville} | HOOMY.MA`;
   const description = `${data.titre} à vendre à ${data.ville}. Prix : ${formaterPrix(Number(data.prix), "vente")}.`;
-  const ogImage = `/api/og?slug=${slugCanonique}`;
+  const ogImage = `/api/og?slug=${slugCanonique}&v=2`; // v=2 : force WhatsApp à recharger le nouveau design
   const pageUrl = `/acheter/${slugCanonique}`;
   return {
     title: titre,
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: pageUrl,
       type: "website",
-      images: [{ url: ogImage, width: 1200, height: 630, type: "image/png", alt: data.titre }],
+      images: [{ url: ogImage, width: 1200, height: 630, type: "image/jpeg", alt: data.titre }],
     },
     twitter: {
       card: "summary_large_image",
