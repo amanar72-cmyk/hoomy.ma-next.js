@@ -8,17 +8,17 @@
 //   3. Rate limiting par IP (5 leads / 10 min)
 //   4. Whitelist stricte des valeurs (doublée par les CHECK en base)
 //
-// Insertion via le client ANON : la policy RLS publique reste une seconde
-// barrière (agent_id IS NULL AND statut = 'nouveau' imposés par la base).
-// Le score est GÉNÉRÉ par la base — jamais écrit par le code ; il n'est relu
-// (client admin) que pour l'email de notification.
+// Insertion via la fonction PARTAGÉE upsertLeadEtContact (lib/leads/upsert) :
+// fiche contact dédoublonnée par téléphone, résolution du bien, anti-doublon,
+// statut 'nouveau'. Les validations strictes ci-dessous restent la barrière
+// d'entrée publique. Le score est GÉNÉRÉ par la base — jamais écrit par le
+// code ; il n'est relu (client admin) que pour l'email de notification.
 
 import { headers } from "next/headers";
-import { randomUUID } from "node:crypto";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
 import { notifierNouveauLead } from "@/lib/email/notifications";
+import { upsertLeadEtContact } from "@/lib/leads/upsert";
 
 // ── Valeurs autorisées (miroir des CHECK en base) ─────────────────────────────
 
@@ -141,27 +141,33 @@ export async function soumettreLead(donnees: DonneesLead): Promise<void> {
   const source = dansListe(SOURCES, donnees.source) ? donnees.source : "site";
   const bienId = donnees.bienId && estUUID(donnees.bienId) ? donnees.bienId : null;
 
-  // ── Insertion (client anon — la RLS publique s'applique) ──────────────────
-  // L'id est généré ici : pas de SELECT anon sur la table (voulu), et il faut
-  // pouvoir relire le score généré côté admin pour l'email.
-  const id = randomUUID();
-  const supabase = await createClient();
-  const { error } = await supabase.from("leads").insert({
-    id,
-    nom,
-    telephone,
-    email,
-    type_projet: typeProjet,
-    budget,
-    financement,
-    delai,
-    profil_client: profilClient,
-    zones: zones.length > 0 ? zones : null,
-    source,
-    bien_id: bienId,
-    message,
-  });
-  if (error) throw new Error("Impossible d'enregistrer votre demande. Réessayez dans un instant.");
+  // ── Insertion via la fonction PARTAGÉE (contact + bien + lead) ────────────
+  // upsertLeadEtContact centralise : normalisation +212, fiche contact
+  // dédoublonnée par téléphone, résolution du bien, anti-doublon 24 h,
+  // statut 'nouveau' (file d'affectation). Le score reste généré par la base.
+  let id: string;
+  try {
+    const resultat = await upsertLeadEtContact({
+      nom,
+      telephone,
+      email,
+      typeProjet,
+      budget,
+      financement,
+      delai,
+      profilClient,
+      zones,
+      message,
+      source,
+      bienId,
+    });
+    id = resultat.leadId;
+    // Doublon récent (double-clic, re-soumission) : succès silencieux, pas
+    // de second email de notification.
+    if (resultat.doublon) return;
+  } catch {
+    throw new Error("Impossible d'enregistrer votre demande. Réessayez dans un instant.");
+  }
 
   // ── Notification email (best-effort, ne bloque jamais la soumission) ──────
   try {
