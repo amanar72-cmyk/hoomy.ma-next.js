@@ -14,11 +14,32 @@ export default function PwaInstaller() {
   const [ferme, setFerme] = useState(false);
 
   useEffect(() => {
-    // Enregistrement du service worker
+    // Le SW (scope "/") fait du cache-first sur /_next/static/. En prod les chunks
+    // sont hashés → sûr. En DEV/localhost, les chunks ne sont pas hashés de la même
+    // façon : le SW sert des bundles périmés et casse le HMR
+    // (« module factory is not available »). On ne l'enregistre donc qu'en prod,
+    // et en dev on désenregistre tout SW existant + on purge ses caches pour
+    // auto-réparer le navigateur.
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw-pro.js", { scope: "/" })
-        .catch((err) => console.warn("[HOOMY PRO] SW non enregistré :", err));
+      const hote = window.location.hostname;
+      const estProd =
+        process.env.NODE_ENV === "production" &&
+        hote !== "localhost" &&
+        hote !== "127.0.0.1";
+
+      if (estProd) {
+        navigator.serviceWorker
+          .register("/sw-pro.js", { scope: "/" })
+          .catch((err) => console.warn("[HOOMY PRO] SW non enregistré :", err));
+      } else {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((regs) => regs.forEach((r) => r.unregister()))
+          .catch(() => {});
+        if ("caches" in window) {
+          caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
+        }
+      }
     }
 
     // Détection du prompt d'installation natif (Chrome/Android)
