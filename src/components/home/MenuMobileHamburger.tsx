@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoHoomy from "./LogoHoomy";
@@ -10,7 +11,6 @@ const LIENS_NAV = [
   { label: "Louer",                 href: "/louer" },
   { label: "Neuf",                  href: "/neuf" },
   { label: "Vendre mon bien",       href: "/publier" },
-  { label: "Carte des prix",        href: "/carte" },
   { label: "Simulateur de crédit",  href: "/simulateur-credit" },
 ] as const;
 
@@ -21,7 +21,14 @@ interface Props {
 
 export default function MenuMobileHamburger({ estConnecte, nomComplet }: Props) {
   const [ouvert, setOuvert] = useState(false);
+  const [monte, setMonte] = useState(false);
   const pathname = usePathname();
+
+  // Le drawer/overlay sont rendus via un portail sur <body> : la barre est
+  // enveloppée dans NavbarShell (transform), et un élément `position: fixed`
+  // à l'intérieur d'un ancêtre transformé se cale sur cet ancêtre, pas sur le
+  // viewport → le panneau s'affichait mal placé/mal visible sur mobile.
+  useEffect(() => { setMonte(true); }, []);
 
   // Fermer automatiquement sur changement de route (clic sur un lien)
   useEffect(() => { setOuvert(false); }, [pathname]);
@@ -76,6 +83,8 @@ export default function MenuMobileHamburger({ estConnecte, nomComplet }: Props) 
         </svg>
       </button>
 
+      {monte && createPortal(
+      <>
       {/* ── Overlay (toujours dans le DOM, opacité contrôlée) ─────────────── */}
       <div
         aria-hidden="true"
@@ -242,6 +251,9 @@ export default function MenuMobileHamburger({ estConnecte, nomComplet }: Props) 
           )}
         </div>
       </div>
+      </>,
+      document.body
+      )}
     </>
   );
 }

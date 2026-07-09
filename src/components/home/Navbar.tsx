@@ -45,23 +45,20 @@ export default async function Navbar() {
 
         {/* ── Navigation desktop ──────────────────────────────────────────── */}
         <nav className="hidden md:flex items-center gap-8 text-[15px]" style={{ color: "var(--texte-corps)" }}>
-          <Link href="/acheter" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link href="/acheter" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
             Acheter
           </Link>
-          <Link href="/louer" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link href="/louer" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
             Louer
           </Link>
-          <Link href="/neuf" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link href="/neuf" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
             Neuf
           </Link>
-          <Link href="/publier" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "var(--primaire-clair)" }}>
+          <Link href="/publier" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "var(--primaire-clair)" }}>
             Vendre
           </Link>
-          <Link href="/simulateur-credit" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link href="/simulateur-credit" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
             Crédit
-          </Link>
-          <Link href="/carte" className="hover:opacity-70 transition-opacity" style={{ textDecoration: "none", color: "inherit" }}>
-            Carte
           </Link>
         </nav>
 
