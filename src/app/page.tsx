@@ -10,6 +10,7 @@ import { SeparateurZellige } from "@/components/ui/MotifZellige";
 import ApparitionScroll from "@/components/ui/ApparitionScroll";
 import SectionLead from "@/components/home/SectionLead";
 import SectionVendeurs from "@/components/home/SectionVendeurs";
+import { Reveal } from "@/components/ui/Reveal";
 import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -42,27 +43,30 @@ export default async function Accueil() {
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
       <HeroSection />
-      {/* Ordre : Hero → Double parcours → Biens → Pourquoi → Villes → Lead.
-          Apparitions discrètes au scroll — hero exclu (LCP). */}
-      <ApparitionScroll>
-        <DoubleParcours />
-      </ApparitionScroll>
+      {/* Ordre orienté conversion :
+          Hero → Biens en vedette → Double parcours → Villes → Pourquoi HOOMY
+          → Bloc vendeurs → Contact. Apparitions au scroll — Hero exclu (LCP).
+          BiensVedette (proche de la ligne de flottaison) garde ApparitionScroll
+          (rendu SSR visible) ; les sections plus bas utilisent Reveal (Framer). */}
       <ApparitionScroll>
         <BiensVedette biens={biens} />
       </ApparitionScroll>
-      <ApparitionScroll>
-        <PourquoiHoomy />
-      </ApparitionScroll>
-      <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
-      <ApparitionScroll>
+      <Reveal>
+        <DoubleParcours />
+      </Reveal>
+      <Reveal>
         <SectionVilles comptesParVille={comptesParVille} />
-      </ApparitionScroll>
-      <ApparitionScroll>
+      </Reveal>
+      <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
+      <Reveal>
+        <PourquoiHoomy />
+      </Reveal>
+      <Reveal>
         <SectionVendeurs />
-      </ApparitionScroll>
-      <ApparitionScroll>
+      </Reveal>
+      <Reveal>
         <SectionLead />
-      </ApparitionScroll>
+      </Reveal>
       <Footer />
     </main>
   );
