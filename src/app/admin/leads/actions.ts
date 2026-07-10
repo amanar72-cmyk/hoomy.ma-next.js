@@ -29,6 +29,7 @@ export async function changerStatutLeadQualifie(leadId: string, statut: string):
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/leads/file");
 }
 
 /**
@@ -71,6 +72,7 @@ export async function affecterLeadConseiller(leadId: string, agentId: string | n
   }
 
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/leads/file");
 }
 
 export async function enregistrerNotesLead(leadId: string, notes: string): Promise<void> {
@@ -85,4 +87,5 @@ export async function enregistrerNotesLead(leadId: string, notes: string): Promi
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/leads/file");
 }

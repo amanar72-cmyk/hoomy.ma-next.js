@@ -157,11 +157,29 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
 
       {/* ── En-tête ────────────────────────────────────────────────────── */}
-      <div className="mb-5">
-        <h1 className="text-xl font-semibold mb-0.5" style={{ color: "#111" }}>Leads qualifiés</h1>
-        <p className="text-sm" style={{ color: "#999" }}>
-          {tous.length} lead{tous.length !== 1 ? "s" : ""} au total · score calculé automatiquement
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div>
+          <h1 className="text-xl font-semibold mb-0.5" style={{ color: "#111" }}>Leads qualifiés</h1>
+          <p className="text-sm" style={{ color: "#999" }}>
+            {tous.length} lead{tous.length !== 1 ? "s" : ""} au total · score calculé automatiquement
+          </p>
+        </div>
+        {/* File d'affectation — les leads 'nouveau' en attente d'un conseiller */}
+        <Link
+          href="/admin/leads/file"
+          className="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl"
+          style={{ background: "#0F4C3A", color: "#fff", textDecoration: "none" }}
+        >
+          File d&apos;affectation
+          {(compteurs["nouveau"] ?? 0) > 0 && (
+            <span
+              className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+              style={{ background: "#D4AF37", color: "#0F4C3A" }}
+            >
+              {compteurs["nouveau"]}
+            </span>
+          )}
+        </Link>
       </div>
 
       {/* ── Onglets statut avec compteurs ──────────────────────────────── */}
