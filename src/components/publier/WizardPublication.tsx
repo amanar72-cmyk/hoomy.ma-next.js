@@ -325,6 +325,18 @@ export default function WizardPublication({ userId }: { userId: string | null })
     setEtape((e) => e - 1);
   };
 
+  // Choix qui AVANCE automatiquement à l'étape suivante (transaction, type de
+  // bien) : courte pause pour voir la sélection s'activer, et garde anti
+  // double-clic — on n'avance que depuis l'étape où le clic a eu lieu.
+  const choisirEtAvancer = (champ: "transaction" | "type", valeur: string) => {
+    mettreAJour(champ, valeur as DonneesWizard[typeof champ]);
+    setErreur(null);
+    const depuis = etape;
+    window.setTimeout(() => {
+      setEtape((e) => (e === depuis ? e + 1 : e));
+    }, 220);
+  };
+
   // ── Upload / mise en attente des photos ───────────────────────────────────
 
   const traiterFichiers = async (fichiers: File[]) => {
@@ -642,14 +654,14 @@ export default function WizardPublication({ userId }: { userId: string | null })
                 titre="Je vends"
                 sous_titre="Mettre en vente votre bien"
                 selectionne={donnees.transaction === "vente"}
-                onClick={() => mettreAJour("transaction", "vente")}
+                onClick={() => choisirEtAvancer("transaction", "vente")}
               />
               <CarteChoix
                 icone="🔑"
                 titre="Je loue"
                 sous_titre="Proposer votre bien à la location"
                 selectionne={donnees.transaction === "location"}
-                onClick={() => mettreAJour("transaction", "location")}
+                onClick={() => choisirEtAvancer("transaction", "location")}
               />
             </div>
           </div>
@@ -670,7 +682,7 @@ export default function WizardPublication({ userId }: { userId: string | null })
                   icone={t.icone}
                   titre={t.valeur}
                   selectionne={donnees.type === t.valeur}
-                  onClick={() => mettreAJour("type", t.valeur)}
+                  onClick={() => choisirEtAvancer("type", t.valeur)}
                 />
               ))}
             </div>

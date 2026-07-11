@@ -1,9 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import ActionsLead from "@/components/pro/ActionsLead";
+import ActionsLeadAffecte from "@/components/pro/ActionsLeadAffecte";
+import ErreurChargement from "@/components/ui/ErreurChargement";
 import { changerStatutLead } from "@/app/pro/actions";
+import { formatPhoneMaroc } from "@/lib/utils/telephone";
 
 export const metadata: Metadata = {
   title: "Leads — Espace Pro HOOMY.MA",
@@ -50,6 +54,33 @@ function inférerType(lead: Lead): "Visite" | "Message" {
   return lead.date_souhaitee ? "Visite" : "Message";
 }
 
+// ── Leads qualifiés affectés (table public.leads) ─────────────────────────────
+
+type LeadAffecte = {
+  id: string;
+  cree_le: string;
+  nom: string;
+  telephone: string;
+  email: string | null;
+  type_projet: string;
+  budget: string | null;
+  zones: string[] | null;
+  message: string | null;
+  source: string;
+  campagne: string | null;
+  score: string | null;
+  statut: string;
+  biens: { titre: string; slug: string | null; transaction: string } | null;
+};
+
+const SCORES_LEAD: Record<string, { label: string; bg: string; color: string }> = {
+  chaud: { label: "🔥 Chaud", bg: "#D4AF37", color: "#0F4C3A" },
+  tiede: { label: "Tiède", bg: "#FEF3C7", color: "#92400E" },
+  froid: { label: "Froid", bg: "#E5E7EB", color: "#4B5563" },
+};
+
+const LABEL_TYPE_PROJET: Record<string, string> = { achat: "Achat", location: "Location", vente: "Vente" };
+
 function formaterDate(d: string) {
   return new Date(d).toLocaleDateString("fr-MA", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -83,6 +114,22 @@ export default async function PageProLeads({ searchParams }: { searchParams: Sea
   const { data: leadsRaw } = await query;
   const leads = (leadsRaw ?? []) as unknown as Lead[];
 
+  // ── Leads qualifiés AFFECTÉS à cet agent (table leads) ────────────────────
+  // Lecture via service_role avec filtre agent_id imposé côté serveur : la RLS
+  // de la table leads ne donne pas d'accès direct aux agents. On n'affiche que
+  // les leads encore actifs (ni convertis ni perdus).
+  const adminClient = createAdminClient();
+  const { data: affectesRaw, error: erreurAffectes } = await adminClient
+    .from("leads")
+    .select(
+      "id, cree_le, nom, telephone, email, type_projet, budget, zones, message, " +
+      "source, campagne, score, statut, biens(titre, slug, transaction)"
+    )
+    .eq("agent_id", user.id)
+    .not("statut", "in", "(converti,perdu)")
+    .order("cree_le", { ascending: false });
+  const affectes = (affectesRaw ?? []) as unknown as LeadAffecte[];
+
   // Compteurs par statut (sur tous les leads sans filtre)
   const { data: tousRaw } = await supabase
     .from("demandes_visite")
@@ -106,6 +153,93 @@ export default async function PageProLeads({ searchParams }: { searchParams: Sea
           </p>
         </div>
       </div>
+
+      {/* ══ Leads qualifiés affectés par HOOMY (file d'affectation admin) ══ */}
+      {erreurAffectes && (
+        <ErreurChargement
+          titre="Impossible de charger vos leads affectés"
+          detail={erreurAffectes.message}
+        />
+      )}
+      {affectes.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "#0F4C3A" }}>
+              Leads qui me sont affectés
+            </h2>
+            <span
+              className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ background: "#D4AF37", color: "#0F4C3A" }}
+            >
+              {affectes.length}
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {affectes.map((l) => {
+              const score = SCORES_LEAD[l.score ?? ""];
+              const telA = formatPhoneMaroc(l.telephone);
+              return (
+                <div
+                  key={l.id}
+                  className="rounded-2xl px-4 sm:px-5 py-4"
+                  style={{
+                    background: "#fff",
+                    border: l.score === "chaud" ? "1px solid rgba(212,175,55,0.55)" : "1px solid #EBEBEB",
+                    boxShadow: l.score === "chaud" ? "0 4px 20px rgba(212,175,55,0.10)" : "none",
+                  }}
+                >
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-1.5">
+                    <span className="text-sm font-semibold" style={{ color: "#0F4C3A" }}>{l.nom}</span>
+                    {score && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: score.bg, color: score.color }}>
+                        {score.label}
+                      </span>
+                    )}
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#F0EDE5", color: "#6B7A71" }}>
+                      {LABEL_TYPE_PROJET[l.type_projet] ?? l.type_projet}
+                    </span>
+                    <span className="text-xs ml-auto" style={{ color: "#BBB" }}>{formaterDate(l.cree_le)}</span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-xs" style={{ color: "#666" }}>
+                    <span className="tabular-nums">{telA.affichage ?? l.telephone}</span>
+                    {l.biens && (
+                      <Link
+                        href={`/${l.biens.transaction === "location" ? "louer" : "acheter"}/${l.biens.slug ?? ""}`}
+                        target="_blank"
+                        className="hover:underline font-medium"
+                        style={{ color: "#A07C1E", textDecoration: "none" }}
+                      >
+                        🏠 {l.biens.titre}
+                      </Link>
+                    )}
+                    {l.budget && <span>Budget : {l.budget}</span>}
+                    {(l.zones ?? []).length > 0 && <span>Zones : {(l.zones ?? []).join(", ")}</span>}
+                  </div>
+
+                  {l.message && (
+                    <p className="text-xs italic mb-3 line-clamp-2" style={{ color: "#8A8A8A" }}>
+                      « {l.message} »
+                    </p>
+                  )}
+
+                  <ActionsLeadAffecte
+                    leadId={l.id}
+                    nom={l.nom}
+                    telephone={l.telephone}
+                    statut={l.statut}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          <h2 className="text-sm font-semibold uppercase tracking-wide mt-8 mb-1" style={{ color: "#0F4C3A" }}>
+            Demandes de visite &amp; messages
+          </h2>
+        </div>
+      )}
 
       {/* Onglets statut */}
       <div className="flex gap-1 p-1 rounded-2xl mb-6 overflow-x-auto" style={{ background: "#F0F0F0" }}>
