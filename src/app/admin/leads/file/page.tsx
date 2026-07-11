@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
 import ActionsLeadQualifie, { type ConseillerLead } from "@/components/admin/leads/ActionsLeadQualifie";
+import ErreurChargement from "@/components/ui/ErreurChargement";
 
 // File d'affectation des LEADS — tous les leads statut='nouveau', triés par
 // score (chaud en haut) puis par ancienneté (les plus anciens d'abord : un
@@ -61,7 +62,7 @@ function attenteDepuis(iso: string): string {
 export default async function PageFileAffectationLeads() {
   const supabase = await createClient();
 
-  const [{ data: raw }, { data: tousRaw }, { data: agentsRaw }] = await Promise.all([
+  const [{ data: raw, error: erreurListe }, { data: tousRaw }, { data: agentsRaw }] = await Promise.all([
     supabase
       .from("leads")
       .select(
@@ -120,8 +121,16 @@ export default async function PageFileAffectationLeads() {
         </Link>
       </div>
 
+      {/* ── Erreur de chargement (jamais silencieuse) ────────────────────── */}
+      {erreurListe && (
+        <ErreurChargement
+          titre="Impossible de charger la file d'affectation"
+          detail={erreurListe.message}
+        />
+      )}
+
       {/* ── File ─────────────────────────────────────────────────────────── */}
-      {leads.length === 0 ? (
+      {!erreurListe && leads.length === 0 ? (
         <div
           className="rounded-2xl px-6 py-14 text-center"
           style={{ background: "#fff", border: "1px solid #EBEBEB" }}

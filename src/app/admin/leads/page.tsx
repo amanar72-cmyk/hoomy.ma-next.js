@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import ActionsLeadQualifie, { type ConseillerLead } from "@/components/admin/leads/ActionsLeadQualifie";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
+import ErreurChargement from "@/components/ui/ErreurChargement";
 
 export const metadata: Metadata = {
   title: "Leads qualifiés — Administration HOOMY.MA",
@@ -24,6 +25,7 @@ type Lead = {
   zones: string[] | null;
   source: string;
   bien_id: string | null;
+  contact_id: string | null;
   message: string | null;
   score: string;
   statut: string;
@@ -110,7 +112,7 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
     .from("leads")
     .select(
       "id, cree_le, nom, telephone, email, type_projet, budget, financement, delai, " +
-      "profil_client, zones, source, bien_id, message, score, statut, agent_id, notes_interne, " +
+      "profil_client, zones, source, bien_id, contact_id, message, score, statut, agent_id, notes_interne, " +
       "biens(titre, slug, transaction)"
     )
     .order("cree_le", { ascending: false })
@@ -123,7 +125,9 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
   if (q)       query = query.or(`nom.ilike.%${q}%,telephone.ilike.%${q}%`);
 
   // ── Compteurs par statut + charge des conseillers + liste conseillers ──
-  const [{ data: raw }, { data: tousRaw }, { data: agentsRaw }] = await Promise.all([
+  // L'erreur de la requête principale est LUE et affichée : un échec (embed,
+  // colonne, policy) ne doit jamais se déguiser en « Aucun lead ».
+  const [{ data: raw, error: erreurListe }, { data: tousRaw }, { data: agentsRaw }] = await Promise.all([
     query,
     supabase.from("leads").select("statut, agent_id"),
     supabase.from("profils").select("id, nom_complet, zones, role").in("role", ["agent", "agence"]).order("nom_complet"),
@@ -285,8 +289,16 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
         </form>
       </div>
 
+      {/* ── Erreur de chargement (jamais silencieuse) ───────────────────── */}
+      {erreurListe && (
+        <ErreurChargement
+          titre="Impossible de charger la liste des leads"
+          detail={erreurListe.message}
+        />
+      )}
+
       {/* ── État vide ───────────────────────────────────────────────────── */}
-      {leads.length === 0 && (
+      {!erreurListe && leads.length === 0 && (
         <div className="rounded-2xl flex flex-col items-center py-16 text-center"
           style={{ background: "#fff", border: "1px solid #EBEBEB" }}>
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: "#F5F5F5" }}>
@@ -334,7 +346,18 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
                     style={{ background: score.bg, color: score.color }}>
                     {score.label}
                   </span>
-                  <p className="text-sm font-semibold" style={{ color: "#111" }}>{lead.nom}</p>
+                  {/* Nom cliquable → fiche contact CRM (si rattachée) */}
+                  {lead.contact_id ? (
+                    <Link
+                      href={`/admin/contacts/${lead.contact_id}`}
+                      className="text-sm font-semibold hover:underline"
+                      style={{ color: "#111", textDecoration: "none" }}
+                    >
+                      {lead.nom}
+                    </Link>
+                  ) : (
+                    <p className="text-sm font-semibold" style={{ color: "#111" }}>{lead.nom}</p>
+                  )}
                   {tel.affichage && (
                     <a href={`tel:${tel.lienTel}`} className="text-xs font-medium" style={{ color: "#0F4C3A" }}>
                       {tel.affichage}
