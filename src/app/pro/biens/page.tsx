@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import BoutonActionPro from "@/components/pro/BoutonActionPro";
 import { transmettreAuBo } from "./actions";
+import { fichesCompletes } from "@/lib/documents/fiche";
 import { formaterPrix } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -72,9 +73,12 @@ function formaterDate(d: string) {
 function CarteBienAgent({
   bien,
   avecAction,
+  docsComplets = true,
 }: {
   bien: BienAgent;
   avecAction: boolean;
+  // Verrou : les 3 documents (mandat, CIN, certificat) sont-ils déposés ?
+  docsComplets?: boolean;
 }) {
   const photo = bien.photos?.[0] ?? null;
   const estPublie = bien.statut === "finalise" || bien.statut === "transacte";
@@ -162,7 +166,7 @@ function CarteBienAgent({
           className="px-3 pb-3 flex gap-2 flex-wrap"
           style={{ borderTop: "1px solid #F8F5EE" }}
         >
-          {avecAction && (
+          {avecAction && docsComplets && (
             <BoutonActionPro
               action={transmettreAuBo.bind(null, bien.id)}
               label="Transmettre au BO"
@@ -171,6 +175,28 @@ function CarteBienAgent({
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl mt-2"
               style={{ background: "#0F4C3A", color: "#fff", cursor: "pointer" }}
             />
+          )}
+          {avecAction && !docsComplets && (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {/* Verrou documentaire : bouton désactivé tant que les 3 pièces
+                  ne sont pas déposées (garde serveur dans transmettreAuBo) */}
+              <button
+                type="button"
+                disabled
+                title="Déposez les 3 documents (mandat, CIN, certificat) avant d'envoyer au backoffice."
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl cursor-not-allowed"
+                style={{ background: "#E8E4DA", color: "#9DB8AD", border: "none" }}
+              >
+                Transmettre au BO
+              </button>
+              <Link
+                href={`/pro/biens/${bien.id}`}
+                className="text-xs hover:underline"
+                style={{ color: "#92400E", textDecoration: "none" }}
+              >
+                📁 Déposez les 3 documents (mandat, CIN, certificat) →
+              </Link>
+            </div>
           )}
           {lienAnnonce && (
             <Link
@@ -232,6 +258,13 @@ export default async function PageProMesBiens({
     zone,
     biens: biens.filter((b) => (zone.statuts as readonly string[]).includes(b.statut ?? "")),
   }));
+
+  // Dossiers documentaires complets (mandat + CIN + certificat) — conditionne
+  // le bouton « Transmettre au BO » des biens encore à traiter (1 requête).
+  const idsATraiter = biensParZone
+    .filter(({ zone }) => zone.avecAction)
+    .flatMap(({ biens: b }) => b.map((x) => x.id));
+  const dossiersOk = await fichesCompletes(supabase, idsATraiter);
 
   const totalBiens = biens.length;
 
@@ -363,6 +396,7 @@ export default async function PageProMesBiens({
                       key={b.id}
                       bien={b}
                       avecAction={zone.avecAction}
+                      docsComplets={dossiersOk.has(b.id)}
                     />
                   ))}
                 </div>

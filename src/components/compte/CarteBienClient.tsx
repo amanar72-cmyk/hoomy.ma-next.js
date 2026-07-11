@@ -301,8 +301,13 @@ export default function CarteBienClient({
         className="rounded-2xl overflow-hidden"
         style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
       >
-        {/* ── Corps principal ───────────────────────────────────────────────── */}
-        <div className="flex gap-4 p-4 pb-3">
+        {/* ── Corps principal — cliquable vers la fiche détail (lecture seule,
+               dépôt des pièces justificatives) ──────────────────────────────── */}
+        <Link
+          href={`/mon-compte/mes-biens/${bien.id}`}
+          className="flex gap-4 p-4 pb-3 hover:bg-[#FAFAF8] transition-colors"
+          style={{ textDecoration: "none", color: "inherit" }}
+        >
 
           {/* Photo */}
           <div
@@ -353,7 +358,14 @@ export default function CarteBienClient({
               )}
             </div>
           </div>
-        </div>
+
+          {/* Chevron — indique que la carte s'ouvre */}
+          <span className="self-center flex-shrink-0" aria-hidden="true">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#C4D8CE" strokeWidth="2">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </span>
+        </Link>
 
         {/* ── Affectation en cours ──────────────────────────────────────────── */}
         {enAttente && (

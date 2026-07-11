@@ -247,7 +247,14 @@ export default async function PageTableauDeBord() {
                 {biensActifs.slice(0, 5).map((b) => {
                   const photo = (b.photos as string[] | null)?.[0] ?? null;
                   return (
-                    <div key={b.id} className="flex gap-3 px-5 py-4 items-start">
+                    // Ligne cliquable → fiche détail propriétaire (lecture seule
+                    // + dépôt des pièces justificatives)
+                    <Link
+                      key={b.id}
+                      href={`/mon-compte/mes-biens/${b.id}`}
+                      className="flex gap-3 px-5 py-4 items-start hover:bg-[#FAFAF8] transition-colors"
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
                       {/* Photo */}
                       <div
                         className="flex-shrink-0 rounded-xl overflow-hidden"
@@ -281,7 +288,13 @@ export default async function PageTableauDeBord() {
                           </p>
                         )}
                       </div>
-                    </div>
+                      {/* Chevron */}
+                      <span className="self-center flex-shrink-0" aria-hidden="true">
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#C4D8CE" strokeWidth="2">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                      </span>
+                    </Link>
                   );
                 })}
               </div>

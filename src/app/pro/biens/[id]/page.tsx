@@ -4,8 +4,10 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import FormulaireEditionBienAgent, { type BienEditable } from "@/components/pro/FormulaireEditionBienAgent";
 import PhotoGalerie from "@/components/ui/PhotoGalerie";
+import DocumentsFiche from "@/components/pro/DocumentsFiche";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
 import { formaterPrix } from "@/lib/format";
+import { documentsParType, TYPES_DOCUMENTS_FICHE, MESSAGE_DOCUMENTS_MANQUANTS } from "@/lib/documents/fiche";
 
 export const metadata: Metadata = {
   title: "Fiche bien — Espace Pro HOOMY.MA",
@@ -57,6 +59,12 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
   const estModifiable = STATUTS_MODIFIABLES.includes(bien.statut ?? "");
   const modeEdition = modifier === "1" && estModifiable;
 
+  // ── Documents du dossier (mandat, CIN, certificat) ─────────────────────────
+  // Le plus récent par type ; conditionne l'envoi au back-office.
+  const documents = await documentsParType(supabase, bien.id);
+  const typesPresents = new Set(documents.map((d) => d.type_document));
+  const dossierEstComplet = TYPES_DOCUMENTS_FICHE.every((t) => typesPresents.has(t));
+
   // ── Mode édition ───────────────────────────────────────────────────────────
   if (modeEdition) {
     return (
@@ -92,7 +100,15 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
           )}
         </div>
 
-        <FormulaireEditionBienAgent bien={bien} agentId={user.id} />
+        <FormulaireEditionBienAgent bien={bien} agentId={user.id} documentsComplets={dossierEstComplet} />
+
+        {/* Documents du dossier — accessibles aussi en mode édition */}
+        <section className="mt-10 max-w-4xl">
+          <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>
+            Documents du dossier
+          </h2>
+          <DocumentsFiche bienId={bien.id} documents={documents} />
+        </section>
       </div>
     );
   }
@@ -280,6 +296,21 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
           </div>
         )}
       </div>
+
+      {/* ── Documents du dossier (mandat, CIN, certificat) ────────────────── */}
+      <section className="mb-6">
+        <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>
+          Documents du dossier
+        </h2>
+        {!dossierEstComplet && estModifiable && (
+          <div className="mb-3 rounded-xl px-4 py-3 flex items-start gap-2 text-sm"
+            style={{ background: "#FEF9EC", border: "1px solid #F3E0A8", color: "#92400E" }}>
+            <span className="flex-shrink-0 mt-0.5">📁</span>
+            <span>{MESSAGE_DOCUMENTS_MANQUANTS}</span>
+          </div>
+        )}
+        <DocumentsFiche bienId={bien.id} documents={documents} />
+      </section>
 
       {/* Description */}
       {bien.description && (

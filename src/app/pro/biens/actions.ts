@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { notifierNouveauBien } from "@/lib/email/notifications";
+import { dossierComplet, MESSAGE_DOCUMENTS_MANQUANTS } from "@/lib/documents/fiche";
 
 // ── Slug / référence ──────────────────────────────────────────────────────────
 
@@ -42,6 +43,13 @@ export async function transmettreAuBo(bienId: string) {
     .eq("id", bienId)
     .single();
   if (!bien || bien.agent_id !== user.id) throw new Error("Accès refusé.");
+
+  // Verrou documentaire : les 3 pièces (mandat, CIN, certificat de propriété)
+  // doivent être déposées AVANT l'envoi au back-office. La transition de
+  // statut elle-même (RPC transmettre_au_bo) reste inchangée.
+  if (!(await dossierComplet(supabase, bienId))) {
+    throw new Error(MESSAGE_DOCUMENTS_MANQUANTS);
+  }
 
   const { error } = await supabase.rpc("transmettre_au_bo", { bien_id: bienId });
   if (error) throw new Error(error.message);

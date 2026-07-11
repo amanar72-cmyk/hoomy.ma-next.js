@@ -84,9 +84,13 @@ const cls = "border rounded-xl px-4 py-2.5 text-sm w-full focus:outline-none";
 export default function FormulaireEditionBienAgent({
   bien,
   agentId,
+  documentsComplets = true,
 }: {
   bien: BienEditable;
   agentId: string;
+  // Verrou : les 3 documents du dossier (mandat, CIN, certificat) doivent être
+  // déposés avant de pouvoir transmettre au back-office.
+  documentsComplets?: boolean;
 }) {
   const router = useRouter();
 
@@ -253,6 +257,10 @@ export default function FormulaireEditionBienAgent({
 
   // ── Transmettre au BO ────────────────────────────────────────────────────────
   async function handleTransmettre() {
+    if (!documentsComplets) {
+      setErreur("Déposez les 3 documents (mandat, CIN, certificat) avant d'envoyer au backoffice.");
+      return;
+    }
     if (!window.confirm("Transmettre ce bien au back-office pour publication ?")) return;
     setErreur(null);
     setEnvoi(true);
@@ -560,14 +568,21 @@ export default function FormulaireEditionBienAgent({
       </Section>
 
       {/* ── Barre d'actions ──────────────────────────────────────────────────── */}
+      {!documentsComplets && (
+        <p className="text-xs -mb-2" style={{ color: "#92400E" }}>
+          📁 Déposez les 3 documents (mandat, CIN, certificat) avant d&apos;envoyer au backoffice —
+          section « Documents du dossier » en bas de page.
+        </p>
+      )}
       <div
         className="flex items-center justify-between gap-3 pt-2 pb-4 flex-wrap"
       >
         <button
           type="button"
           onClick={handleTransmettre}
-          disabled={envoi || chargement}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-opacity disabled:opacity-60"
+          disabled={envoi || chargement || !documentsComplets}
+          title={!documentsComplets ? "Déposez les 3 documents (mandat, CIN, certificat) avant d'envoyer au backoffice." : undefined}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
           style={{ borderColor: "#D4AF37", color: "#92400E", background: "#FEF9C3" }}
         >
           {envoi ? (
