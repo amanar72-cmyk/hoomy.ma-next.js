@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { verifierBien, supprimerBien } from "@/app/admin/actions";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
 import { formaterPrix } from "@/lib/format";
+import DocumentsVerification, { type DocumentVerification } from "@/components/admin/DocumentsVerification";
 
 export default async function PageAdminVerifications() {
   const supabase = await createClient();
@@ -26,6 +27,26 @@ export default async function PageAdminVerifications() {
       ),
     }))
   );
+
+  // ── Documents des dossiers — 1 requête pour tous les biens listés ─────────
+  // (la RLS admin donne accès à tout ; on garde la pièce la plus récente par
+  // type et par fiche : les dépôts propriétaire créent des versions horodatées)
+  const idsBiens = biens.map((b) => b.id);
+  const docsParBien = new Map<string, DocumentVerification[]>();
+  if (idsBiens.length > 0) {
+    const { data: docsRaw } = await supabase
+      .from("documents_fiche")
+      .select("id, fiche_id, type_document, statut, storage_path, uploaded_by_role, cree_le, signe_le")
+      .in("fiche_id", idsBiens)
+      .order("cree_le", { ascending: false });
+
+    for (const d of (docsRaw ?? []) as unknown as (DocumentVerification & { fiche_id: string })[]) {
+      const liste = docsParBien.get(d.fiche_id) ?? [];
+      // Plus récent par type uniquement (la liste arrive triée par date desc)
+      if (!liste.some((x) => x.type_document === d.type_document)) liste.push(d);
+      docsParBien.set(d.fiche_id, liste);
+    }
+  }
 
 
   return (
@@ -105,6 +126,9 @@ export default async function PageAdminVerifications() {
                   <p className="text-base font-semibold mb-4" style={{ color: "#D4AF37" }}>
                     {formaterPrix(b.prix, b.transaction)}
                   </p>
+
+                  {/* Documents du dossier (mandat, CIN, certificat) */}
+                  <DocumentsVerification documents={docsParBien.get(b.id) ?? []} />
 
                   <div className="flex gap-2 mt-auto">
                     {/* Approuver */}

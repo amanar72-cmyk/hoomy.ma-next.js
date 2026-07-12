@@ -372,3 +372,27 @@ export async function changerRole(userId: string, nouveauRole: string) {
   revalidatePath("/admin/clients");
   revalidatePath("/admin/utilisateurs");
 }
+
+// ── Documents du dossier (table documents_fiche) ─────────────────────────────
+
+/**
+ * Passe un document du dossier en statut 'verifie'. Réservé à l'admin :
+ * garde applicative explicite + update via le client SSR authentifié → la
+ * policy RLS is_admin() s'applique aussi (double sécurité). Seul le statut
+ * change — signe_le et le reste de la ligne sont intacts.
+ */
+export async function marquerDocumentVerifie(documentId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
+
+  const { error } = await supabase
+    .from("documents_fiche")
+    .update({ statut: "verifie" })
+    .eq("id", documentId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/verifications");
+}

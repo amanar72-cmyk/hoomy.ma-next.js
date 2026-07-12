@@ -8,6 +8,7 @@ import DocumentsProprietaire from "@/components/compte/DocumentsProprietaire";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
 import { formaterPrix } from "@/lib/format";
 import { documentsParType } from "@/lib/documents/fiche";
+import { formatPhoneMaroc } from "@/lib/utils/telephone";
 
 // Fiche bien côté PROPRIÉTAIRE — lecture seule stricte : aucune donnée du bien
 // n'est modifiable ici (prix, infos…). Seule action possible : déposer ses
@@ -39,7 +40,7 @@ export default async function PageFicheBienProprietaire({ params }: Props) {
     .select(
       "id, reference, slug, titre, description, type, transaction, prix, ville, quartier, " +
       "chambres, salles_bain, surface, photos, photos_originales, statut, verifie, " +
-      "proprietaire_id, date_soumission"
+      "proprietaire_id, agent_id, date_soumission"
     )
     .eq("id", id)
     .maybeSingle();
@@ -52,11 +53,29 @@ export default async function PageFicheBienProprietaire({ params }: Props) {
     ville: string; quartier: string | null; chambres: number; salles_bain: number;
     surface: number; photos: string[] | null; photos_originales: string[] | null;
     statut: string | null; verifie: boolean; date_soumission: string | null;
-    proprietaire_id: string | null;
+    proprietaire_id: string | null; agent_id: string | null;
   };
 
   // Garde de propriété : uniquement SES biens (en plus de la RLS)
   if (bien.proprietaire_id !== user.id) notFound();
+
+  // ── Conseiller en charge du bien (affiché si affecté) ─────────────────────
+  let agent: { nom: string; telephone: string | null; email: string | null; avatar_url: string | null } | null = null;
+  if (bien.agent_id) {
+    const { data: profilAgent } = await supabase
+      .from("profils")
+      .select("nom_complet, telephone, email_contact, avatar_url")
+      .eq("id", bien.agent_id)
+      .maybeSingle();
+    if (profilAgent) {
+      agent = {
+        nom: profilAgent.nom_complet ?? "Conseiller HOOMY",
+        telephone: profilAgent.telephone ?? null,
+        email: profilAgent.email_contact ?? null,
+        avatar_url: profilAgent.avatar_url ?? null,
+      };
+    }
+  }
 
   // Photos nettes (le propriétaire voit toujours les siennes — URL signées)
   const photos = await urlsPhotosNettes(
@@ -150,6 +169,82 @@ export default async function PageFicheBienProprietaire({ params }: Props) {
           Soumis le {formaterDate(bien.date_soumission)}
         </span>
       </div>
+
+      {/* ── Votre conseiller HOOMY (agent en charge du bien) ───────────────── */}
+      {agent && (() => {
+        const telAgent = formatPhoneMaroc(agent.telephone);
+        const initiales = agent.nom.split(/\s+/).map((m) => m[0]).slice(0, 2).join("").toUpperCase();
+        return (
+          <section
+            className="rounded-2xl px-5 py-4 mb-6"
+            style={{ background: "#F0FAF4", border: "1px solid #C6E8D4" }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#146C43" }}>
+              Votre conseiller HOOMY
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Avatar ou initiales */}
+              {agent.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={agent.avatar_url}
+                  alt={agent.nom}
+                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                  style={{ border: "2px solid #D4AF37" }}
+                />
+              ) : (
+                <span
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                  style={{ background: "#0F4C3A", color: "#D4AF37" }}
+                >
+                  {initiales}
+                </span>
+              )}
+
+              {/* Identité + coordonnées */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "#0F4C3A" }}>{agent.nom}</p>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 mt-0.5 text-xs" style={{ color: "#3D4A42" }}>
+                  {telAgent.affichage && (
+                    <a href={`tel:${telAgent.lienTel}`} className="hover:underline tabular-nums" style={{ color: "#0F4C3A", textDecoration: "none" }}>
+                      📞 {telAgent.affichage}
+                    </a>
+                  )}
+                  {agent.email && (
+                    <a href={`mailto:${agent.email}`} className="hover:underline truncate" style={{ color: "#0F4C3A", textDecoration: "none" }}>
+                      ✉️ {agent.email}
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions rapides */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {telAgent.lienTel && (
+                  <a
+                    href={`tel:${telAgent.lienTel}`}
+                    className="text-xs font-semibold px-3 py-2 rounded-xl hover:opacity-90 transition-opacity"
+                    style={{ background: "#0F4C3A", color: "#fff", textDecoration: "none" }}
+                  >
+                    Appeler
+                  </a>
+                )}
+                {telAgent.numeroWA && (
+                  <a
+                    href={`https://wa.me/${telAgent.numeroWA}?text=${encodeURIComponent(`Bonjour ${agent.nom}, je vous contacte au sujet de mon bien ${bien.reference ?? bien.titre} sur HOOMY.MA.`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold px-3 py-2 rounded-xl hover:opacity-90 transition-opacity"
+                    style={{ background: "#25D366", color: "#fff", textDecoration: "none" }}
+                  >
+                    WhatsApp
+                  </a>
+                )}
+              </div>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* ── Vos pièces justificatives ──────────────────────────────────────── */}
       <section className="mb-6">

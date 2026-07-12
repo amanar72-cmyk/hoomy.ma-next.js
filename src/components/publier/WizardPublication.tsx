@@ -10,6 +10,7 @@ import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier"
 import { appliquerWatermark } from "@/lib/images/watermark";
 import { appliquerFlou } from "@/lib/images/flou";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
+import { sauvegarderBrouillon, chargerBrouillon, supprimerBrouillon } from "@/lib/publier/brouillon";
 import LogoHoomy from "@/components/home/LogoHoomy";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -488,6 +489,8 @@ export default function WizardPublication({ userId }: { userId: string | null })
       longitude: donnees.longitude,
     });
     setSucces(true);
+    // Publication réussie → le brouillon local (parcours Google) n'a plus lieu d'être
+    void supprimerBrouillon();
   };
 
   // Soumission directe — visiteur déjà connecté en arrivant sur la page.
@@ -583,6 +586,53 @@ export default function WizardPublication({ userId }: { userId: string | null })
       setEnSoumission(false);
     }
   }
+
+  // Continuer avec Google : l'onglet va QUITTER le site (OAuth) et l'état React
+  // sera perdu — on persiste d'abord le brouillon complet (photos comprises)
+  // dans IndexedDB, puis on lance la redirection. Restauration au retour via
+  // l'effet ci-dessous. Fonctionne pour créer un compte ET se connecter.
+  async function continuerAvecGoogle() {
+    setErreur(null);
+    setEnSoumission(true);
+    try {
+      await sauvegarderBrouillon(donnees, etape);
+      const base = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${base}/auth/callback?next=/publier` },
+      });
+      if (error) {
+        setErreur(`Connexion Google impossible : ${error.message}`);
+        setEnSoumission(false);
+      }
+      // Pas de finally ici : en cas de succès la page part chez Google.
+    } catch {
+      setErreur("Impossible de préparer la connexion Google. Réessayez.");
+      setEnSoumission(false);
+    }
+  }
+
+  // Restaure le brouillon au montage (retour de Google, ou OAuth annulé).
+  // Les aperçus des photos en attente sont recréés depuis les fichiers
+  // conservés dans IndexedDB.
+  const restaurationFaite = useRef(false);
+  useEffect(() => {
+    if (restaurationFaite.current) return;
+    restaurationFaite.current = true;
+    void (async () => {
+      const brouillon = await chargerBrouillon();
+      if (!brouillon) return;
+      const d = brouillon.donnees as DonneesWizard;
+      d.photos = (d.photos ?? [])
+        .filter((p) => p.uploadee || p.fichier)
+        .map((p) => (!p.uploadee && p.fichier ? { ...p, url: URL.createObjectURL(p.fichier) } : p));
+      setDonnees(d);
+      // Connecté (retour Google réussi) → dernière étape pour publier ;
+      // sinon (OAuth annulé) → retour là où l'utilisateur s'était arrêté.
+      setEtape(userId ? TOTAL_ETAPES : Math.min(brouillon.etape, TOTAL_ETAPES));
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Nouvelle vérification manuelle (si l'écouteur cross-onglet n'a pas capté la confirmation).
   async function verifierConfirmation() {
@@ -1035,6 +1085,32 @@ export default function WizardPublication({ userId }: { userId: string | null })
             <p className="text-sm mb-6" style={{ color: "#9DB8AD" }}>
               Créez votre compte HOOMY pour publier votre annonce et suivre son avancement.
             </p>
+
+            {/* Continuer avec Google — création OU connexion. Le brouillon
+                (photos comprises) est sauvegardé localement avant la
+                redirection et restauré au retour. */}
+            <button
+              type="button"
+              onClick={continuerAvecGoogle}
+              disabled={enSoumission}
+              className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold border transition-opacity hover:opacity-80 disabled:opacity-60 cursor-pointer mb-4"
+              style={{ background: "#fff", borderColor: "#E0DAC8", color: "#3D4A42" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z" />
+                <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z" />
+              </svg>
+              Continuer avec Google
+            </button>
+
+            {/* Séparateur */}
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex-1 h-px" style={{ background: "#E0DAC8" }} />
+              <span className="text-xs" style={{ color: "#9DB8AD" }}>ou par email</span>
+              <span className="flex-1 h-px" style={{ background: "#E0DAC8" }} />
+            </div>
 
             {/* Bascule créer / se connecter */}
             <div className="flex rounded-xl overflow-hidden border mb-5" style={{ borderColor: "#E0DAC8" }}>
