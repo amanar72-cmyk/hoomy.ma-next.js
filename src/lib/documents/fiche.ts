@@ -45,6 +45,28 @@ export async function dossierComplet(supabase: SupabaseClient, bienId: string): 
   return TYPES_DOCUMENTS_FICHE.every((t) => types.has(t));
 }
 
+/** Nombre de types de documents requis présents par fiche (0 à 3) — 1 seule requête. */
+export async function nbDocsParFiche(
+  supabase: SupabaseClient,
+  bienIds: string[]
+): Promise<Map<string, number>> {
+  const comptages = new Map<string, number>();
+  if (bienIds.length === 0) return comptages;
+  const { data } = await supabase
+    .from("documents_fiche")
+    .select("fiche_id, type_document")
+    .in("fiche_id", bienIds);
+
+  const typesParFiche = new Map<string, Set<string>>();
+  for (const d of (data ?? []) as { fiche_id: string; type_document: string }[]) {
+    if (!(TYPES_DOCUMENTS_FICHE as readonly string[]).includes(d.type_document)) continue;
+    if (!typesParFiche.has(d.fiche_id)) typesParFiche.set(d.fiche_id, new Set());
+    typesParFiche.get(d.fiche_id)!.add(d.type_document);
+  }
+  for (const [ficheId, types] of typesParFiche) comptages.set(ficheId, types.size);
+  return comptages;
+}
+
 /** Ids des fiches (parmi bienIds) dont le dossier est complet — 1 seule requête. */
 export async function fichesCompletes(
   supabase: SupabaseClient,

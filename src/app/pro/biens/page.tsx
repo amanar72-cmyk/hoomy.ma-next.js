@@ -3,276 +3,110 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import BoutonActionPro from "@/components/pro/BoutonActionPro";
+import BarreRecherche from "@/components/pro/BarreRecherche";
+import Pagination from "@/components/pro/Pagination";
+import CarteBienListe, { type BienListe } from "@/components/partage/CarteBienListe";
 import { transmettreAuBo } from "./actions";
-import { fichesCompletes } from "@/lib/documents/fiche";
-import { formaterPrix } from "@/lib/format";
+import { nbDocsParFiche, TYPES_DOCUMENTS_FICHE } from "@/lib/documents/fiche";
+import { infoStatut, ORDRE_STATUTS_BIEN } from "@/lib/biens/statuts";
 
 export const metadata: Metadata = {
   title: "Mes biens — Espace Pro HOOMY.MA",
 };
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const PAR_PAGE = 10;
 
-type BienAgent = {
-  id: string;
-  reference: string | null;
-  slug: string | null;
-  titre: string;
-  type: string;
-  transaction: string;
-  prix: number;
-  ville: string;
-  quartier: string | null;
-  photos: string[] | null;
-  statut: string | null;
-  surface: number;
-  chambres: number;
-  cree_le: string;
-  date_affectation: string | null;
-};
+// Statuts où l'agent peut encore transmettre le bien au back-office
+const STATUTS_A_TRANSMETTRE = ["brouillon", "affecte"];
 
-// ── Zones ─────────────────────────────────────────────────────────────────────
-
-const ZONES = [
-  {
-    id: "en_cours",
-    label: "En cours de traitement",
-    statuts: ["brouillon", "affecte"],
-    badge: { bg: "#FEF3C7", color: "#92400E" },
-    avecAction: true,
-  },
-  {
-    id: "en_validation",
-    label: "En validation BO",
-    statuts: ["en_validation"],
-    badge: { bg: "#DBEAFE", color: "#1E40AF" },
-    avecAction: false,
-  },
-  {
-    id: "publies",
-    label: "Publiés",
-    statuts: ["finalise", "transacte"],
-    badge: { bg: "#D1FAE5", color: "#065F46" },
-    avecAction: false,
-  },
+const TRIS = [
+  { value: "recent", label: "Le plus récent" },
+  { value: "prix_desc", label: "Prix décroissant" },
+  { value: "prix_asc", label: "Prix croissant" },
 ] as const;
 
-// ── Utilitaires ───────────────────────────────────────────────────────────────
+type SearchParams = Promise<{
+  q?: string;
+  transaction?: string;
+  statut?: string;
+  tri?: string;
+  page?: string;
+}>;
 
-
-function formaterDate(d: string) {
-  return new Date(d).toLocaleDateString("fr-MA", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+function urlAvec(params: Record<string, string | undefined>) {
+  const usp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v) usp.set(k, v);
+  const s = usp.toString();
+  return `/pro/biens${s ? `?${s}` : ""}`;
 }
 
-// ── Carte bien agent ──────────────────────────────────────────────────────────
-
-function CarteBienAgent({
-  bien,
-  avecAction,
-  docsComplets = true,
-}: {
-  bien: BienAgent;
-  avecAction: boolean;
-  // Verrou : les 3 documents (mandat, CIN, certificat) sont-ils déposés ?
-  docsComplets?: boolean;
-}) {
-  const photo = bien.photos?.[0] ?? null;
-  const estPublie = bien.statut === "finalise" || bien.statut === "transacte";
-  const lienAnnonce =
-    estPublie && bien.slug
-      ? `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug}`
-      : null;
-
-  return (
-    <article
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: "#fff",
-        border: "1px solid #F0EDE5",
-        boxShadow: "0 1px 8px rgba(15,76,58,0.05)",
-      }}
-    >
-      {/* Zone info cliquable → fiche du bien */}
-      <Link
-        href={`/pro/biens/${bien.id}`}
-        className="flex gap-3 p-3 hover:bg-[#FAFAF8] transition-colors"
-        style={{ textDecoration: "none" }}
-      >
-        {/* Photo */}
-        <div
-          className="flex-shrink-0 rounded-xl overflow-hidden"
-          style={{ width: 88, height: 72, background: "#F4F6F5" }}
-        >
-          {photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photo} alt={bien.titre} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#C4D8CE" strokeWidth="1.2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
-            </div>
-          )}
-        </div>
-
-        {/* Infos */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-0.5 flex-wrap">
-            <p
-              className="text-sm font-semibold leading-snug line-clamp-1"
-              style={{ color: "#1f2a24" }}
-            >
-              {bien.titre}
-            </p>
-            {bien.reference && (
-              <span
-                className="text-xs font-mono px-1.5 py-0.5 rounded flex-shrink-0"
-                style={{ background: "#F0EDE5", color: "#9DB8AD" }}
-              >
-                {bien.reference}
-              </span>
-            )}
-          </div>
-
-          <p className="text-xs" style={{ color: "#9DB8AD" }}>
-            {bien.type}
-            {bien.quartier ? ` · ${bien.quartier}` : ""}
-            {" · "}{bien.ville}
-          </p>
-
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <span className="text-sm font-bold" style={{ color: "#0F4C3A" }}>
-              {formaterPrix(bien.prix, bien.transaction)}
-            </span>
-            <span className="text-xs" style={{ color: "#C4D8CE" }}>
-              {bien.surface} m²
-              {bien.chambres > 0 ? ` · ${bien.chambres} ch.` : ""}
-            </span>
-            <span className="text-xs" style={{ color: "#C4D8CE" }}>
-              {formaterDate(bien.cree_le)}
-            </span>
-          </div>
-        </div>
-      </Link>
-
-      {/* Actions */}
-      {(avecAction || lienAnnonce) && (
-        <div
-          className="px-3 pb-3 flex gap-2 flex-wrap"
-          style={{ borderTop: "1px solid #F8F5EE" }}
-        >
-          {avecAction && docsComplets && (
-            <BoutonActionPro
-              action={transmettreAuBo.bind(null, bien.id)}
-              label="Transmettre au BO"
-              labelChargement="Transmission…"
-              confirmation="Confirmer la transmission de ce bien au back-office pour publication ?"
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl mt-2"
-              style={{ background: "#0F4C3A", color: "#fff", cursor: "pointer" }}
-            />
-          )}
-          {avecAction && !docsComplets && (
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              {/* Verrou documentaire : bouton désactivé tant que les 3 pièces
-                  ne sont pas déposées (garde serveur dans transmettreAuBo) */}
-              <button
-                type="button"
-                disabled
-                title="Déposez les 3 documents (mandat, CIN, certificat) avant d'envoyer au backoffice."
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl cursor-not-allowed"
-                style={{ background: "#E8E4DA", color: "#9DB8AD", border: "none" }}
-              >
-                Transmettre au BO
-              </button>
-              <Link
-                href={`/pro/biens/${bien.id}`}
-                className="text-xs hover:underline"
-                style={{ color: "#92400E", textDecoration: "none" }}
-              >
-                📁 Déposez les 3 documents (mandat, CIN, certificat) →
-              </Link>
-            </div>
-          )}
-          {lienAnnonce && (
-            <Link
-              href={lienAnnonce}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl mt-2 hover:opacity-90 transition-opacity"
-              style={{ background: "#D4AF37", color: "#0F4C3A", textDecoration: "none" }}
-            >
-              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              Voir l&apos;annonce
-            </Link>
-          )}
-        </div>
-      )}
-    </article>
-  );
-}
-
-// ── searchParams ──────────────────────────────────────────────────────────────
-
-type SearchParams = Promise<{ transaction?: string }>;
-
-// ── Page ─────────────────────────────────────────────────────────────────────
-
-export default async function PageProMesBiens({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function PageProMesBiens({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
+  const q = (sp.q ?? "").trim();
   const transaction = sp.transaction ?? "";
+  const statut = sp.statut ?? "";
+  const tri = sp.tri ?? "recent";
+  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/connexion");
 
-  // Uniquement les biens de cet agent
+  // Nettoyage pour la syntaxe or() de PostgREST (virgules/parenthèses réservées)
+  const qFiltre = q.replace(/[,()]/g, " ").trim();
+
+  // ── Biens de la page (RLS + filtre agent) ──────────────────────────────────
+  // select("*") : tolère l'absence de la colonne date_publication tant que
+  // date_publication.sql n'a pas été exécuté.
   let query = supabase
     .from("biens")
-    .select(
-      "id, reference, slug, titre, type, transaction, prix, ville, quartier, " +
-      "photos, statut, surface, chambres, cree_le, date_affectation"
-    )
-    .eq("agent_id", user.id)
-    .order("cree_le", { ascending: false });
+    .select("*", { count: "exact" })
+    .eq("agent_id", user.id);
 
-  if (transaction) {
-    query = query.eq("transaction", transaction);
+  if (transaction) query = query.eq("transaction", transaction);
+  if (statut) query = query.eq("statut", statut);
+  if (qFiltre) query = query.or(`titre.ilike.%${qFiltre}%,reference.ilike.%${qFiltre}%`);
+
+  if (tri === "prix_asc") query = query.order("prix", { ascending: true });
+  else if (tri === "prix_desc") query = query.order("prix", { ascending: false });
+  else query = query.order("cree_le", { ascending: false });
+
+  const de = (page - 1) * PAR_PAGE;
+  const { data: biensRaw, count } = await query.range(de, de + PAR_PAGE - 1);
+  const biens = (biensRaw ?? []) as unknown as (BienListe & { slug: string | null; photos: unknown })[];
+  const total = count ?? 0;
+
+  // ── Comptages par statut pour les chips (mêmes filtres, hors statut) ───────
+  let queryChips = supabase.from("biens").select("statut").eq("agent_id", user.id);
+  if (transaction) queryChips = queryChips.eq("transaction", transaction);
+  if (qFiltre) queryChips = queryChips.or(`titre.ilike.%${qFiltre}%,reference.ilike.%${qFiltre}%`);
+  const { data: statutsRaw } = await queryChips;
+  const comptages = new Map<string, number>();
+  for (const r of (statutsRaw ?? []) as { statut: string | null }[]) {
+    const s = r.statut ?? "";
+    comptages.set(s, (comptages.get(s) ?? 0) + 1);
+  }
+  const totalChips = statutsRaw?.length ?? 0;
+  // Chips construits à partir des statuts réellement présents, dans l'ordre du cycle de vie
+  const statutsPresents = [
+    ...ORDRE_STATUTS_BIEN.filter((s) => comptages.has(s)),
+    ...[...comptages.keys()].filter((s) => s && !ORDRE_STATUTS_BIEN.includes(s)),
+  ];
+
+  // ── Documents (N/3) et demandes de visite — 1 requête chacun ───────────────
+  const ids = biens.map((b) => b.id);
+  const [docsParBien, demandesRes] = await Promise.all([
+    nbDocsParFiche(supabase, ids),
+    ids.length > 0
+      ? supabase.from("demandes_visite").select("bien_id").in("bien_id", ids)
+      : Promise.resolve({ data: [] as { bien_id: string }[] }),
+  ]);
+  const demandesParBien = new Map<string, number>();
+  for (const d of (demandesRes.data ?? []) as { bien_id: string }[]) {
+    demandesParBien.set(d.bien_id, (demandesParBien.get(d.bien_id) ?? 0) + 1);
   }
 
-  const { data: biensRaw } = await query;
-  const biens = (biensRaw ?? []) as unknown as BienAgent[];
-
-  // Répartition par zone
-  const biensParZone = ZONES.map((zone) => ({
-    zone,
-    biens: biens.filter((b) => (zone.statuts as readonly string[]).includes(b.statut ?? "")),
-  }));
-
-  // Dossiers documentaires complets (mandat + CIN + certificat) — conditionne
-  // le bouton « Transmettre au BO » des biens encore à traiter (1 requête).
-  const idsATraiter = biensParZone
-    .filter(({ zone }) => zone.avecAction)
-    .flatMap(({ biens: b }) => b.map((x) => x.id));
-  const dossiersOk = await fichesCompletes(supabase, idsATraiter);
-
-  const totalBiens = biens.length;
-
-  const onglets = [
-    { label: "Tous", value: "" },
-    { label: "Vente", value: "vente" },
-    { label: "Location", value: "location" },
-  ];
+  const baseUrlPagination = urlAvec({ q, transaction, statut, tri: tri !== "recent" ? tri : undefined });
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -287,7 +121,7 @@ export default async function PageProMesBiens({
             Mes biens
           </h1>
           <p className="text-sm" style={{ color: "#9DB8AD" }}>
-            {totalBiens} bien{totalBiens !== 1 ? "s" : ""} en portefeuille
+            Total des biens : {total}
           </p>
         </div>
         <Link
@@ -303,18 +137,42 @@ export default async function PageProMesBiens({
         </Link>
       </div>
 
-      {/* ── Filtres transaction ──────────────────────────────────────────── */}
-      <div
-        className="flex gap-1 p-1 rounded-xl w-fit mb-6"
-        style={{ background: "#E8E4DA" }}
-      >
-        {onglets.map((o) => {
+      {/* ── Recherche + tri ──────────────────────────────────────────────── */}
+      <form method="get" action="/pro/biens" className="flex gap-2 mb-4 flex-wrap">
+        {transaction && <input type="hidden" name="transaction" value={transaction} />}
+        {statut && <input type="hidden" name="statut" value={statut} />}
+        <BarreRecherche defaultValue={q} placeholder="Rechercher par titre ou référence…" />
+        <select
+          name="tri"
+          defaultValue={tri}
+          className="border rounded-xl px-3 py-2.5 text-sm"
+          style={{ borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" }}
+        >
+          {TRIS.map((t) => (
+            <option key={t.value} value={t.value}>{t.label}</option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity"
+          style={{ background: "#0F4C3A", color: "#fff" }}
+        >
+          Rechercher
+        </button>
+      </form>
+
+      {/* ── Filtre transaction ───────────────────────────────────────────── */}
+      <div className="flex gap-1 p-1 rounded-xl w-fit mb-4" style={{ background: "#E8E4DA" }}>
+        {[
+          { label: "Tous", value: "" },
+          { label: "Vente", value: "vente" },
+          { label: "Location", value: "location" },
+        ].map((o) => {
           const actif = transaction === o.value;
-          const href = `/pro/biens${o.value ? `?transaction=${o.value}` : ""}`;
           return (
             <Link
               key={o.value}
-              href={href}
+              href={urlAvec({ q, statut, tri: tri !== "recent" ? tri : undefined, transaction: o.value || undefined })}
               className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
               style={
                 actif
@@ -328,8 +186,41 @@ export default async function PageProMesBiens({
         })}
       </div>
 
-      {/* ── État vide global ─────────────────────────────────────────────── */}
-      {totalBiens === 0 && (
+      {/* ── Chips statut (statuts réellement présents en base) ──────────── */}
+      <div className="flex gap-2 mb-6 flex-wrap">
+        <Link
+          href={urlAvec({ q, transaction, tri: tri !== "recent" ? tri : undefined })}
+          className="text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-80"
+          style={
+            !statut
+              ? { background: "#0F4C3A", color: "#fff", textDecoration: "none" }
+              : { background: "#fff", color: "#0F4C3A", border: "1px solid #E0DAC8", textDecoration: "none" }
+          }
+        >
+          Tous ({totalChips})
+        </Link>
+        {statutsPresents.map((s) => {
+          const info = infoStatut(s);
+          const actif = statut === s;
+          return (
+            <Link
+              key={s}
+              href={urlAvec({ q, transaction, tri: tri !== "recent" ? tri : undefined, statut: s })}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-80"
+              style={
+                actif
+                  ? { background: "#0F4C3A", color: "#fff", textDecoration: "none" }
+                  : { background: info.bg, color: info.color, textDecoration: "none" }
+              }
+            >
+              {info.label} ({comptages.get(s) ?? 0})
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* ── État vide ────────────────────────────────────────────────────── */}
+      {biens.length === 0 && (
         <div
           className="rounded-2xl flex flex-col items-center justify-center py-16 px-6 text-center"
           style={{ background: "#fff", border: "1px solid #F0EDE5" }}
@@ -344,10 +235,14 @@ export default async function PageProMesBiens({
             </svg>
           </div>
           <p className="text-sm font-semibold mb-1" style={{ color: "#0F4C3A" }}>
-            Aucun bien en portefeuille
+            {total === 0 && !q && !statut && !transaction
+              ? "Aucun bien en portefeuille"
+              : "Aucun bien ne correspond à ces filtres"}
           </p>
           <p className="text-sm mb-4" style={{ color: "#9DB8AD" }}>
-            Créez votre premier bien ou acceptez-en un depuis la file d'affectation.
+            {total === 0 && !q && !statut && !transaction
+              ? "Créez votre premier bien ou acceptez-en un depuis la file d'affectation."
+              : "Modifiez la recherche ou les filtres pour élargir les résultats."}
           </p>
           <Link
             href="/pro/biens/nouveau"
@@ -363,49 +258,76 @@ export default async function PageProMesBiens({
         </div>
       )}
 
-      {/* ── Zones ────────────────────────────────────────────────────────── */}
-      {totalBiens > 0 && (
-        <div className="flex flex-col gap-8">
-          {biensParZone.map(({ zone, biens: biensDeLaZone }) => (
-            <section key={zone.id}>
-              {/* En-tête de zone */}
-              <div className="flex items-center gap-3 mb-3">
-                <h2 className="text-sm font-semibold" style={{ color: "#0F4C3A" }}>
-                  {zone.label}
-                </h2>
-                <span
-                  className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: zone.badge.bg, color: zone.badge.color }}
-                >
-                  {biensDeLaZone.length}
-                </span>
-              </div>
+      {/* ── Liste des biens ──────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3">
+        {biens.map((bien) => {
+          const nbDocs = docsParBien.get(bien.id) ?? 0;
+          const docsComplets = nbDocs >= TYPES_DOCUMENTS_FICHE.length;
+          const aTransmettre = STATUTS_A_TRANSMETTRE.includes(bien.statut ?? "");
+          const estPublie = bien.statut === "finalise" || bien.statut === "transacte";
+          const lienAnnonce =
+            estPublie && bien.slug
+              ? `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug}`
+              : null;
 
-              {/* Biens de la zone */}
-              {biensDeLaZone.length === 0 ? (
-                <div
-                  className="rounded-2xl py-8 text-center text-sm"
-                  style={{ background: "#FAFAF8", border: "1px dashed #E8E2D2", color: "#C4D8CE" }}
-                >
-                  Aucun bien dans cette zone
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {biensDeLaZone.map((b) => (
-                    <CarteBienAgent
-                      key={b.id}
-                      bien={b}
-                      avecAction={zone.avecAction}
-                      docsComplets={dossiersOk.has(b.id)}
+          return (
+            <CarteBienListe
+              key={bien.id}
+              bien={bien}
+              href={`/pro/biens/${bien.id}`}
+              photo={Array.isArray(bien.photos) ? ((bien.photos as string[])[0] ?? null) : null}
+              nbDemandesVisite={demandesParBien.get(bien.id) ?? 0}
+              nbDocs={nbDocs}
+              actions={
+                aTransmettre ? (
+                  docsComplets ? (
+                    <BoutonActionPro
+                      action={transmettreAuBo.bind(null, bien.id)}
+                      label="Transmettre au BO"
+                      labelChargement="Transmission…"
+                      confirmation="Confirmer la transmission de ce bien au back-office pour publication ?"
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl whitespace-nowrap"
+                      style={{ background: "#0F4C3A", color: "#fff", cursor: "pointer" }}
                     />
-                  ))}
-                </div>
-              )}
-            </section>
-          ))}
-        </div>
-      )}
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      title="Déposez les 3 documents (mandat, CIN, certificat) avant d'envoyer au back-office."
+                      className="text-xs font-semibold px-3 py-1.5 rounded-xl cursor-not-allowed whitespace-nowrap"
+                      style={{ background: "#E8E4DA", color: "#9DB8AD", border: "none" }}
+                    >
+                      Transmettre au BO
+                    </button>
+                  )
+                ) : lienAnnonce ? (
+                  <Link
+                    href={lienAnnonce}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl hover:opacity-90 transition-opacity whitespace-nowrap"
+                    style={{ background: "#D4AF37", color: "#0F4C3A", textDecoration: "none" }}
+                  >
+                    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Voir l&apos;annonce
+                  </Link>
+                ) : (
+                  <span
+                    className="text-xs font-medium px-3 py-1.5 rounded-xl whitespace-nowrap"
+                    style={{ background: "#F4F6F5", color: "#6B7A71" }}
+                  >
+                    Ouvrir →
+                  </span>
+                )
+              }
+            />
+          );
+        })}
+      </div>
 
+      <Pagination page={page} total={total} parPage={PAR_PAGE} baseUrl={baseUrlPagination} />
     </div>
   );
 }
