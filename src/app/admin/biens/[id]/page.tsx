@@ -4,42 +4,74 @@ import { notFound } from "next/navigation";
 import FormulaireEditionBien from "@/components/admin/FormulaireEditionBien";
 import { affecterBienAgent } from "@/app/admin/actions";
 import PhotoGalerie from "@/components/ui/PhotoGalerie";
+import OngletsFiche from "@/components/partage/OngletsFiche";
+import FicheInfosBien, { type BienFiche } from "@/components/partage/FicheInfosBien";
+import CarteContactProfil, { type ProfilContact } from "@/components/partage/CarteContactProfil";
+import CarteLocalisationBO from "@/components/partage/CarteLocalisationBO";
+import ListeDemandesVisite, { type DemandeVisiteFiche } from "@/components/partage/ListeDemandesVisite";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
 import { formaterPrix } from "@/lib/format";
+import { documentsParType, TYPES_DOCUMENTS_FICHE } from "@/lib/documents/fiche";
+import { infoStatut } from "@/lib/biens/statuts";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ modifier?: string }>;
+  searchParams: Promise<{ modifier?: string; onglet?: string }>;
 };
 
-const BADGE_STATUT: Record<string, { label: string; bg: string; color: string }> = {
-  brouillon:     { label: "Brouillon",     bg: "#F5F5F5", color: "#777" },
-  affecte:       { label: "Affecté",       bg: "#FEF3C7", color: "#92400E" },
-  en_validation: { label: "En validation", bg: "#DBEAFE", color: "#1E40AF" },
-  finalise:      { label: "Publié",        bg: "#D1FAE5", color: "#065F46" },
-  transacte:     { label: "Transacté",     bg: "#F3E8FF", color: "#6B21A8" },
+// Libellés des documents du dossier (affichage lecture seule côté admin —
+// le dépôt reste côté agent, la validation dans /admin/verifications)
+const LIBELLES_DOCUMENTS: Record<string, string> = {
+  mandat: "Mandat signé",
+  cin: "CIN",
+  certificat_propriete: "Certificat de propriété",
 };
 
+const BADGES_DOC: Record<string, { label: string; bg: string; color: string }> = {
+  en_attente: { label: "En attente", bg: "#FEF3C7", color: "#92400E" },
+  signe:      { label: "Signé",      bg: "#D4AF37", color: "#0F4C3A" },
+  verifie:    { label: "Vérifié ✓",  bg: "#D1FAE5", color: "#065F46" },
+  depose:     { label: "Déposé",     bg: "#DBEAFE", color: "#1E40AF" },
+};
+
+function formaterDate(d: string | null | undefined) {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString("fr-MA", { day: "2-digit", month: "short", year: "numeric" });
+}
 
 export default async function PageFicheBien({ params, searchParams }: Props) {
   const { id } = await params;
-  const { modifier } = await searchParams;
+  const { modifier, onglet } = await searchParams;
   const supabase = await createClient();
 
-  const { data: bien, error } = await supabase
+  const { data: bienRaw, error } = await supabase
     .from("biens")
     .select("*")
     .eq("id", id)
     .single();
 
-  if (!bien) {
+  if (!bienRaw) {
     if (error) console.error(`[admin/biens/${id}]`, error.message);
     notFound();
   }
 
+  const bien = bienRaw as unknown as BienFiche & {
+    id: string;
+    titre: string;
+    statut: string | null;
+    verifie: boolean;
+    slug: string | null;
+    agent_id: string | null;
+    proprietaire_id: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    photos: unknown;
+    photos_originales: unknown;
+  };
+
   const modeEdition = modifier === "1";
 
-  // ── Mode édition ───────────────────────────────────────────────────────────
+  // ── Mode édition — logique existante inchangée ──────────────────────────────
   if (modeEdition) {
     return (
       <div className="p-6 lg:p-10 max-w-5xl mx-auto">
@@ -73,75 +105,123 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
           )}
         </div>
 
-        <FormulaireEditionBien bien={bien} />
+        <FormulaireEditionBien bien={bienRaw} />
       </div>
     );
   }
 
-  // ── Données pour le mode lecture ───────────────────────────────────────────
-  // L'admin voit toujours les photos nettes, même avant validation (URL signée).
-  const photos = await urlsPhotosNettes(
-    Array.isArray(bien.photos) ? bien.photos : [],
-    Array.isArray(bien.photos_originales) ? bien.photos_originales : [],
-    bien.verifie
-  );
-  const equipements = (Array.isArray(bien.equipements) ? bien.equipements : []) as string[];
-  const statutInfo  = BADGE_STATUT[bien.statut ?? ""] ?? { label: bien.statut ?? "—", bg: "#F5F5F5", color: "#777" };
+  // ── Données du mode lecture ─────────────────────────────────────────────────
+  const [photos, documents, demandesRes, agentsRes, proprietaireRes] = await Promise.all([
+    urlsPhotosNettes(
+      Array.isArray(bien.photos) ? (bien.photos as string[]) : [],
+      Array.isArray(bien.photos_originales) ? (bien.photos_originales as string[]) : [],
+      bien.verifie
+    ),
+    documentsParType(supabase, bien.id),
+    supabase
+      .from("demandes_visite")
+      .select("id, nom_client, email_client, telephone_client, date_souhaitee, date_confirmee, message, statut, cree_le")
+      .eq("bien_id", bien.id)
+      .order("cree_le", { ascending: false }),
+    supabase
+      .from("profils")
+      .select("id, nom_complet, email, telephone, role")
+      .in("role", ["agent", "agence"])
+      .order("nom_complet"),
+    bien.proprietaire_id
+      ? supabase
+          .from("profils")
+          .select("nom_complet, email, telephone, role")
+          .eq("id", bien.proprietaire_id)
+          .single()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  // Agents disponibles pour l'affectation
-  const { data: agentsRaw } = await supabase
-    .from("profils")
-    .select("id, nom_complet, role")
-    .in("role", ["agent", "agence"])
-    .order("nom_complet");
-  const agents = (agentsRaw ?? []) as Array<{ id: string; nom_complet: string; role: string }>;
+  const demandes = (demandesRes.data ?? []) as DemandeVisiteFiche[];
+  const agents = (agentsRes.data ?? []) as Array<
+    ProfilContact & { id: string; nom_complet: string }
+  >;
+  const proprietaire = (proprietaireRes.data as ProfilContact | null) ?? null;
+  const conseiller = agents.find((a) => a.id === bien.agent_id) ?? null;
 
-  // Agent actuellement affecté
-  const agentActuel = agents.find((a) => a.id === (bien.agent_id as string | null));
+  const typesPresents = new Set(documents.map((d) => d.type_document));
+  const nbDocs = TYPES_DOCUMENTS_FICHE.filter((t) => typesPresents.has(t)).length;
+  const statutInfo = infoStatut(bien.statut);
 
-  // ── Mode lecture ───────────────────────────────────────────────────────────
+  const estPublie = bien.statut === "finalise" || bien.statut === "transacte";
+  const lienAnnonce = estPublie && bien.slug
+    ? `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug}`
+    : null;
+
+  const ongletActif = ["fiche", "photos", "documents", "demandes"].includes(onglet ?? "")
+    ? (onglet as string)
+    : "fiche";
+  const onglets = [
+    { id: "fiche", label: "Fiche du bien" },
+    { id: "photos", label: "Photos", badge: photos.length },
+    { id: "documents", label: "Documents", badge: `${nbDocs}/${TYPES_DOCUMENTS_FICHE.length}` },
+    { id: "demandes", label: "Demandes de visite", badge: demandes.length },
+  ];
+
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
+    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
 
       {/* Fil d'Ariane */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-2">
         <Link
           href="/admin/biens"
-          className="text-sm flex items-center gap-1 hover:opacity-70 transition-opacity"
-          style={{ color: "#999", textDecoration: "none" }}
+          className="text-sm flex items-center gap-1 hover:opacity-80 transition-opacity"
+          style={{ color: "#9DB8AD", textDecoration: "none" }}
         >
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6" />
           </svg>
           Biens
         </Link>
-        <span style={{ color: "#DDD" }}>/</span>
-        <span className="text-sm font-medium" style={{ color: "#111" }}>
+        <span style={{ color: "#E0DAC8" }}>/</span>
+        <span className="text-sm" style={{ color: "#0F4C3A" }}>
           {bien.reference ?? bien.id.slice(0, 8)}
         </span>
       </div>
 
       {/* En-tête */}
-      <div className="mb-5 flex items-start justify-between gap-4 flex-wrap">
+      <div className="mb-4 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold mb-0.5" style={{ color: "#111" }}>
-            {bien.titre}
+          <h1 className="text-2xl mb-1"
+            style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}>
+            {bien.type} {bien.transaction === "location" ? "à louer" : "à vendre"} — {bien.titre}
           </h1>
-          <p className="text-sm" style={{ color: "#999" }}>
+          <p className="text-sm" style={{ color: "#9DB8AD" }}>
             {bien.ville}{bien.quartier ? ` · ${bien.quartier}` : ""}
+            {" · "}Créé le {formaterDate(bien.cree_le)}
+            {bien.date_publication ? ` · Publié le ${formaterDate(bien.date_publication)}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-2.5 flex-shrink-0 flex-wrap">
           {bien.reference && (
             <span className="text-xs px-3 py-1 rounded-full font-mono"
-              style={{ background: "#F5F5F5", color: "#777", border: "1px solid #E8E8E8" }}>
+              style={{ background: "#E8F5ED", color: "#0F4C3A", border: "1px solid #C6E8D4" }}>
               {bien.reference}
             </span>
+          )}
+          {lienAnnonce && (
+            <Link
+              href={lienAnnonce}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl hover:opacity-90 transition-opacity"
+              style={{ background: "#D4AF37", color: "#0F4C3A", textDecoration: "none" }}
+            >
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+              Voir l&apos;annonce
+            </Link>
           )}
           <Link
             href={`/admin/biens/${id}?modifier=1`}
             className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
-            style={{ background: "#111", color: "#fff", textDecoration: "none" }}
+            style={{ background: "#0F4C3A", color: "#fff", textDecoration: "none" }}
           >
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -153,21 +233,10 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
       </div>
 
       {/* Badges */}
-      <div className="flex flex-wrap gap-2 mb-5">
+      <div className="flex flex-wrap gap-2 mb-4">
         <span className="text-xs font-semibold px-3 py-1 rounded-full"
           style={{ background: statutInfo.bg, color: statutInfo.color }}>
           {statutInfo.label}
-        </span>
-        <span className="text-xs font-medium px-2.5 py-1 rounded-full"
-          style={{ background: "#F5F5F5", color: "#666" }}>
-          {bien.type}
-        </span>
-        <span className="text-xs font-medium px-2.5 py-1 rounded-full"
-          style={bien.transaction === "location"
-            ? { background: "#FEF3C7", color: "#92400E" }
-            : { background: "#DBEAFE", color: "#1E40AF" }
-          }>
-          {bien.transaction === "location" ? "À louer" : "À vendre"}
         </span>
         {bien.verifie && (
           <span className="text-xs font-medium px-2.5 py-1 rounded-full"
@@ -177,107 +246,122 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
         )}
       </div>
 
-      {/* Disposition 2 colonnes : détails + affectation */}
-      <div className="grid lg:grid-cols-3 gap-5">
+      {/* Prix */}
+      <p className="mb-5 leading-none"
+        style={{
+          fontFamily: "var(--font-marcellus), serif",
+          color: "#D4AF37",
+          fontSize: "clamp(1.5rem, 3vw, 2.2rem)",
+        }}>
+        {formaterPrix(bien.prix, bien.transaction)}
+      </p>
 
-        {/* Colonne principale */}
-        <div className="lg:col-span-2 flex flex-col gap-5">
+      {/* Onglets */}
+      <OngletsFiche onglets={onglets} actif={ongletActif} hrefBase={`/admin/biens/${id}`} />
 
-          {/* Photos */}
-          {photos.length > 0 && (
-            <PhotoGalerie photos={photos} hauteur={160} largeurMax={260} classeImage="rounded-xl" />
+      {/* Contenu : onglet actif + colonne latérale */}
+      <div className="grid lg:grid-cols-3 gap-6 items-start">
+
+        {/* ── Colonne principale ─────────────────────────────────────────── */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+
+          {ongletActif === "fiche" && (
+            <>
+              <FicheInfosBien bien={bien} />
+              <section>
+                <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>
+                  Localisation
+                </h2>
+                <CarteLocalisationBO
+                  latitude={bien.latitude}
+                  longitude={bien.longitude}
+                  titre={bien.titre}
+                  bienId={bien.id}
+                />
+                <p className="text-sm mt-2" style={{ color: "#6B7A71" }}>
+                  {bien.quartier ? `${bien.quartier}, ` : ""}{bien.ville}
+                </p>
+              </section>
+            </>
           )}
 
-          {/* Prix */}
-          <p style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)", color: "#D4AF37", fontFamily: "var(--font-marcellus),serif", lineHeight: 1 }}>
-            {formaterPrix(bien.prix, bien.transaction)}
-          </p>
-
-          {/* Caractéristiques */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {bien.surface > 0 && (
-              <Carac label="Surface" valeur={`${bien.surface} m²`} />
-            )}
-            {bien.chambres > 0 && (
-              <Carac label={bien.chambres > 1 ? "Chambres" : "Chambre"} valeur={`${bien.chambres}`} />
-            )}
-            {bien.salles_bain > 0 && (
-              <Carac label="Salles de bain" valeur={`${bien.salles_bain}`} />
-            )}
-          </div>
-
-          {/* Description */}
-          {bien.description && (
-            <div>
-              <p className="text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: "#999" }}>Description</p>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "#333" }}>
-                {bien.description}
-              </p>
-            </div>
-          )}
-
-          {/* Équipements */}
-          {equipements.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: "#999" }}>Équipements</p>
-              <div className="flex flex-wrap gap-1.5">
-                {equipements.map((e) => (
-                  <span key={e} className="text-xs font-medium px-2.5 py-1 rounded-full"
-                    style={{ background: "#F5F5F5", border: "1px solid #E8E8E8", color: "#444" }}>
-                    {e}
-                  </span>
-                ))}
+          {ongletActif === "photos" && (
+            photos.length > 0 ? (
+              <PhotoGalerie photos={photos} hauteur={220} largeurMax={320} classeImage="rounded-2xl" />
+            ) : (
+              <div className="rounded-2xl py-10 text-center text-sm"
+                style={{ background: "#FAFAF8", border: "1px dashed #E8E2D2", color: "#9DB8AD" }}>
+                Aucune photo pour ce bien
               </div>
-            </div>
+            )
           )}
 
-          {/* Métadonnées */}
-          <div className="pt-4 flex flex-wrap gap-4 text-xs" style={{ borderTop: "1px solid #F0F0F0", color: "#BBB" }}>
-            <span>ID : <span className="font-mono">{bien.id}</span></span>
-            {bien.cree_le && (
-              <span>Créé le {new Date(bien.cree_le).toLocaleDateString("fr-MA", { day: "2-digit", month: "long", year: "numeric" })}</span>
-            )}
-            {bien.date_affectation && (
-              <span>Affecté le {new Date(bien.date_affectation).toLocaleDateString("fr-MA", { day: "2-digit", month: "long", year: "numeric" })}</span>
-            )}
-          </div>
+          {ongletActif === "documents" && (
+            <section className="flex flex-col gap-3">
+              {TYPES_DOCUMENTS_FICHE.map((type) => {
+                const doc = documents.find((d) => d.type_document === type);
+                const badge = doc
+                  ? (BADGES_DOC[doc.statut] ?? { label: doc.statut, bg: "#F4F6F5", color: "#6B7A71" })
+                  : { label: "Manquant", bg: "#FEE2E2", color: "#991B1B" };
+                return (
+                  <div
+                    key={type}
+                    className="rounded-2xl p-4 flex items-center justify-between gap-3 flex-wrap"
+                    style={{ background: "#fff", border: "1px solid #F0EDE5" }}
+                  >
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#1f2a24" }}>
+                        {LIBELLES_DOCUMENTS[type] ?? type}
+                      </p>
+                      {doc && (
+                        <p className="text-xs mt-0.5" style={{ color: "#9DB8AD" }}>
+                          Déposé le {formaterDate(doc.cree_le)}
+                          {doc.signe_le ? ` · Signé le ${formaterDate(doc.signe_le)}` : ""}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      style={{ background: badge.bg, color: badge.color }}
+                    >
+                      {badge.label}
+                    </span>
+                  </div>
+                );
+              })}
+              <p className="text-xs" style={{ color: "#9DB8AD" }}>
+                La consultation et la validation des documents se font dans{" "}
+                <Link href="/admin/verifications" className="underline" style={{ color: "#0F4C3A" }}>
+                  Vérifications
+                </Link>.
+              </p>
+            </section>
+          )}
+
+          {ongletActif === "demandes" && <ListeDemandesVisite demandes={demandes} />}
         </div>
 
-        {/* Colonne latérale : Affectation */}
+        {/* ── Colonne latérale : contacts + affectation ──────────────────── */}
         <div className="flex flex-col gap-4">
+          <CarteContactProfil
+            titre="Propriétaire"
+            profil={proprietaire}
+            vide="Aucun propriétaire rattaché à ce bien."
+          />
 
-          {/* Carte affectation */}
-          <div className="rounded-2xl p-5" style={{ background: "#fff", border: "1px solid #EBEBEB" }}>
-            <p className="text-xs font-semibold mb-4 uppercase tracking-wider" style={{ color: "#999" }}>
-              Affectation agent
-            </p>
-
-            {/* Agent actuel */}
-            {agentActuel ? (
-              <div className="flex items-center gap-3 mb-4 p-3 rounded-xl" style={{ background: "#F9F9F9" }}>
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold"
-                  style={{ background: "#D4AF37", color: "#111" }}
-                >
-                  {agentActuel.nom_complet.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: "#111" }}>{agentActuel.nom_complet}</p>
-                  <p className="text-xs capitalize" style={{ color: "#999" }}>{agentActuel.role}</p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm mb-4" style={{ color: "#BBB" }}>Aucun agent affecté</p>
-            )}
-
-            {/* Formulaire d'affectation */}
-            <form action={affecterBienAgent.bind(null, bien.id)}>
+          <CarteContactProfil
+            titre="Conseiller HOOMY"
+            profil={conseiller}
+            vide="Aucun agent affecté pour le moment."
+          >
+            {/* Affectation / réaffectation — action existante inchangée */}
+            <form action={affecterBienAgent.bind(null, bien.id)} className="mt-4">
               <div className="flex flex-col gap-2.5">
                 <select
                   name="agent_id"
-                  defaultValue={(bien.agent_id as string | null) ?? ""}
+                  defaultValue={bien.agent_id ?? ""}
                   className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                  style={{ borderColor: "#E8E8E8", color: "#333", background: "#fff" }}
+                  style={{ borderColor: "#E0DAC8", color: "#0F4C3A", background: "#fff" }}
                 >
                   <option value="">— Aucun agent —</option>
                   {agents.map((a) => (
@@ -289,37 +373,24 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
                 <button
                   type="submit"
                   className="w-full py-2.5 rounded-xl text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity"
-                  style={{ background: "#111", color: "#fff" }}
+                  style={{ background: "#0F4C3A", color: "#fff" }}
                 >
-                  {agentActuel ? "Réaffecter" : "Affecter"}
+                  {conseiller ? "Réaffecter" : "Affecter"}
                 </button>
               </div>
             </form>
-          </div>
-
-          {/* Lien vers le profil agent si affecté */}
-          {agentActuel && (
-            <Link
-              href={`/admin/agents/${agentActuel.id}`}
-              className="text-xs text-center hover:underline"
-              style={{ color: "#999", textDecoration: "none" }}
-            >
-              Voir le profil de l&apos;agent →
-            </Link>
-          )}
+            {conseiller && (
+              <Link
+                href={`/admin/agents/${conseiller.id}`}
+                className="block text-xs text-center mt-3 hover:underline"
+                style={{ color: "#9DB8AD", textDecoration: "none" }}
+              >
+                Voir le profil de l&apos;agent →
+              </Link>
+            )}
+          </CarteContactProfil>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ── Composant interne : carte caractéristique ─────────────────────────────────
-
-function Carac({ label, valeur }: { label: string; valeur: string }) {
-  return (
-    <div className="rounded-xl px-4 py-3" style={{ background: "#F9F9F9", border: "1px solid #F0F0F0" }}>
-      <p className="text-sm font-semibold" style={{ color: "#111" }}>{valeur}</p>
-      <p className="text-xs mt-0.5" style={{ color: "#999" }}>{label}</p>
     </div>
   );
 }

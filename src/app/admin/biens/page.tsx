@@ -7,7 +7,7 @@ import BoutonSupprimer from "@/components/admin/BoutonSupprimer";
 import { verifierBien, deverifierBien } from "@/app/admin/actions";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
 import { nbDocsParFiche } from "@/lib/documents/fiche";
-import { infoStatut, ORDRE_STATUTS_BIEN } from "@/lib/biens/statuts";
+import { infoStatut, ORDRE_STATUTS_BIEN, STATUT_NOUVEAU } from "@/lib/biens/statuts";
 
 const PAR_PAGE = 10;
 
@@ -54,7 +54,9 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
 
   if (ville) query = query.eq("ville", ville);
   if (type) query = query.eq("type", type);
-  if (statut) query = query.eq("statut", statut);
+  // « nouveau » = biens fraîchement soumis via /publier, statut encore null
+  if (statut === "nouveau") query = query.is("statut", null);
+  else if (statut) query = query.eq("statut", statut);
   if (qFiltre) query = query.or(`titre.ilike.%${qFiltre}%,reference.ilike.%${qFiltre}%`);
 
   if (tri === "prix_asc") query = query.order("prix", { ascending: true });
@@ -82,8 +84,10 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
     comptages.set(s, (comptages.get(s) ?? 0) + 1);
   }
   const totalChips = statutsRaw?.length ?? 0;
-  // Chips construits à partir des statuts réellement présents, dans l'ordre du cycle de vie
+  // Chips construits à partir des statuts réellement présents, dans l'ordre du
+  // cycle de vie. Clé "" = statut null → chip « Nouveau » (soumissions /publier).
   const statutsPresents = [
+    ...(comptages.has("") ? ["nouveau"] : []),
     ...ORDRE_STATUTS_BIEN.filter((s) => comptages.has(s)),
     ...[...comptages.keys()].filter((s) => s && !ORDRE_STATUTS_BIEN.includes(s)),
   ];
@@ -206,7 +210,9 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
           Tous ({totalChips})
         </Link>
         {statutsPresents.map((s) => {
-          const info = infoStatut(s);
+          const estNouveau = s === "nouveau";
+          const info = estNouveau ? STATUT_NOUVEAU : infoStatut(s);
+          const nb = comptages.get(estNouveau ? "" : s) ?? 0;
           const actif = statut === s;
           return (
             <Link
@@ -219,7 +225,7 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
                   : { background: info.bg, color: info.color, textDecoration: "none" }
               }
             >
-              {info.label} ({comptages.get(s) ?? 0})
+              {info.label} ({nb})
             </Link>
           );
         })}

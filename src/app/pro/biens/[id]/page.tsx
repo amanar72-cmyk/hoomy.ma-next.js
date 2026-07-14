@@ -1,13 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import FormulaireEditionBienAgent, { type BienEditable } from "@/components/pro/FormulaireEditionBienAgent";
 import PhotoGalerie from "@/components/ui/PhotoGalerie";
 import DocumentsFiche from "@/components/pro/DocumentsFiche";
+import OngletsFiche from "@/components/partage/OngletsFiche";
+import FicheInfosBien, { type BienFiche } from "@/components/partage/FicheInfosBien";
+import CarteContactProfil, { type ProfilContact } from "@/components/partage/CarteContactProfil";
+import CarteLocalisationBO from "@/components/partage/CarteLocalisationBO";
+import ListeDemandesVisite, { type DemandeVisiteFiche } from "@/components/partage/ListeDemandesVisite";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
 import { formaterPrix } from "@/lib/format";
 import { documentsParType, TYPES_DOCUMENTS_FICHE, MESSAGE_DOCUMENTS_MANQUANTS } from "@/lib/documents/fiche";
+import { infoStatut } from "@/lib/biens/statuts";
 
 export const metadata: Metadata = {
   title: "Fiche bien — Espace Pro HOOMY.MA",
@@ -15,43 +22,42 @@ export const metadata: Metadata = {
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ modifier?: string }>;
+  searchParams: Promise<{ modifier?: string; onglet?: string }>;
 };
 
 const STATUTS_MODIFIABLES = ["brouillon", "affecte"];
 
-
-function formaterDate(d: string) {
-  return new Date(d).toLocaleDateString("fr-MA", { day: "2-digit", month: "short", year: "numeric" });
-}
-
 export default async function PageFicheBienAgent({ params, searchParams }: Props) {
   const { id } = await params;
-  const { modifier } = await searchParams;
+  const { modifier, onglet } = await searchParams;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/connexion");
 
+  // select("*") : récupère aussi proprietaire_id, dates du cycle de vie,
+  // charges, nombre_vues et date_publication (colonne récente).
   const { data: bienRaw, error } = await supabase
     .from("biens")
-    .select(
-      "id, reference, slug, titre, description, type, transaction, prix, ville, quartier, " +
-      "chambres, salles_bain, surface, equipements, composition, photos, photos_originales, statut, agent_id, latitude, longitude, cree_le, verifie"
-    )
+    .select("*")
     .eq("id", id)
     .single();
 
   if (error || !bienRaw) notFound();
 
-  const bien = bienRaw as unknown as BienEditable & {
+  const bien = bienRaw as unknown as BienEditable & BienFiche & {
+    id: string;
     agent_id: string | null;
+    proprietaire_id: string | null;
     slug: string | null;
-    cree_le: string;
     verifie: boolean;
+    latitude: number | null;
+    longitude: number | null;
+    photos: unknown;
+    photos_originales: unknown;
   };
 
-  // Vérification propriété — seul l'agent propriétaire peut voir la fiche
+  // Vérification propriété — seul l'agent affecté peut voir la fiche
   if (bien.agent_id !== user.id) {
     redirect("/pro/biens");
   }
@@ -60,12 +66,12 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
   const modeEdition = modifier === "1" && estModifiable;
 
   // ── Documents du dossier (mandat, CIN, certificat) ─────────────────────────
-  // Le plus récent par type ; conditionne l'envoi au back-office.
   const documents = await documentsParType(supabase, bien.id);
   const typesPresents = new Set(documents.map((d) => d.type_document));
   const dossierEstComplet = TYPES_DOCUMENTS_FICHE.every((t) => typesPresents.has(t));
+  const nbDocs = TYPES_DOCUMENTS_FICHE.filter((t) => typesPresents.has(t)).length;
 
-  // ── Mode édition ───────────────────────────────────────────────────────────
+  // ── Mode édition — logique existante inchangée ──────────────────────────────
   if (modeEdition) {
     return (
       <div className="p-6 lg:p-10 max-w-5xl mx-auto">
@@ -114,30 +120,68 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
   }
 
   // ── Mode lecture ───────────────────────────────────────────────────────────
-  // L'agent assigné voit toujours les photos nettes, même avant validation
-  // (URL signée à courte durée tant que le bien n'est pas encore validé).
+
+  // Propriétaire : la RLS de profils ne permet à l'agent de lire que son propre
+  // profil — lecture via le client admin APRÈS la vérification de propriété
+  // ci-dessus (même pattern que modifierBienAgent dans ./actions.ts).
+  let proprietaire: ProfilContact | null = null;
+  if (bien.proprietaire_id) {
+    const adminClient = createAdminClient();
+    const { data } = await adminClient
+      .from("profils")
+      .select("nom_complet, email, telephone, role")
+      .eq("id", bien.proprietaire_id)
+      .single();
+    proprietaire = (data as ProfilContact | null) ?? null;
+  }
+
+  // Conseiller = l'agent connecté (son propre profil, lisible via RLS)
+  const { data: conseillerRaw } = await supabase
+    .from("profils")
+    .select("nom_complet, email, telephone, role")
+    .eq("id", user.id)
+    .single();
+  const conseiller = (conseillerRaw as ProfilContact | null) ?? null;
+
+  // Demandes de visite du bien (RLS : l'agent voit celles de ses biens)
+  const { data: demandesRaw } = await supabase
+    .from("demandes_visite")
+    .select("id, nom_client, email_client, telephone_client, date_souhaitee, date_confirmee, message, statut, cree_le")
+    .eq("bien_id", bien.id)
+    .order("cree_le", { ascending: false });
+  const demandes = (demandesRaw ?? []) as DemandeVisiteFiche[];
+
+  // Photos nettes (URL signées tant que le bien n'est pas validé)
+  const photosBrutes = Array.isArray(bien.photos) ? (bien.photos as string[]) : [];
   const photos = await urlsPhotosNettes(
-    Array.isArray(bien.photos) ? bien.photos : [],
-    Array.isArray(bien.photos_originales) ? bien.photos_originales : [],
+    photosBrutes,
+    Array.isArray(bien.photos_originales) ? (bien.photos_originales as string[]) : [],
     bien.verifie
   );
-  const equipements = (Array.isArray(bien.equipements) ? bien.equipements : []) as string[];
+
   const estPublie = bien.statut === "finalise" || bien.statut === "transacte";
   const lienAnnonce = estPublie && bien.slug
     ? `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug}`
     : null;
+  const statutInfo = infoStatut(bien.statut);
 
-  const LABEL_STATUT: Record<string, { label: string; bg: string; color: string }> = {
-    brouillon: { label: "Brouillon", bg: "#FEF3C7", color: "#92400E" },
-    affecte: { label: "Affecté", bg: "#FEF3C7", color: "#92400E" },
-    en_validation: { label: "En validation BO", bg: "#DBEAFE", color: "#1E40AF" },
-    finalise: { label: "Publié", bg: "#D1FAE5", color: "#065F46" },
-    transacte: { label: "Transacté", bg: "#F3E8FF", color: "#6B21A8" },
-  };
-  const statutInfo = LABEL_STATUT[bien.statut ?? ""] ?? { label: bien.statut ?? "—", bg: "#F4F6F5", color: "#6B7A71" };
+  const ongletActif = ["fiche", "photos", "documents", "demandes"].includes(onglet ?? "")
+    ? (onglet as string)
+    : "fiche";
+  const onglets = [
+    { id: "fiche", label: "Fiche du bien" },
+    { id: "photos", label: "Photos", badge: photos.length },
+    { id: "documents", label: "Documents", badge: `${nbDocs}/${TYPES_DOCUMENTS_FICHE.length}` },
+    { id: "demandes", label: "Demandes de visite", badge: demandes.length },
+  ];
+
+  function formaterDate(d: string | null | undefined) {
+    if (!d) return null;
+    return new Date(d).toLocaleDateString("fr-MA", { day: "2-digit", month: "short", year: "numeric" });
+  }
 
   return (
-    <div className="p-6 lg:p-10 max-w-5xl mx-auto">
+    <div className="p-6 lg:p-10 max-w-6xl mx-auto">
 
       {/* Fil d'Ariane */}
       <div className="flex items-center gap-3 mb-2">
@@ -158,14 +202,16 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
       </div>
 
       {/* En-tête */}
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+      <div className="mb-4 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl mb-1"
             style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}>
-            {bien.titre}
+            {bien.type} {bien.transaction === "location" ? "à louer" : "à vendre"} — {bien.titre}
           </h1>
           <p className="text-sm" style={{ color: "#9DB8AD" }}>
             {bien.ville}{bien.quartier ? ` · ${bien.quartier}` : ""}
+            {" · "}Créé le {formaterDate(bien.cree_le)}
+            {bien.date_publication ? ` · Publié le ${formaterDate(bien.date_publication)}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
@@ -205,22 +251,11 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
         </div>
       </div>
 
-      {/* Statut */}
-      <div className="flex flex-wrap gap-2 mb-5">
+      {/* Badges */}
+      <div className="flex flex-wrap gap-2 mb-4">
         <span className="text-xs font-semibold px-3 py-1 rounded-full"
           style={{ background: statutInfo.bg, color: statutInfo.color }}>
           {statutInfo.label}
-        </span>
-        <span className="text-xs font-medium px-2.5 py-1 rounded-full"
-          style={{ background: "#F0EDE5", color: "#6B7A71" }}>
-          {bien.type}
-        </span>
-        <span className="text-xs font-medium px-2.5 py-1 rounded-full"
-          style={bien.transaction === "location"
-            ? { background: "#FEF3C7", color: "#92400E" }
-            : { background: "#DBEAFE", color: "#1E40AF" }
-          }>
-          {bien.transaction === "location" ? "À louer" : "À vendre"}
         </span>
         {bien.verifie && (
           <span className="text-xs font-medium px-2.5 py-1 rounded-full"
@@ -232,20 +267,13 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
 
       {/* Notice si statut non modifiable */}
       {!estModifiable && (
-        <div className="mb-5 rounded-xl px-4 py-3 flex items-start gap-2 text-sm"
+        <div className="mb-4 rounded-xl px-4 py-3 flex items-start gap-2 text-sm"
           style={{ background: "#F0FAF4", border: "1px solid #C6E8D4", color: "#0F4C3A" }}>
           <span className="flex-shrink-0 mt-0.5">ℹ️</span>
           <span>
             Ce bien ne peut plus être modifié directement — il est <strong>{statutInfo.label.toLowerCase()}</strong>.
             Contactez le back-office si une correction est nécessaire.
           </span>
-        </div>
-      )}
-
-      {/* Photos */}
-      {photos.length > 0 && (
-        <div className="mb-6">
-          <PhotoGalerie photos={photos} hauteur={180} largeurMax={280} classeImage="rounded-2xl" />
         </div>
       )}
 
@@ -259,89 +287,76 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
         {formaterPrix(bien.prix, bien.transaction)}
       </p>
 
-      {/* Caractéristiques */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        {bien.surface > 0 && (
-          <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-            style={{ background: "#F8F5EE", border: "1px solid #EDE7D7" }}>
-            <span className="text-xl">📐</span>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: "#0F4C3A" }}>{bien.surface} m²</p>
-              <p className="text-xs" style={{ color: "#9DB8AD" }}>Surface</p>
-            </div>
-          </div>
-        )}
-        {bien.chambres > 0 && (
-          <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-            style={{ background: "#F8F5EE", border: "1px solid #EDE7D7" }}>
-            <span className="text-xl">🛏️</span>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: "#0F4C3A" }}>{bien.chambres}</p>
-              <p className="text-xs" style={{ color: "#9DB8AD" }}>
-                {bien.chambres > 1 ? "Chambres" : "Chambre"}
-              </p>
-            </div>
-          </div>
-        )}
-        {bien.salles_bain > 0 && (
-          <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-            style={{ background: "#F8F5EE", border: "1px solid #EDE7D7" }}>
-            <span className="text-xl">🚿</span>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: "#0F4C3A" }}>{bien.salles_bain}</p>
-              <p className="text-xs" style={{ color: "#9DB8AD" }}>
-                {bien.salles_bain > 1 ? "Salles de bain" : "Salle de bain"}
-              </p>
-            </div>
-          </div>
-        )}
+      {/* Onglets */}
+      <OngletsFiche onglets={onglets} actif={ongletActif} hrefBase={`/pro/biens/${id}`} />
+
+      {/* Contenu : onglet actif + colonne latérale */}
+      <div className="grid lg:grid-cols-3 gap-6 items-start">
+
+        {/* ── Colonne principale ─────────────────────────────────────────── */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+
+          {ongletActif === "fiche" && (
+            <>
+              <FicheInfosBien bien={bien} />
+              <section>
+                <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>
+                  Localisation
+                </h2>
+                <CarteLocalisationBO
+                  latitude={bien.latitude}
+                  longitude={bien.longitude}
+                  titre={bien.titre}
+                  bienId={bien.id}
+                />
+                <p className="text-sm mt-2" style={{ color: "#6B7A71" }}>
+                  {bien.quartier ? `${bien.quartier}, ` : ""}{bien.ville}
+                </p>
+              </section>
+            </>
+          )}
+
+          {ongletActif === "photos" && (
+            photos.length > 0 ? (
+              <PhotoGalerie photos={photos} hauteur={220} largeurMax={320} classeImage="rounded-2xl" />
+            ) : (
+              <div className="rounded-2xl py-10 text-center text-sm"
+                style={{ background: "#FAFAF8", border: "1px dashed #E8E2D2", color: "#9DB8AD" }}>
+                Aucune photo pour ce bien
+              </div>
+            )
+          )}
+
+          {ongletActif === "documents" && (
+            <section>
+              {!dossierEstComplet && estModifiable && (
+                <div className="mb-3 rounded-xl px-4 py-3 flex items-start gap-2 text-sm"
+                  style={{ background: "#FEF9EC", border: "1px solid #F3E0A8", color: "#92400E" }}>
+                  <span className="flex-shrink-0 mt-0.5">📁</span>
+                  <span>{MESSAGE_DOCUMENTS_MANQUANTS}</span>
+                </div>
+              )}
+              <DocumentsFiche bienId={bien.id} documents={documents} />
+            </section>
+          )}
+
+          {ongletActif === "demandes" && <ListeDemandesVisite demandes={demandes} />}
+        </div>
+
+        {/* ── Colonne latérale : contacts ────────────────────────────────── */}
+        <div className="flex flex-col gap-4">
+          <CarteContactProfil
+            titre="Propriétaire"
+            profil={proprietaire}
+            vide="Aucun propriétaire rattaché à ce bien."
+          />
+          <CarteContactProfil
+            titre="Conseiller HOOMY"
+            profil={conseiller}
+            vide="Profil conseiller introuvable."
+          />
+        </div>
       </div>
-
-      {/* ── Documents du dossier (mandat, CIN, certificat) ────────────────── */}
-      <section className="mb-6">
-        <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>
-          Documents du dossier
-        </h2>
-        {!dossierEstComplet && estModifiable && (
-          <div className="mb-3 rounded-xl px-4 py-3 flex items-start gap-2 text-sm"
-            style={{ background: "#FEF9EC", border: "1px solid #F3E0A8", color: "#92400E" }}>
-            <span className="flex-shrink-0 mt-0.5">📁</span>
-            <span>{MESSAGE_DOCUMENTS_MANQUANTS}</span>
-          </div>
-        )}
-        <DocumentsFiche bienId={bien.id} documents={documents} />
-      </section>
-
-      {/* Description */}
-      {bien.description && (
-        <section className="mb-6">
-          <h2 className="text-base font-semibold mb-2" style={{ color: "#0F4C3A" }}>Description</h2>
-          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "#3D4A42" }}>
-            {bien.description}
-          </p>
-        </section>
-      )}
-
-      {/* Équipements */}
-      {equipements.length > 0 && (
-        <section className="mb-6">
-          <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>Équipements</h2>
-          <div className="flex flex-wrap gap-2">
-            {equipements.map((e) => (
-              <span key={e} className="text-xs font-medium px-3 py-1.5 rounded-full"
-                style={{ background: "#fff", border: "1px solid #E0DAC8", color: "#3D4A42" }}>
-                {e}
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Métadonnées */}
-      <div className="mt-6 pt-4 flex flex-wrap gap-4 text-xs" style={{ borderTop: "1px solid #F0EDE5", color: "#9DB8AD" }}>
-        <span>Ajouté le {formaterDate(bien.cree_le)}</span>
-      </div>
-
     </div>
   );
 }

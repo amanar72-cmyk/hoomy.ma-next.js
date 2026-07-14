@@ -18,7 +18,12 @@ export const STATUTS_BIEN: Record<string, { label: string; bg: string; color: st
 /** Ordre d'affichage des chips de filtre (suit le cycle de vie). */
 export const ORDRE_STATUTS_BIEN = Object.keys(STATUTS_BIEN);
 
+/** Statut null = bien fraîchement soumis par un propriétaire (/publier),
+ *  pas encore pris en charge par le back-office. */
+export const STATUT_NOUVEAU = { label: "Nouveau", bg: "#DBEAFE", color: "#1E40AF" };
+
 /** Libellé + couleurs d'un statut, avec repli pour un statut inconnu. */
 export function infoStatut(statut: string | null | undefined) {
-  return STATUTS_BIEN[statut ?? ""] ?? { label: statut ?? "—", bg: "#F4F6F5", color: "#6B7A71" };
+  if (!statut) return STATUT_NOUVEAU;
+  return STATUTS_BIEN[statut] ?? { label: statut, bg: "#F4F6F5", color: "#6B7A71" };
 }
