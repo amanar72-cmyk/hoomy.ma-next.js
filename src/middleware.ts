@@ -123,6 +123,16 @@ export async function middleware(request: NextRequest) {
   );
   if (estCheminPublic) return supabaseResponse;
 
+  // B1bis. Routes API → pass-through (JAMAIS redirigées vers une page).
+  // Chaque route API porte SA PROPRE garde (ex. /api/agent/simulateur vérifie
+  // le rôle admin et renvoie 401/403 en JSON). Sans ce pass-through, la
+  // branche B4 redirigeait un fetch JSON vers la page /admin (HTML) et le
+  // simulateur affichait « Impossible de joindre le serveur ». Même
+  // comportement que le domaine principal, où les API passent déjà.
+  if (pathname.startsWith('/api/')) {
+    return supabaseResponse;
+  }
+
   // B2. Non connecté → page de connexion du sous-domaine
   if (!user) {
     const url = request.nextUrl.clone();

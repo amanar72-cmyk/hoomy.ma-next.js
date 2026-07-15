@@ -73,14 +73,31 @@ export default function SimulateurAgent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: contenu }),
       });
-      const donnees = await rep.json();
-      if (!rep.ok) {
-        setErreur(donnees.erreur ?? `Erreur ${rep.status}`);
+
+      // Diagnostic précis : on lit le texte brut, puis on tente le JSON.
+      // Une redirection middleware ou une page HTML n'est ainsi plus masquée
+      // par un message générique.
+      const texte = await rep.text();
+      let donnees: Record<string, unknown> | null = null;
+      try {
+        donnees = JSON.parse(texte) as Record<string, unknown>;
+      } catch {
+        donnees = null;
+      }
+
+      if (!rep.ok || !donnees) {
+        const extrait = texte.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 140);
+        const redirection = rep.redirected ? ` — redirigée vers ${rep.url}` : "";
+        setErreur(
+          (donnees?.erreur as string | undefined) ??
+            `Réponse inattendue du serveur (HTTP ${rep.status}${redirection}) : ${extrait || "réponse vide"}`
+        );
         return;
       }
-      setResultat(donnees as Resultat);
+
+      setResultat(donnees as unknown as Resultat);
     } catch {
-      setErreur("Impossible de joindre le serveur — réessayez.");
+      setErreur("Impossible de joindre le serveur (erreur réseau) — réessayez.");
     } finally {
       setChargement(false);
     }
