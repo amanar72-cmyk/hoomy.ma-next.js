@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase/client";
+import { validerMotDePasse, LONGUEUR_MIN } from "@/lib/securite/motDePasse";
+import CriteresMotDePasse from "@/components/auth/CriteresMotDePasse";
 
 type Indicateur = { code: string; pays: string; drapeau: string };
 
@@ -58,7 +60,8 @@ export default function FormulaireInscription() {
     if (!nomComplet.trim()) { setErreur("Le nom complet est requis."); return; }
     if (!email.includes("@")) { setErreur("Adresse email invalide."); return; }
     if (!numero.trim()) { setErreur("Le numéro de téléphone est requis."); return; }
-    if (motDePasse.length < 6) { setErreur("Mot de passe trop court (min. 6 caractères)."); return; }
+    const faiblesse = validerMotDePasse(motDePasse);
+    if (faiblesse) { setErreur(faiblesse); return; }
     if (motDePasse !== confirmation) { setErreur("Les mots de passe ne correspondent pas."); return; }
 
     setErreur(null);
@@ -308,11 +311,12 @@ export default function FormulaireInscription() {
             <div>
               <label className="block text-xs mb-1.5 font-medium" style={{ color: "#555" }}>
                 Mot de passe{" "}
-                <span style={{ color: "#B4AD97", fontWeight: 400 }}>(min. 6 caractères)</span>
+                <span style={{ color: "#B4AD97", fontWeight: 400 }}>(min. {LONGUEUR_MIN} caractères)</span>
               </label>
               <input type="password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)}
                 autoComplete="new-password" placeholder="••••••••"
                 className="w-full border rounded-xl px-4 py-3 text-sm" style={inp} />
+              <CriteresMotDePasse motDePasse={motDePasse} />
             </div>
 
             {/* Confirmation */}

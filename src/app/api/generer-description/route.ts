@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { verifierRateLimit } from "@/lib/securite/rateLimiter";
 
 // ─── Prompt système ────────────────────────────────────────────────────────────
 
@@ -37,7 +39,32 @@ function extraireJSON(texte: string): string {
 
 // ─── Route POST ───────────────────────────────────────────────────────────────
 
-export async function POST(req: Request) {
+// Rédaction d'annonce : fonctionnalité exclusivement back-office (le bouton
+// n'existe que dans les formulaires pro et admin). La route consomme la clé
+// Gemini côté serveur — sans garde, elle servait de proxy IA gratuit à
+// n'importe qui, facturé à HOOMY.
+const ROLES_AUTORISES = ["agent", "agence", "admin"];
+
+export async function POST(req: NextRequest) {
+  // 1. Réservé aux comptes back-office
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ erreur: "Non authentifié." }, { status: 401 });
+
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (!profil || !ROLES_AUTORISES.includes(profil.role)) {
+    return NextResponse.json({ erreur: "Réservé aux comptes professionnels." }, { status: 403 });
+  }
+
+  // 2. Rate limit par utilisateur : garde-fou sur le coût même si un compte pro
+  //    est compromis. 20 générations / 10 min suffisent à un usage réel.
+  if (!verifierRateLimit(`generer-description:${user.id}`, 20, 10 * 60 * 1000)) {
+    return NextResponse.json(
+      { erreur: "Trop de générations. Veuillez patienter quelques minutes." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await req.json() as Payload;
     const { type, transaction, ville, quartier, prix, surface, chambres, salles_bain, equipements } = body;

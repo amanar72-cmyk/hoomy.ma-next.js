@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase/client";
+import { validerMotDePasse, LONGUEUR_MIN } from "@/lib/securite/motDePasse";
+import CriteresMotDePasse from "@/components/auth/CriteresMotDePasse";
 
 export default function FormulaireDefinirMotDePasse() {
   const router = useRouter();
@@ -19,8 +21,9 @@ export default function FormulaireDefinirMotDePasse() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (motDePasse.length < 8) {
-      setErreur("Le mot de passe doit contenir au moins 8 caractères.");
+    const faiblesse = validerMotDePasse(motDePasse);
+    if (faiblesse) {
+      setErreur(faiblesse);
       return;
     }
     if (motDePasse !== confirmation) {
@@ -116,7 +119,7 @@ export default function FormulaireDefinirMotDePasse() {
                   value={motDePasse}
                   onChange={(e) => setMotDePasse(e.target.value)}
                   autoComplete="new-password"
-                  placeholder="Minimum 8 caractères"
+                  placeholder={`Minimum ${LONGUEUR_MIN} caractères`}
                   className="w-full border rounded-xl px-4 py-3 text-sm pr-11 focus:outline-none"
                   style={inp}
                 />
@@ -134,11 +137,7 @@ export default function FormulaireDefinirMotDePasse() {
                   </svg>
                 </button>
               </div>
-              {motDePasse.length > 0 && motDePasse.length < 8 && (
-                <p className="text-xs mt-1" style={{ color: "var(--erreur)" }}>
-                  {8 - motDePasse.length} caractère{8 - motDePasse.length > 1 ? "s" : ""} manquant{8 - motDePasse.length > 1 ? "s" : ""}
-                </p>
-              )}
+              <CriteresMotDePasse motDePasse={motDePasse} />
             </div>
 
             <div>
@@ -166,7 +165,7 @@ export default function FormulaireDefinirMotDePasse() {
 
             <button
               type="submit"
-              disabled={chargement || motDePasse.length < 8 || motDePasse !== confirmation}
+              disabled={chargement || validerMotDePasse(motDePasse) !== null || motDePasse !== confirmation}
               className="w-full py-3 rounded-xl text-sm font-semibold hover:opacity-90 mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               style={{ background: "var(--primaire)", color: "var(--fond-secondaire)" }}
             >

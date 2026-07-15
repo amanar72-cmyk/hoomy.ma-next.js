@@ -24,12 +24,29 @@ function baseUrl(request: Request): string {
   return 'https://hoomy.ma';
 }
 
+/**
+ * `next` arrive de l'URL : sans contrôle, il devient une redirection ouverte.
+ * Comme la destination est construite par concaténation (`base + next`), les
+ * deux vecteurs qui sortent du domaine sont :
+ *   "@evil.com"  → https://hoomy.ma@evil.com   (le @ fait passer hoomy.ma pour
+ *                                               un identifiant → hôte evil.com)
+ *   ".evil.com"  → https://hoomy.ma.evil.com   (sous-domaine de l'attaquant)
+ * On n'accepte donc qu'un chemin interne : "/" suivi d'autre chose qu'un "/"
+ * ou un "\" (qui rouvriraient une URL protocol-relative).
+ */
+function cheminInterne(next: string | null): string {
+  const DEFAUT = '/mon-compte';
+  if (!next || !next.startsWith('/')) return DEFAUT;
+  if (next.startsWith('//') || next.startsWith('/\\')) return DEFAUT;
+  return next;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code       = searchParams.get('code');
   const token_hash = searchParams.get('token_hash');
   const type       = searchParams.get('type') as EmailOtpType | null;
-  const next       = searchParams.get('next') ?? '/mon-compte';
+  const next       = cheminInterne(searchParams.get('next'));
 
   const base     = baseUrl(request);
   const supabase = await createClient();

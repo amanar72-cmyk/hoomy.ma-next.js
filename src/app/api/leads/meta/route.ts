@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { upsertLeadEtContact } from "@/lib/leads/upsert";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
 
@@ -17,6 +18,20 @@ function champ(corps: Record<string, unknown>, ...cles: string[]): string | null
   return null;
 }
 
+/**
+ * Comparaison à temps constant : `a !== b` s'arrête au premier caractère
+ * différent, ce qui laisse fuiter le secret octet par octet via le temps de
+ * réponse. timingSafeEqual exige des Buffers de même longueur — on compare donc
+ * les longueurs d'abord (l'écart de longueur, lui, n'est pas un secret utile).
+ */
+function secretValide(fourni: string | null, attendu: string): boolean {
+  if (!fourni) return false;
+  const a = Buffer.from(fourni);
+  const b = Buffer.from(attendu);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
 export async function POST(req: NextRequest) {
   // 1. Secret partagé — refuse tout si non configuré ou différent
   const secret = process.env.META_LEADS_SECRET;
@@ -24,7 +39,7 @@ export async function POST(req: NextRequest) {
     console.error("[leads/meta] META_LEADS_SECRET non configurée — route désactivée.");
     return NextResponse.json({ erreur: "Route non configurée." }, { status: 503 });
   }
-  if (req.headers.get("x-hoomy-secret") !== secret) {
+  if (!secretValide(req.headers.get("x-hoomy-secret"), secret)) {
     return NextResponse.json({ erreur: "Non autorisé." }, { status: 401 });
   }
 

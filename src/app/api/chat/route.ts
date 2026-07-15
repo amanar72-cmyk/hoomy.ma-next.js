@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifierRateLimit } from "@/lib/securite/rateLimiter";
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 // Conçu pour résister aux tentatives de détournement (jailbreak / prompt injection).
@@ -186,6 +187,18 @@ async function appelGemini(
 
 export async function POST(req: Request) {
   try {
+    // Rate limit : 20 messages / 5 min / IP. Le chatbot est public par nature,
+    // donc pas d'auth — mais le coût par requête est déjà borné (600 car. par
+    // message, 8 000 d'historique, 400 tokens en sortie) : ne manquait qu'une
+    // limite sur le VOLUME, sans quoi un script boucle sur le budget Gemini.
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "inconnue";
+    if (!verifierRateLimit(`chat:${ip}`, 20, 5 * 60 * 1000)) {
+      return NextResponse.json(
+        { erreur: "Vous allez un peu vite. Réessayez dans quelques minutes." },
+        { status: 429 }
+      );
+    }
+
     // Vérification Content-Type
     const contentType = req.headers.get("content-type") ?? "";
     if (!contentType.includes("application/json")) {
