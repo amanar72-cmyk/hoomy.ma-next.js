@@ -3,7 +3,9 @@ import { Marcellus, Outfit } from "next/font/google";
 import { cookies } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
-import AnalytiqueGA from "@/components/AnalytiqueGA";
+import Analytique from "@/components/analytique/Analytique";
+import { COOKIE_CONSENTEMENT, estConsentementValide } from "@/lib/consentement";
+import { estSitePublic } from "@/lib/hote";
 import BulleChatConditionnelle from "@/components/chat/BulleChatConditionnelle";
 import { ComparateurProvider } from "@/lib/comparateur/ComparateurContext";
 import BarreComparateur from "@/components/comparateur/BarreComparateur";
@@ -54,6 +56,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const cookieStore = await cookies();
   const theme = cookieStore.get("hoomy_theme")?.value === "dark" ? "dark" : "light";
   const splashDeja = !!cookieStore.get("splash_vu")?.value;
+
+  // Mesure d'audience : uniquement sur le site public, uniquement après accord.
+  const consentementBrut = cookieStore.get(COOKIE_CONSENTEMENT)?.value;
+  const consentement = estConsentementValide(consentementBrut) ? consentementBrut : null;
+  const sitePublic = await estSitePublic();
 
   return (
     // suppressHydrationWarning : évite l'erreur React si le script inline
@@ -132,9 +139,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SplashScreen splashDeja={splashDeja} />
           {children}
           <BulleChatConditionnelle />
-          {process.env.NEXT_PUBLIC_GA_ID && (
-            <AnalytiqueGA gaId={process.env.NEXT_PUBLIC_GA_ID} />
-          )}
+          <Analytique
+            gaId={process.env.NEXT_PUBLIC_GA_ID}
+            metaPixelId={process.env.NEXT_PUBLIC_META_PIXEL_ID}
+            estSitePublic={sitePublic}
+            consentementInitial={consentement}
+          />
           <BarreComparateur />
           <Toaster />
         </ComparateurProvider>
