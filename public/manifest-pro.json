@@ -2,7 +2,7 @@
   "name": "HOOMY PRO",
   "short_name": "HOOMY PRO",
   "description": "Espace professionnel HOOMY — Gérez vos biens, clients et visites.",
-  "start_url": "/pro",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

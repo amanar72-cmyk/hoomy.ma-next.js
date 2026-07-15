@@ -14,7 +14,7 @@ type Props = {
 
 function hrefTableauDeBord(role: string | null): string {
   if (role === "admin") return "/admin";
-  if (role === "agent" || role === "agence") return "/pro";
+  if (role === "agent" || role === "agence") return "/pro/biens";
   return "/mon-compte";
 }
 

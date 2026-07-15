@@ -23,7 +23,7 @@ export default async function MonCompteLayout({ children }: { children: React.Re
 
   // Rediriger les admins et agents vers leur espace dédié
   if (role === "admin") redirect("/admin");
-  if (role === "agent" || role === "agence") redirect("/pro");
+  if (role === "agent" || role === "agence") redirect("/pro/biens");
 
   return (
     <div className="flex min-h-screen" style={{ background: "#F7F5F0" }}>

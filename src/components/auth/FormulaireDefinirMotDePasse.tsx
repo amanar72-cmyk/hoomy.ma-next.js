@@ -47,7 +47,7 @@ export default function FormulaireDefinirMotDePasse() {
 
       setSucces(true);
       // Courte pause pour afficher le message de succès avant la redirection
-      setTimeout(() => router.push("/pro"), 1500);
+      setTimeout(() => router.push("/pro/biens"), 1500);
     } catch {
       setErreur("Erreur inattendue — réessayez.");
       setChargement(false);

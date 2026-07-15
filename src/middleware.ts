@@ -167,7 +167,7 @@ export async function middleware(request: NextRequest) {
 
   if (ROLES_AGENT.includes(role)) {
     const dest = request.nextUrl.clone();
-    dest.pathname = '/pro';
+    dest.pathname = '/pro/biens'; // arrivée directe sur les biens de l'agent
     return NextResponse.redirect(dest);
   }
 

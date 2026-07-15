@@ -54,7 +54,9 @@ export default function FormulaireConnexionPro() {
         }
 
         journaliserConnexion({ email: email.trim().toLowerCase(), methode: "pro", resultat: "succes" });
-        const destination = role === "admin" ? "/admin" : "/pro";
+        // Agents : arrivée directe sur leurs biens (le tableau de bord reste
+        // accessible via la sidebar)
+        const destination = role === "admin" ? "/admin" : "/pro/biens";
         router.push(destination);
         router.refresh();
       }
