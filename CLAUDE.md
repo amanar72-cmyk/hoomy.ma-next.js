@@ -16,7 +16,7 @@ Il n'y a pas de tests automatisés dans ce projet.
 - **Frontend** : Next.js 16 (App Router), TypeScript, React 19
 - **Styling** : Tailwind CSS v4 (pas de shadcn/ui — les composants UI sont écrits manuellement)
 - **Backend** : Supabase (PostgreSQL + Storage + Auth)
-- **Hébergement** : Vercel
+- **Hébergement** : Hostinger (app Node.js derrière un reverse proxy — pas Vercel)
 - **Cartographie** : Mapbox GL via react-map-gl
 
 ## Identité visuelle
