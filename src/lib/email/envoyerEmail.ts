@@ -29,18 +29,20 @@ function obtenirTransporteur(): nodemailer.Transporter {
 export type EmailAEnvoyer = {
   sujet: string;
   texte: string;
+  /** Destinataire — par défaut la boîte HOOMY (SMTP_USER, notifications admin) */
+  destinataire?: string;
 };
 
 // Envoi best-effort : ne lève JAMAIS d'exception — une panne email ne doit jamais
 // casser l'action métier (création de bien, demande de visite, etc.). Les erreurs
 // sont loggées pour rester diagnosticables.
-export async function envoyerEmail({ sujet, texte }: EmailAEnvoyer): Promise<void> {
+export async function envoyerEmail({ sujet, texte, destinataire }: EmailAEnvoyer): Promise<void> {
   try {
     const transport = obtenirTransporteur();
     const adresse = process.env.SMTP_USER as string;
     await transport.sendMail({
       from: `"HOOMY.MA" <${adresse}>`,
-      to: adresse,
+      to: destinataire ?? adresse,
       subject: sujet,
       text: texte,
     });
