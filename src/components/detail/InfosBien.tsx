@@ -195,20 +195,6 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         )}
       </div>
 
-      {/* ── Avertissement bien en traitement ─────────────────────────── */}
-      {!bien.verifie && (
-        <div
-          className="rounded-xl px-4 py-3 mb-6 flex items-start gap-2.5 text-sm"
-          style={{ background: "var(--fond-accent)", border: "1px solid #EDE7D7", color: "var(--texte-secondaire)" }}
-        >
-          <span className="flex-shrink-0 mt-0.5">ℹ️</span>
-          <span>
-            Cette annonce sera bientôt disponible. Les photos sont temporairement floutées et
-            seront visibles en clair dès la validation par nos équipes.
-          </span>
-        </div>
-      )}
-
       {/* ── Titre ─────────────────────────────────────────────────────── */}
       <h1
         className="font-normal leading-tight mb-4"
