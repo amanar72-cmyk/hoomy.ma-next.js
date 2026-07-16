@@ -21,6 +21,7 @@ type BienResultat = {
 
 type Resultat = {
   intention: "acheteur" | "vendeur" | "autre";
+  hors_zone?: boolean;
   langue: "fr" | "ar" | "en";
   criteres: {
     ville: string | null;
@@ -35,9 +36,9 @@ type Resultat = {
 };
 
 const EXEMPLES = [
-  "Bonjour, je cherche un appartement 2 chambres à Casablanca, budget 900 000 DH max",
+  "Bonjour, je cherche un appartement 2 chambres à Agadir, budget 1 million max",
   "Salam, bghit nbi3 villa dyali f Marrakech",
-  "Hi, do you have villas for rent in Tangier?",
+  "Hi, do you have villas for rent in Tangier?", // hors zone → réponse honnête attendue
   "C'est quoi vos horaires ?",
 ];
 
@@ -198,6 +199,11 @@ export default function SimulateurAgent() {
               <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: "#F0EDE5", color: "#6B7A71" }}>
                 {BADGE_LANGUE[resultat.langue]}
               </span>
+              {resultat.hors_zone && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "#FEF3C7", color: "#92400E" }}>
+                  📍 Hors zone — réponse honnête
+                </span>
+              )}
               <span className="text-xs ml-auto" style={{ color: "#C4D8CE" }}>
                 {(resultat.duree_ms / 1000).toFixed(1)} s
               </span>

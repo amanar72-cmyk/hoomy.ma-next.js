@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import type { FiltresActifs } from "@/lib/types";
+import { LISTE_VILLES_ACTIVES } from "@/lib/villes";
 
-const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
+// Diffusion publique limitée aux villes actives (source : src/lib/villes.ts)
+const VILLES = LISTE_VILLES_ACTIVES;
 const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
 const CHAMBRES = ["1", "2", "3", "4", "5+"];
 

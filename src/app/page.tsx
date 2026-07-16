@@ -11,11 +11,13 @@ import ApparitionScroll from "@/components/ui/ApparitionScroll";
 import SectionLead from "@/components/home/SectionLead";
 import ParcoursProprietaire from "@/components/home/ParcoursProprietaire";
 import { Reveal } from "@/components/ui/Reveal";
+import { LISTE_VILLES_ACTIVES, FILTRE_VILLES_ACTIVES_OR } from "@/lib/villes";
 import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const VILLES_COMPTAGE = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
+// Diffusion publique : uniquement les villes actives (src/lib/villes.ts)
+const VILLES_COMPTAGE = LISTE_VILLES_ACTIVES;
 
 export default async function Accueil() {
   // Trois requêtes en parallèle : biens vedette + comptes par ville + total vérifié
@@ -23,6 +25,7 @@ export default async function Accueil() {
     supabase
       .from("biens")
       .select(COLONNES_BIEN_PUBLIC) // jamais latitude/longitude côté public
+      .or(FILTRE_VILLES_ACTIVES_OR) // mise en avant limitée aux villes actives
       .order("cree_le", { ascending: false })
       .limit(10),
     supabase
@@ -33,7 +36,8 @@ export default async function Accueil() {
     supabase
       .from("biens")
       .select("id", { count: "exact", head: true })
-      .eq("verifie", true),
+      .eq("verifie", true)
+      .or(FILTRE_VILLES_ACTIVES_OR),
   ]);
 
   const biens = (dataBiens ?? []) as unknown as BienPublic[];

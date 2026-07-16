@@ -1,3 +1,4 @@
+import { LISTE_VILLES_ACTIVES } from "@/lib/villes";
 import Link from "next/link";
 import { FondZellige, SeparateurZellige } from "@/components/ui/MotifZellige";
 
@@ -22,12 +23,11 @@ const COLONNES = [
   },
   {
     titre: "Villes",
-    liens: [
-      { label: "Casablanca", href: "/acheter?ville=Casablanca" },
-      { label: "Marrakech", href: "/acheter?ville=Marrakech" },
-      { label: "Rabat", href: "/acheter?ville=Rabat" },
-      { label: "Agadir", href: "/acheter?ville=Agadir" },
-    ],
+    // Générée depuis les villes actives (src/lib/villes.ts)
+    liens: LISTE_VILLES_ACTIVES.map((v) => ({
+      label: v,
+      href: `/acheter?ville=${encodeURIComponent(v)}`,
+    })),
   },
   {
     titre: "Aide",

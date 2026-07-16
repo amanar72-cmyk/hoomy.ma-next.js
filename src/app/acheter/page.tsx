@@ -9,13 +9,13 @@ import VueListeCarte from "@/components/annonces/VueListeCarte";
 import { construirePointsCarte } from "@/lib/geo/floutage";
 import type { Bien, FiltresActifs } from "@/lib/types";
 import { TRI_MAP } from "@/lib/types";
+import { FILTRE_VILLES_ACTIVES_OR, LIBELLE_VILLES_ACTIVES } from "@/lib/villes";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Acheter un bien immobilier au Maroc — Appartements, villas, riads | HOOMY.MA",
-  description:
-    "Trouvez votre bien à acheter au Maroc : appartements, villas, riads, bureaux et terrains vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+  description: `Trouvez votre bien à acheter au Maroc : appartements, villas, riads, bureaux et terrains vérifiés à ${LIBELLE_VILLES_ACTIVES}.`,
   alternates: { canonical: "/acheter" },
 };
 
@@ -53,7 +53,13 @@ export default async function PageAcheter({ searchParams }: Props) {
   if (chambres) paramsActifs.chambres = chambres;
 
   // ── Construction de la requête Supabase ──
-  let query = supabase.from("biens").select("*").eq("transaction", "vente");
+  // Diffusion publique restreinte aux villes actives (src/lib/villes.ts) —
+  // les biens des autres villes restent accessibles par lien direct.
+  let query = supabase
+    .from("biens")
+    .select("*")
+    .eq("transaction", "vente")
+    .or(FILTRE_VILLES_ACTIVES_OR);
 
   if (ville) query = query.eq("ville", ville);
   if (quartiersArr.length === 1) query = query.eq("quartier", quartiersArr[0]);

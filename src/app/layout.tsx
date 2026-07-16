@@ -1,3 +1,4 @@
+import { LIBELLE_VILLES_ACTIVES } from "@/lib/villes";
 import type { Metadata } from "next";
 import { Marcellus, Outfit } from "next/font/google";
 import { cookies } from "next/headers";
@@ -18,7 +19,7 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 export const metadata: Metadata = {
   title: "HOOMY.MA — L'immobilier premium au Maroc",
   description:
-    "Appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+    `Appartements, villas, riads et bureaux vérifiés à ${LIBELLE_VILLES_ACTIVES}.`,
 
   metadataBase: new URL("https://hoomy.ma"),
 
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
     siteName: "HOOMY.MA",
     title: "HOOMY.MA — L'immobilier premium au Maroc",
     description:
-      "Appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+      `Appartements, villas, riads et bureaux vérifiés à ${LIBELLE_VILLES_ACTIVES}.`,
     // og:image par défaut : géré par la convention fichier src/app/opengraph-image.tsx
     // (1200×630, dégradé Vert Royal + logo) pour toutes les pages sans OG propre.
     // Les fiches biens définissent leur propre carte via /api/og.
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "HOOMY.MA — L'immobilier premium au Maroc",
     description:
-      "Appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+      `Appartements, villas, riads et bureaux vérifiés à ${LIBELLE_VILLES_ACTIVES}.`,
   },
 };
 
@@ -99,7 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   },
                   "image": { "@id": "https://hoomy.ma/#logo" },
                   "description":
-                    "Plateforme immobilière premium au Maroc — appartements, villas, riads et bureaux vérifiés à Casablanca, Marrakech, Rabat, Tanger, Agadir et Fès.",
+                    `Plateforme immobilière premium au Maroc — appartements, villas, riads et bureaux vérifiés à ${LIBELLE_VILLES_ACTIVES}.`,
                   "areaServed": { "@type": "Country", "name": "Maroc" },
                   "knowsLanguage": ["fr", "ar"],
                   "contactPoint": {

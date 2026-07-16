@@ -6,8 +6,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { LISTE_VILLES_ACTIVES } from "@/lib/villes";
 
-const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"] as const;
+// Mise en avant limitée aux villes actives (source : src/lib/villes.ts)
+const VILLES = LISTE_VILLES_ACTIVES;
 
 function formaterAnnonces(n: number): string {
   if (n === 0) return "Bientôt disponible";

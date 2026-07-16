@@ -6,12 +6,14 @@ import Link from "next/link";
 import React from "react";
 import { createClient } from "@/lib/supabase/client";
 import { FondZellige } from "@/components/ui/MotifZellige";
+import { LISTE_VILLES_ACTIVES, estVilleActive } from "@/lib/villes";
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
 type Mode = "acheter" | "louer" | "neuf";
 
-const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"] as const;
+// Diffusion publique limitée aux villes actives (source : src/lib/villes.ts)
+const VILLES = LISTE_VILLES_ACTIVES;
 const TYPES_BIEN = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"] as const;
 
 const BUDGETS_VENTE = [
@@ -32,14 +34,18 @@ const BUDGETS_LOCATION = [
   { label: "25 000 DH/mois et plus",   prixMin: 25_000 },
 ] as const;
 
-const TENDANCES = [
-  { label: "Guéliz · Marrakech",  href: "/acheter?ville=Marrakech&quartier=Gu%C3%A9liz" },
-  { label: "Maarif · Casablanca", href: "/acheter?ville=Casablanca&quartier=Maarif" },
-  { label: "Agdal · Rabat",       href: "/acheter?ville=Rabat&quartier=Agdal" },
-  { label: "Malabata · Tanger",   href: "/acheter?ville=Tanger&quartier=Malabata" },
-  { label: "Hay Riad · Rabat",    href: "/acheter?ville=Rabat&quartier=Hay%20Riad" },
-  { label: "Agadir ville",        href: "/acheter?ville=Agadir" },
+// Tags tendances — filtrés automatiquement sur les villes actives : pour en
+// réactiver, il suffit d'ajouter la ville dans VILLES_ACTIVES (src/lib/villes.ts)
+const TOUTES_TENDANCES = [
+  { ville: "Marrakech",  label: "Guéliz · Marrakech",  href: "/acheter?ville=Marrakech&quartier=Gu%C3%A9liz" },
+  { ville: "Casablanca", label: "Maarif · Casablanca", href: "/acheter?ville=Casablanca&quartier=Maarif" },
+  { ville: "Rabat",      label: "Agdal · Rabat",       href: "/acheter?ville=Rabat&quartier=Agdal" },
+  { ville: "Tanger",     label: "Malabata · Tanger",   href: "/acheter?ville=Tanger&quartier=Malabata" },
+  { ville: "Rabat",      label: "Hay Riad · Rabat",    href: "/acheter?ville=Rabat&quartier=Hay%20Riad" },
+  { ville: "Agadir",     label: "Agadir ville",        href: "/acheter?ville=Agadir" },
+  { ville: "Marrakech",  label: "Hivernage · Marrakech", href: "/acheter?ville=Marrakech&quartier=Hivernage" },
 ] as const;
+const TENDANCES = TOUTES_TENDANCES.filter((t) => estVilleActive(t.ville));
 
 // ─── Icônes SVG inline ─────────────────────────────────────────────────────────
 

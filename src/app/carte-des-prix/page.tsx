@@ -1,3 +1,4 @@
+import { estVilleActive } from "@/lib/villes";
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import CartePrixShell from "@/components/carte-prix/CartePrixShell";
@@ -32,7 +33,9 @@ const COORDS_VILLES: Record<string, { lat: number; lng: number }> = {
   Agadir:     { lat: 30.4278, lng: -9.5981 },
 };
 
-const VILLES = Object.keys(COORDS_VILLES);
+// Diffusion publique limitée aux villes actives (src/lib/villes.ts) —
+// les coordonnées des autres villes restent prêtes pour leur réouverture.
+const VILLES = Object.keys(COORDS_VILLES).filter(estVilleActive);
 
 export default async function CartePrixPage() {
   const { data, error } = await supabase

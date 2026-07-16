@@ -15,6 +15,7 @@ import "server-only";
 
 import OpenAI from "openai";
 import { supabase as supabasePublic } from "@/lib/supabase";
+import { estVilleActive, FILTRE_VILLES_ACTIVES_OR, LIBELLE_VILLES_ACTIVES } from "@/lib/villes";
 
 const MODELE = "gpt-4o";
 const TIMEOUT_MS = 30_000;
@@ -51,12 +52,16 @@ export type BienAgent = {
 export type ReponseAgent = ClassificationAgent & {
   biens: BienAgent[];
   reponse: string;
+  // true = acheteur demandant une ville où HOOMY ne diffuse pas encore
+  hors_zone: boolean;
 };
 
 // ── Étape A : classification ──────────────────────────────────────────────────
 
-// Valeurs canoniques du schéma réel de la table biens
-const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
+// Type canonique du schéma réel de la table biens.
+// IMPORTANT : la classification extrait N'IMPORTE QUELLE ville marocaine — c'est
+// le CODE qui décide ensuite (estVilleActive) : ville active → recherche ;
+// ville reconnue mais inactive → réponse honnête « pas encore présents ».
 const TYPES_BIEN = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
 
 // response_format json_object garantit un objet JSON syntaxiquement valide ;
@@ -72,7 +77,7 @@ Règles :
 - intention "acheteur" = veut acheter OU louer un bien. "vendeur" = veut vendre/mettre en location SON bien. "autre" = tout le reste (salutation, question générale...).
 - langue : "ar" couvre l'arabe ET la darija même écrite en lettres latines (ex. "bghit nchri dar"). Sinon "fr" ou "en".
 - criteres : uniquement pertinents pour un acheteur ; pour vendeur/autre, mets tout à null.
-- ville : une de ${VILLES.join(", ")} (orthographe exacte) ou null si non mentionnée/hors liste.
+- ville : le nom de la ville marocaine mentionnée, quelle qu'elle soit (orthographe française usuelle, ex. Agadir, Marrakech, Casablanca, Rabat, Tanger, Fès, Oujda…), ou null si aucune ville n'est mentionnée.
 - type : un de ${TYPES_BIEN.join(", ")} (orthographe exacte) ou null. "partement"/"appart" → Appartement.
 - budget_max : en dirhams. Convertis : "1M"/"1 million" → 1000000, "800k" → 800000. null si absent.
 - chambres : nombre MINIMUM de chambres demandé (entier), null si absent.
@@ -114,11 +119,13 @@ function parserClassification(brut: string): ClassificationAgent | null {
 // ── Étape B : recherche réelle dans biens ─────────────────────────────────────
 
 async function chercherBiens(criteres: CriteresAgent): Promise<BienAgent[]> {
-  // Colonnes réelles du schéma : statut 'finalise' = bien publié sur le site
+  // Colonnes réelles du schéma : statut 'finalise' = bien publié sur le site.
+  // Restriction permanente aux villes actives (src/lib/villes.ts).
   let q = supabasePublic
     .from("biens")
     .select("reference, slug, titre, type, transaction, prix, ville, quartier, chambres, surface")
     .eq("statut", "finalise")
+    .or(FILTRE_VILLES_ACTIVES_OR)
     .order("cree_le", { ascending: false })
     .limit(5);
 
@@ -157,10 +164,21 @@ const LANGUES: Record<string, string> = {
   en: "anglais",
 };
 
-function promptRedaction(classification: ClassificationAgent): string {
+function promptRedaction(classification: ClassificationAgent, horsZone: boolean): string {
   const base = `Tu es le conseiller commercial de HOOMY.MA, plateforme immobilière premium au Maroc.
 Tu réponds à un message client comme sur WhatsApp : ton chaleureux, humain, professionnel, adapté au marché marocain. Court et naturel (pas de listes à rallonge). Termine par une signature légère « — HOOMY ».
 Réponds STRICTEMENT en ${LANGUES[classification.langue]}.`;
+
+  // Acheteur demandant une ville où HOOMY ne diffuse pas encore : HONNÊTETÉ.
+  if (classification.intention === "acheteur" && horsZone) {
+    return `${base}
+
+Le client cherche un bien à ${classification.criteres.ville}, où HOOMY n'est PAS ENCORE présent.
+- Dis-le HONNÊTEMENT et simplement : nous n'avons pas encore de biens dans cette ville.
+- N'invente AUCUN bien. Ne redirige PAS vers une autre ville sans le dire clairement.
+- Propose de prendre ses coordonnées pour le recontacter dès que HOOMY ouvrira dans sa ville.
+- Tu peux mentionner en toute transparence que HOOMY est aujourd'hui présent à ${LIBELLE_VILLES_ACTIVES}, au cas où son projet pourrait s'y porter — sans insister.`;
+  }
 
   if (classification.intention === "acheteur") {
     return `${base}
@@ -221,13 +239,20 @@ export async function genererReponseAgent(message: string): Promise<ReponseAgent
     throw new Error("Classification illisible (JSON invalide renvoyé par le modèle).");
   }
 
-  // ── B. Recherche réelle (acheteur uniquement) ───────────────────────────────
-  const biens = classification.intention === "acheteur"
+  // ── B. Recherche réelle (acheteur uniquement, villes actives uniquement) ───
+  // Ville demandée hors des villes actives → PAS de recherche : l'agent doit
+  // le dire honnêtement, pas montrer des biens d'une autre ville.
+  const horsZone =
+    classification.intention === "acheteur" &&
+    classification.criteres.ville !== null &&
+    !estVilleActive(classification.criteres.ville);
+
+  const biens = classification.intention === "acheteur" && !horsZone
     ? await chercherBiens(classification.criteres)
     : [];
 
   // ── C. Rédaction commerciale ────────────────────────────────────────────────
-  const contenuC = classification.intention === "acheteur"
+  const contenuC = classification.intention === "acheteur" && !horsZone
     ? `Message du client :\n${texte}\n\nBiens disponibles (SOURCE DE VÉRITÉ — liste exhaustive) :\n${JSON.stringify(biens, null, 2)}`
     : `Message du client :\n${texte}`;
 
@@ -236,12 +261,12 @@ export async function genererReponseAgent(message: string): Promise<ReponseAgent
     max_tokens: 800,
     temperature: 0.7, // rédaction : un peu de naturel
     messages: [
-      { role: "system", content: promptRedaction(classification) },
+      { role: "system", content: promptRedaction(classification, horsZone) },
       { role: "user", content: contenuC },
     ],
   });
 
   const reponse = repC.choices[0]?.message?.content ?? "";
 
-  return { ...classification, biens, reponse };
+  return { ...classification, biens, reponse, hors_zone: horsZone };
 }
