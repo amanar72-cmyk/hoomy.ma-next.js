@@ -1,8 +1,12 @@
 "use client";
 
 // Simulateur de l'agent commercial IA — interface admin.
-// Envoie le message client à /api/agent/simulateur (serveur : la clé Anthropic
-// n'est jamais exposée ici) et affiche le diagnostic complet + la réponse.
+// Envoie le message client à /api/agent/simulateur (serveur : la clé OpenAI
+// n'est jamais exposée ici) et affiche le fil + le diagnostic du dernier tour.
+//
+// Conversation MULTI-TOURS : les messages s'enchaînent sous un numéro fictif
+// (+212000000000) et sont VRAIMENT écrits en base, comme sur WhatsApp — c'est
+// ce qui permet de tester la mémoire. « Réinitialiser » efface le fil fictif.
 
 import { useState } from "react";
 
@@ -19,27 +23,39 @@ type BienResultat = {
   lien: string;
 };
 
+type Criteres = {
+  ville: string | null;
+  quartier: string | null;
+  type: string | null;
+  budget_max: number | null;
+  chambres: number | null;
+  prenom: string | null;
+};
+
 type Resultat = {
   intention: "acheteur" | "vendeur" | "autre";
   hors_zone?: boolean;
   langue: "fr" | "ar" | "en";
-  criteres: {
-    ville: string | null;
-    quartier: string | null;
-    type: string | null;
-    budget_max: number | null;
-    chambres: number | null;
-  };
+  criteres: Criteres;
+  corrections?: string[];
   biens: BienResultat[];
   reponse: string;
   duree_ms: number;
+  conversation_entamee?: boolean;
+  nb_messages_historique?: number;
 };
 
+/** Un tour affiché dans le fil. */
+type Tour = { role: "client" | "agent"; contenu: string };
+
+// Scénario de test de la MÉMOIRE : à envoyer dans l'ordre. L'agent ne doit
+// pas resaluer au 2e message, ne pas redemander la ville au 3e, et remplacer
+// 2 chambres par 3 au 4e sans perdre la ville ni le budget.
 const EXEMPLES = [
-  "Bonjour, je cherche un appartement 2 chambres à Agadir, budget 1 million max",
+  "Bonjour, je cherche un appartement 2 chambres à Agadir",
+  "Mon budget est de 1 million max",
+  "Finalement plutôt 3 chambres",
   "Salam, bghit nbi3 villa dyali f Marrakech",
-  "Hi, do you have villas for rent in Tangier?", // hors zone → réponse honnête attendue
-  "C'est quoi vos horaires ?",
 ];
 
 const BADGE_INTENTION: Record<string, { label: string; bg: string; color: string }> = {
@@ -59,15 +75,38 @@ export default function SimulateurAgent() {
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [resultat, setResultat] = useState<Resultat | null>(null);
+  const [fil, setFil] = useState<Tour[]>([]);
+
+  /** Efface la conversation fictive en base ET à l'écran. */
+  async function reinitialiser() {
+    if (chargement) return;
+    setChargement(true);
+    setErreur(null);
+    try {
+      const rep = await fetch("/api/agent/simulateur", { method: "DELETE" });
+      if (!rep.ok) {
+        setErreur("Réinitialisation impossible — réessayez.");
+        return;
+      }
+      setFil([]);
+      setResultat(null);
+      setMessage("");
+    } catch {
+      setErreur("Impossible de joindre le serveur (erreur réseau) — réessayez.");
+    } finally {
+      setChargement(false);
+    }
+  }
 
   async function tester(texte?: string) {
     const contenu = (texte ?? message).trim();
     if (!contenu || chargement) return;
-    if (texte) setMessage(texte);
 
     setChargement(true);
     setErreur(null);
-    setResultat(null);
+    // Le message part au fil immédiatement ; le champ se vide (comme WhatsApp).
+    setFil((f) => [...f, { role: "client", contenu }]);
+    setMessage("");
     try {
       const rep = await fetch("/api/agent/simulateur", {
         method: "POST",
@@ -93,19 +132,32 @@ export default function SimulateurAgent() {
           (donnees?.erreur as string | undefined) ??
             `Réponse inattendue du serveur (HTTP ${rep.status}${redirection}) : ${extrait || "réponse vide"}`
         );
+        // Le tour a échoué : on retire le message du fil et on le remet dans le
+        // champ, sinon l'affichage montrerait un message que la base n'a pas.
+        setFil((f) => f.slice(0, -1));
+        setMessage(contenu);
         return;
       }
 
-      setResultat(donnees as unknown as Resultat);
+      const r = donnees as unknown as Resultat;
+      setResultat(r);
+      if (r.reponse?.trim()) {
+        setFil((f) => [...f, { role: "agent", contenu: r.reponse.trim() }]);
+      }
     } catch {
       setErreur("Impossible de joindre le serveur (erreur réseau) — réessayez.");
+      setFil((f) => f.slice(0, -1));
+      setMessage(contenu);
     } finally {
       setChargement(false);
     }
   }
 
+  // Critères EFFECTIFS (mémoire fusionnée), pas ceux du seul dernier message :
+  // c'est ce cumul qui prouve que la mémoire fonctionne.
   const criteresAffiches = resultat
     ? ([
+        ["Prénom", resultat.criteres.prenom],
         ["Ville", resultat.criteres.ville],
         ["Quartier", resultat.criteres.quartier],
         ["Type", resultat.criteres.type],
@@ -116,13 +168,57 @@ export default function SimulateurAgent() {
 
   return (
     <div className="space-y-5">
+      {/* ── Fil de conversation ────────────────────────────────────────────── */}
+      {fil.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: "#fff", border: "1px solid #EBEBEB" }}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#9DB8AD" }}>
+              Conversation ({fil.length} message{fil.length > 1 ? "s" : ""})
+            </span>
+            <button
+              type="button"
+              onClick={() => void reinitialiser()}
+              disabled={chargement}
+              className="text-xs px-2.5 py-1.5 rounded-lg cursor-pointer hover:opacity-80 disabled:opacity-50"
+              style={{ background: "#FEF3C7", color: "#92400E", border: "none" }}
+            >
+              ↺ Réinitialiser
+            </button>
+          </div>
+
+          <div className="space-y-2.5">
+            {fil.map((t, i) => (
+              <div key={i} className={`flex ${t.role === "client" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className="text-sm rounded-2xl px-3.5 py-2.5 max-w-[80%] whitespace-pre-wrap"
+                  style={
+                    t.role === "client"
+                      ? { background: "#0F4C3A", color: "#fff" }
+                      : { background: "#F0EDE5", color: "#1f2a24" }
+                  }
+                >
+                  {t.contenu}
+                </div>
+              </div>
+            ))}
+            {chargement && (
+              <div className="flex justify-start">
+                <div className="text-sm rounded-2xl px-3.5 py-2.5" style={{ background: "#F0EDE5", color: "#9DB8AD" }}>
+                  L&apos;agent réfléchit…
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Saisie ─────────────────────────────────────────────────────────── */}
       <div
         className="rounded-2xl p-4"
         style={{ background: "#fff", border: "1px solid #EBEBEB" }}
       >
         <label className="block text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "#9DB8AD" }}>
-          Message client (comme reçu sur WhatsApp)
+          {fil.length > 0 ? "Message suivant du client" : "Message client (comme reçu sur WhatsApp)"}
         </label>
         <textarea
           value={message}
@@ -145,9 +241,11 @@ export default function SimulateurAgent() {
             className="text-sm font-semibold px-5 py-2.5 rounded-xl cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: "#0F4C3A", color: "#fff", border: "none" }}
           >
-            {chargement ? "Analyse en cours…" : "Tester ▸"}
+            {chargement ? "Analyse en cours…" : fil.length > 0 ? "Envoyer ▸" : "Tester ▸"}
           </button>
-          <span className="text-xs" style={{ color: "#C4D8CE" }}>ou essayez :</span>
+          <span className="text-xs" style={{ color: "#C4D8CE" }}>
+            {fil.length > 0 ? "suite du scénario :" : "scénario mémoire (dans l'ordre) :"}
+          </span>
           {EXEMPLES.map((ex) => (
             <button
               key={ex}

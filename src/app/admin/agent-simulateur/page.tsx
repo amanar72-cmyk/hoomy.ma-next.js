@@ -3,7 +3,9 @@ import SimulateurAgent from "@/components/admin/SimulateurAgent";
 
 // Simulateur de l'agent commercial IA — page admin (le layout /admin impose
 // déjà le rôle admin ; la route API revérifie de son côté).
-// LECTURE SEULE : aucun lead créé, aucun message envoyé à un vrai client.
+// Aucun lead créé, aucun message envoyé à un vrai client — mais la
+// conversation EST enregistrée, sous le numéro fictif +212000000000, pour
+// tester la mémoire dans les mêmes conditions que WhatsApp.
 
 export const metadata: Metadata = {
   title: "Agent IA — Simulateur | HOOMY PRO",
@@ -21,7 +23,9 @@ export default function PageAgentSimulateur() {
         </h1>
         <p className="text-sm" style={{ color: "#9DB8AD" }}>
           Testez le cerveau de l&apos;agent sans impliquer de vrai client : intention détectée,
-          critères extraits, biens réels remontés, réponse générée. Rien n&apos;est enregistré.
+          critères accumulés, biens réels remontés, réponse générée. La conversation se
+          poursuit d&apos;un message à l&apos;autre (mémoire) et est enregistrée sous un numéro
+          fictif — « Réinitialiser » repart de zéro.
         </p>
       </div>
 
