@@ -78,13 +78,22 @@ function dansListe<T extends readonly string[]>(liste: T, v: string): v is T[num
 
 // ── Action ────────────────────────────────────────────────────────────────────
 
-export async function soumettreLead(donnees: DonneesLead): Promise<void> {
+/**
+ * ok=true UNIQUEMENT pour un vrai lead nouvellement enregistré. Les « fausses
+ * réussites silencieuses » (honeypot, timing bot, doublon) renvoient ok=false :
+ * l'UI affiche quand même le succès (ne pas révéler l'anti-spam au bot, ne pas
+ * inquiéter l'humain qui double-clique), mais l'appelant sait ne PAS déclencher
+ * de tracking (Pixel Lead, GA lead_submit) sur ces cas.
+ */
+export type ResultatSoumission = { ok: boolean };
+
+export async function soumettreLead(donnees: DonneesLead): Promise<ResultatSoumission> {
   // 1. Honeypot : rempli → bot → fausse réussite silencieuse
-  if (donnees.siteWeb) return;
+  if (donnees.siteWeb) return { ok: false };
 
   // 2. Soumission trop rapide après affichage (< 3 s) → bot
   const ecoule = Date.now() - donnees.afficheA;
-  if (!Number.isFinite(ecoule) || ecoule < 3000) return;
+  if (!Number.isFinite(ecoule) || ecoule < 3000) return { ok: false };
 
   // 3. Rate limiting par IP
   const ip = await lireIP();
@@ -163,8 +172,9 @@ export async function soumettreLead(donnees: DonneesLead): Promise<void> {
     });
     id = resultat.leadId;
     // Doublon récent (double-clic, re-soumission) : succès silencieux, pas
-    // de second email de notification.
-    if (resultat.doublon) return;
+    // de second email de notification — et pas de second tir Pixel/GA (le lead
+    // d'origine les a déjà déclenchés).
+    if (resultat.doublon) return { ok: false };
   } catch {
     throw new Error("Impossible d'enregistrer votre demande. Réessayez dans un instant.");
   }
@@ -195,4 +205,7 @@ export async function soumettreLead(donnees: DonneesLead): Promise<void> {
   } catch (e) {
     console.error("[leads] notification email échouée :", e);
   }
+
+  // Vrai lead enregistré → l'appelant peut déclencher le tracking.
+  return { ok: true };
 }

@@ -13,6 +13,7 @@ import CarteContact from "@/components/detail/CarteContact";
 import CarteLocalisation from "@/components/detail/CarteLocalisation";
 import BiensSimiliaires from "@/components/detail/BiensSimiliaires";
 import TrackVue from "@/components/tracking/TrackVue";
+import MetaViewContent from "@/components/tracking/MetaViewContent";
 import BarreMobileContact from "@/components/detail/BarreMobileContact";
 import RappelBien from "@/components/leads/RappelBien";
 
@@ -89,6 +90,11 @@ export default async function PageDetailAchat({ params }: Props) {
   return (
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <TrackVue bienId={bien.id} />
+      {/* Retargeting Meta — uniquement si le bien a une référence HM-XXXX
+          (clé du Pixel + futur catalogue). Consent-gated côté composant. */}
+      {bien.reference && (
+        <MetaViewContent reference={bien.reference} titre={bien.titre} prix={bien.prix} />
+      )}
       <Navbar />
 
       {/* ── Fil d'Ariane ─────────────────────────────────────────────────── */}
@@ -126,7 +132,7 @@ export default async function PageDetailAchat({ params }: Props) {
           <div className="flex-1 min-w-0">
             <InfosBien bien={bien} />
             {/* Qualification de lead — bien_id + type de projet pré-remplis */}
-            <RappelBien bienId={bien.id} titreBien={bien.titre} transaction={bien.transaction} />
+            <RappelBien bienId={bien.id} titreBien={bien.titre} transaction={bien.transaction} reference={bien.reference} />
           </div>
 
           {/* Colonne droite — carte contact sticky (desktop) */}

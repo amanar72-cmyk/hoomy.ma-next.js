@@ -8,6 +8,7 @@
 import { useMemo, useState } from "react";
 import { sendGAEvent } from "@next/third-parties/google";
 import { soumettreLead, type DonneesLead } from "@/app/leads/actions";
+import { trackMeta } from "@/lib/meta/pixel";
 import { afficherToast } from "@/components/ui/Toaster";
 
 // ── Options (libellés courts, valeurs = CHECK en base) ───────────────────────
@@ -88,12 +89,13 @@ type Props = {
   source: string;                       // fiche_bien | accueil | estimation…
   bienId?: string | null;               // renseigné depuis une fiche
   titreBien?: string | null;            // pour l'email de notification
+  reference?: string | null;            // HM-XXXX — content_ids du Pixel Lead
   typeProjetInitial?: "achat" | "location" | "vente";
   onSucces?: () => void;                // ex. fermer le modal
 };
 
 export default function FormulaireLead({
-  source, bienId = null, titreBien = null, typeProjetInitial, onSucces,
+  source, bienId = null, titreBien = null, reference = null, typeProjetInitial, onSucces,
 }: Props) {
   // Horodatage d'affichage — validé côté serveur (soumission < 3 s = bot)
   const [afficheA] = useState(() => Date.now());
@@ -162,10 +164,18 @@ export default function FormulaireLead({
     };
 
     try {
-      await soumettreLead(donnees);
+      const resultat = await soumettreLead(donnees);
+      // Succès UI dans tous les cas (le bot/double-clic voit « envoyé »)…
       setEnvoye(true);
       afficherToast("Merci ! Un conseiller vous contacte très vite");
-      sendGAEvent("event", "lead_submit", { source, type_projet: typeProjet });
+      // …mais tracking UNIQUEMENT sur un vrai lead (ni honeypot, ni bot, ni
+      // doublon) : resultat.ok distingue les fausses réussites silencieuses.
+      if (resultat.ok) {
+        sendGAEvent("event", "lead_submit", { source, type_projet: typeProjet });
+        // Pixel Lead — consent-gated (window.fbq n'existe qu'après acceptation).
+        // content_ids = référence HM-XXXX si le lead porte sur un bien précis.
+        trackMeta("Lead", reference ? { content_ids: [reference], content_type: "home_listing" } : undefined);
+      }
       onSucces?.();
     } catch (err) {
       setErreur(err instanceof Error ? err.message : "Une erreur est survenue. Réessayez.");

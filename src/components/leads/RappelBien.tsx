@@ -10,9 +10,10 @@ type Props = {
   bienId: string;
   titreBien: string;
   transaction: string; // "vente" → le visiteur veut acheter ; "location" → louer
+  reference?: string | null; // HM-XXXX — pour content_ids du Pixel Lead
 };
 
-export default function RappelBien({ bienId, titreBien, transaction }: Props) {
+export default function RappelBien({ bienId, titreBien, transaction, reference = null }: Props) {
   const [ouvert, setOuvert] = useState(false);
 
   // Échap pour fermer + scroll verrouillé quand le modal est ouvert
@@ -105,6 +106,7 @@ export default function RappelBien({ bienId, titreBien, transaction }: Props) {
                 source="fiche_bien"
                 bienId={bienId}
                 titreBien={titreBien}
+                reference={reference}
                 typeProjetInitial={transaction === "location" ? "location" : "achat"}
               />
             </div>
