@@ -69,6 +69,11 @@ export type LeadEntrant = {
   bienRef?: string | null;      // référence HM-XXXX (Meta)
   bienId?: string | null;       // uuid direct (formulaire site)
   metaLeadId?: string | null;   // leadgen_id Meta → idempotence forte
+  // Traçabilité publicitaire (webhook Meta direct) — colonnes meta_ad_id /
+  // meta_form_id (voir meta_leads_webhook.sql). Insérées uniquement si
+  // fournies : les autres chemins (Make, site) ne sont pas concernés.
+  metaAdId?: string | null;
+  metaFormId?: string | null;
 };
 
 export type ResultatUpsert = {
@@ -226,6 +231,14 @@ export async function upsertLeadEtContact(payload: LeadEntrant): Promise<Resulta
       contact_id: contactId,
       meta_lead_id: metaLeadId,
       statut: "nouveau",
+      // Colonnes de traçabilité pub — uniquement quand le webhook Meta les
+      // fournit (exige meta_leads_webhook.sql exécuté au préalable)
+      ...(payload.metaAdId !== undefined || payload.metaFormId !== undefined
+        ? {
+            meta_ad_id: payload.metaAdId?.trim().slice(0, 100) || null,
+            meta_form_id: payload.metaFormId?.trim().slice(0, 100) || null,
+          }
+        : {}),
     })
     .select("id")
     .single();

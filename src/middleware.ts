@@ -53,14 +53,14 @@ function urlVersPublic(req: NextRequest, hostname: string): URL {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Webhooks publics appelés par des services EXTERNES (Twilio…) ─────────
+  // ── Webhooks publics appelés par des services EXTERNES (Twilio, Meta…) ───
   // Ces requêtes n'ont JAMAIS de session utilisateur : sans cette exclusion,
   // la logique d'auth ci-dessous les redirige (connexion/accueil) au lieu de
-  // laisser la route s'exécuter. La sécurité de ces routes est assurée DANS
-  // la route elle-même (signature X-Twilio-Signature → 403 si invalide).
-  // Volontairement limité à /api/whatsapp : admin, pro et mon-compte restent
+  // laisser la route s'exécuter. La sécurité est assurée DANS chaque route :
+  // signature X-Twilio-Signature (whatsapp) / X-Hub-Signature-256 (meta).
+  // Volontairement limité à ces préfixes : admin, pro et mon-compte restent
   // protégés comme avant.
-  if (pathname.startsWith('/api/whatsapp')) {
+  if (pathname.startsWith('/api/whatsapp') || pathname.startsWith('/api/meta')) {
     return NextResponse.next();
   }
 
