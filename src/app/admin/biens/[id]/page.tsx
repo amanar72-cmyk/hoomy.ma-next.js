@@ -13,6 +13,7 @@ import { urlsPhotosNettes } from "@/lib/images/photosBien";
 import { formaterPrix } from "@/lib/format";
 import { documentsParType, TYPES_DOCUMENTS_FICHE } from "@/lib/documents/fiche";
 import { infoStatut } from "@/lib/biens/statuts";
+import VendeurEtAcheteursBien from "@/components/proprietaires/VendeurEtAcheteursBien";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -343,10 +344,19 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
 
         {/* ── Colonne latérale : contacts + affectation ──────────────────── */}
         <div className="flex flex-col gap-4">
+          {/* Vendeur (répertoire proprietaires) + acheteurs (leads du bien) */}
+          <VendeurEtAcheteursBien
+            base="/admin"
+            bienId={bien.id}
+            vendeurId={(bien as { vendeur_id?: string | null }).vendeur_id ?? null}
+          />
+
+          {/* Compte utilisateur du site (proprietaire_id) — distinct du
+              répertoire vendeurs : c'est la personne qui a soumis via /publier */}
           <CarteContactProfil
-            titre="Propriétaire"
+            titre="Compte client (site)"
             profil={proprietaire}
-            vide="Aucun propriétaire rattaché à ce bien."
+            vide="Aucun compte client — bien créé en interne."
           />
 
           <CarteContactProfil
