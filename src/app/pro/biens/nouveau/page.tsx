@@ -8,7 +8,13 @@ export const metadata: Metadata = {
   title: "Créer un bien — Espace Pro HOOMY.MA",
 };
 
-export default async function PageNouveauBienAgent() {
+type SearchParams = Promise<{ vendeur?: string }>;
+
+export default async function PageNouveauBienAgent({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -23,6 +29,18 @@ export default async function PageNouveauBienAgent() {
   if (!profil || !["agent", "agence"].includes(profil.role ?? "")) {
     redirect("/pro");
   }
+
+  // Répertoire propriétaires (RLS est_pro) + pré-sélection depuis une fiche
+  // (« Ajouter un bien » → ?vendeur=<id>). Id inconnu → simplement ignoré.
+  const sp = await searchParams;
+  const { data: proprietaires } = await supabase
+    .from("proprietaires")
+    .select("id, nom, prenom, telephone")
+    .order("nom");
+  const vendeurInitial =
+    sp.vendeur && (proprietaires ?? []).some((p) => p.id === sp.vendeur)
+      ? sp.vendeur
+      : null;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -53,7 +71,10 @@ export default async function PageNouveauBienAgent() {
       </div>
 
       {/* ── Formulaire ───────────────────────────────────────────────────── */}
-      <FormulaireCreationBienAgent />
+      <FormulaireCreationBienAgent
+        proprietaires={proprietaires ?? []}
+        vendeurInitial={vendeurInitial}
+      />
 
     </div>
   );

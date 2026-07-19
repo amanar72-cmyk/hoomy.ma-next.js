@@ -1,7 +1,27 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import FormulaireCreationBien from "@/components/admin/FormulaireCreationBien";
 
-export default function PageNouveauBien() {
+type SearchParams = Promise<{ vendeur?: string }>;
+
+export default async function PageNouveauBien({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  // Répertoire propriétaires (RLS is_admin) + pré-sélection depuis une fiche
+  // (« Ajouter un bien » → ?vendeur=<id>). Id inconnu → simplement ignoré.
+  const sp = await searchParams;
+  const supabase = await createClient();
+  const { data: proprietaires } = await supabase
+    .from("proprietaires")
+    .select("id, nom, prenom, telephone")
+    .order("nom");
+  const vendeurInitial =
+    sp.vendeur && (proprietaires ?? []).some((p) => p.id === sp.vendeur)
+      ? sp.vendeur
+      : null;
+
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto">
       {/* Breadcrumb */}
@@ -25,7 +45,10 @@ export default function PageNouveauBien() {
         </p>
       </div>
 
-      <FormulaireCreationBien />
+      <FormulaireCreationBien
+        proprietaires={proprietaires ?? []}
+        vendeurInitial={vendeurInitial}
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte"
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
+import SelecteurProprietaire, { type ProprietaireOption } from "@/components/proprietaires/SelecteurProprietaire";
 
 const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
 const EQUIPEMENTS_LISTE = [
@@ -27,10 +28,18 @@ const selFocus = "#0F4C3A";
 const labelClass = "block text-xs font-semibold mb-1.5";
 const labelStyle = { color: "#0F4C3A" };
 
-export default function FormulaireCreationBienAgent() {
+type Props = {
+  // Répertoire chargé côté serveur ; vendeurInitial = arrivée depuis une
+  // fiche propriétaire (« Ajouter un bien » → ?vendeur=<id>)
+  proprietaires: ProprietaireOption[];
+  vendeurInitial?: string | null;
+};
+
+export default function FormulaireCreationBienAgent({ proprietaires, vendeurInitial }: Props) {
   const router = useRouter();
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [vendeurId, setVendeurId] = useState<string | null>(vendeurInitial ?? null);
   const [equipementsChoisis, setEquipementsChoisis] = useState<string[]>([]);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
@@ -54,6 +63,10 @@ export default function FormulaireCreationBienAgent() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!vendeurId) {
+      setErreur("Veuillez rattacher le bien à un propriétaire (section en haut du formulaire).");
+      return;
+    }
     setErreur(null);
     setChargement(true);
 
@@ -79,6 +92,7 @@ export default function FormulaireCreationBienAgent() {
       composition: !estTerrain && composition.length > 0 ? composition : null,
       latitude,
       longitude,
+      vendeurId,
     };
 
     try {
@@ -92,6 +106,24 @@ export default function FormulaireCreationBienAgent() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+
+      {/* ── Propriétaire (vendeur) ────────────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-6"
+        style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.06)" }}
+      >
+        <h2 className="text-base font-semibold mb-1" style={{ color: "#0F4C3A" }}>
+          Propriétaire (vendeur) *
+        </h2>
+        <p className="text-xs mb-4" style={{ color: "#9DB8AD" }}>
+          Chaque bien doit être rattaché à une fiche du répertoire propriétaires.
+        </p>
+        <SelecteurProprietaire
+          proprietaires={proprietaires}
+          valeur={vendeurId}
+          onChange={setVendeurId}
+        />
+      </div>
 
       {/* ── Informations de base ──────────────────────────────────────────── */}
       <div

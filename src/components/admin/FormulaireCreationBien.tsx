@@ -6,6 +6,7 @@ import { creerBien } from "@/app/admin/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
+import SelecteurProprietaire, { type ProprietaireOption } from "@/components/proprietaires/SelecteurProprietaire";
 
 // ── Constantes partagées (mêmes que FormulaireEditionBien) ───────────────────
 
@@ -39,10 +40,18 @@ function Champ({ label, children }: { label: string; children: React.ReactNode }
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export default function FormulaireCreationBien() {
+type Props = {
+  // Répertoire chargé côté serveur ; vendeurInitial = arrivée depuis une
+  // fiche propriétaire (« Ajouter un bien » → ?vendeur=<id>)
+  proprietaires: ProprietaireOption[];
+  vendeurInitial?: string | null;
+};
+
+export default function FormulaireCreationBien({ proprietaires, vendeurInitial }: Props) {
   const router = useRouter();
 
   // Champs du formulaire — valeurs par défaut
+  const [vendeurId, setVendeurId] = useState<string | null>(vendeurInitial ?? null);
   const [titre, setTitre] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("Appartement");
@@ -103,6 +112,11 @@ export default function FormulaireCreationBien() {
     const surfaceNum = parseFloat(surface);
     if (isNaN(surfaceNum) || surfaceNum <= 0) { setErreur("Veuillez saisir une surface valide."); return; }
 
+    if (!vendeurId) {
+      setErreur("Veuillez rattacher le bien à un propriétaire (section en haut du formulaire).");
+      return;
+    }
+
     const mettreEnFile = actionCible.current === "file";
 
     setErreur(null);
@@ -125,6 +139,7 @@ export default function FormulaireCreationBien() {
           photos: photos.length > 0 ? photos : null,
           latitude,
           longitude,
+          vendeurId,
         },
         mettreEnFile
       );
@@ -158,6 +173,21 @@ export default function FormulaireCreationBien() {
           {erreur}
         </div>
       )}
+
+      {/* Propriétaire (vendeur) — obligatoire */}
+      <div className="rounded-2xl p-6" style={{ background: "#fff", border: "1px solid #EBEBEB" }}>
+        <h2 className="text-base font-semibold mb-1" style={{ color: "#0F4C3A" }}>
+          Propriétaire (vendeur) *
+        </h2>
+        <p className="text-xs mb-4" style={{ color: "#9DB8AD" }}>
+          Chaque bien doit être rattaché à une fiche du répertoire propriétaires.
+        </p>
+        <SelecteurProprietaire
+          proprietaires={proprietaires}
+          valeur={vendeurId}
+          onChange={setVendeurId}
+        />
+      </div>
 
       {/* Informations générales */}
       <Section titre="Informations générales">

@@ -216,6 +216,8 @@ type NouveauBien = {
   longitude: number | null;
   equipements: string[] | null;
   photos: string[] | null;
+  // Fiche du répertoire proprietaires (vendeur) — obligatoire à la création
+  vendeurId: string;
 };
 
 export async function creerBien(
@@ -229,18 +231,30 @@ export async function creerBien(
   const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
   if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
 
+  // Propriétaire obligatoire : la fiche doit exister dans le répertoire
+  // (vendeurId ne part JAMAIS tel quel dans l'insert — colonne vendeur_id).
+  const { vendeurId, ...champsBien } = donnees;
+  if (!vendeurId) throw new Error("Veuillez rattacher le bien à un propriétaire.");
+  const { data: vendeur } = await supabase
+    .from("proprietaires")
+    .select("id")
+    .eq("id", vendeurId)
+    .maybeSingle();
+  if (!vendeur) throw new Error("Propriétaire introuvable dans le répertoire.");
+
   const reference = genererReference();
   const slug = genererSlug(donnees.titre, donnees.ville, reference);
 
   const { data: bien, error } = await supabase
     .from("biens")
     .insert({
-      ...donnees,
+      ...champsBien,
       reference,
       slug,
       verifie: false,
       statut: mettreEnFile ? "en_attente_affectation" : "brouillon",
       proprietaire_id: user.id,
+      vendeur_id: vendeurId,
     })
     .select("id")
     .single();

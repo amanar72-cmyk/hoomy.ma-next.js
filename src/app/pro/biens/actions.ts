@@ -91,6 +91,8 @@ export type DonneesBienAgent = {
   composition: import("@/components/partage/CompositionNiveaux").NiveauBien[] | null;
   latitude: number | null;
   longitude: number | null;
+  // Fiche du répertoire proprietaires (vendeur) — obligatoire à la création
+  vendeurId: string;
 };
 
 export async function creerBienAgent(donnees: DonneesBienAgent): Promise<{ id: string }> {
@@ -106,16 +108,28 @@ export async function creerBienAgent(donnees: DonneesBienAgent): Promise<{ id: s
     .single();
   if (!["agent", "agence"].includes(profil?.role ?? "")) throw new Error("Réservé aux agents.");
 
+  // Propriétaire obligatoire : la fiche doit exister dans le répertoire
+  // (vendeurId ne part JAMAIS tel quel dans l'insert — colonne vendeur_id).
+  const { vendeurId, ...champsBien } = donnees;
+  if (!vendeurId) throw new Error("Veuillez rattacher le bien à un propriétaire.");
+  const { data: vendeur } = await supabase
+    .from("proprietaires")
+    .select("id")
+    .eq("id", vendeurId)
+    .maybeSingle();
+  if (!vendeur) throw new Error("Propriétaire introuvable dans le répertoire.");
+
   const reference = genererReference();
   const slug = genererSlug(donnees.titre, donnees.ville, reference);
 
   const { data: bien, error } = await supabase
     .from("biens")
     .insert({
-      ...donnees,
+      ...champsBien,
       reference,
       slug,
       agent_id: user.id,
+      vendeur_id: vendeurId,
       statut: "brouillon",
       verifie: false,
     })
