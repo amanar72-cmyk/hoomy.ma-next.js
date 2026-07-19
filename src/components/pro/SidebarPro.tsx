@@ -46,6 +46,11 @@ const Ico = {
       <circle cx="12" cy="7" r="4" />
     </svg>
   ),
+  proprietaires: (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7">
+      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+    </svg>
+  ),
   demandes: (
     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7">
       <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
@@ -86,6 +91,7 @@ const Ico = {
 const NAV_AGENT = [
   { href: "/pro",              ico: "dashboard",  label: "Tableau de bord", exact: true },
   { href: "/pro/biens",        ico: "biens",      label: "Mes biens" },
+  { href: "/pro/proprietaires", ico: "proprietaires", label: "Propriétaires" },
   { href: "/pro/file",         ico: "file",       label: "File d'affectation" },
   { href: "/pro/leads",        ico: "leads",      label: "Leads" },
   { href: "/pro/contacts",     ico: "contacts",   label: "Contacts" },
