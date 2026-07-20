@@ -132,12 +132,11 @@ async function traiterLeadgen(leadgenId: string, accessToken: string): Promise<v
     }
 
     const nom = chercherChamp(champs, "full_name") ?? chercherChamp(champs, "nom") ?? "";
+    // Téléphone absent/mal saisi : gardé quand même (statut 'a_verifier' via
+    // permettreSansTelephone) plutôt que perdu — corrigeable sur
+    // /admin/leads/a-verifier.
     const telephone =
-      chercherChamp(champs, "phone") ?? chercherChamp(champs, "telephone");
-    if (!telephone) {
-      console.error(`[meta webhook] lead ${leadgenId} sans téléphone — ignoré.`);
-      return;
-    }
+      chercherChamp(champs, "phone") ?? chercherChamp(champs, "telephone") ?? "";
 
     const typeBien = chercherChamp(champs, "type", "bien") ?? chercherChamp(champs, "type_de_bien");
     const quartier = chercherChamp(champs, "quartier") ?? chercherChamp(champs, "secteur");
@@ -164,6 +163,7 @@ async function traiterLeadgen(leadgenId: string, accessToken: string): Promise<v
       metaLeadId: lead.id,                    // anti-doublon (unique en base)
       metaAdId: lead.ad_id ?? null,
       metaFormId: lead.form_id ?? null,
+      permettreSansTelephone: true,
     });
 
     console.log(

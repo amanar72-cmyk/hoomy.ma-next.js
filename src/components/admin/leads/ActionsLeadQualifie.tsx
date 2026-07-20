@@ -35,6 +35,11 @@ type Props = {
   conseillers: ConseillerLead[];
 };
 
+// Message WhatsApp fixe pré-rempli sur la fiche lead — identique à chaque
+// envoi, l'agent n'a plus qu'à appuyer sur envoyer. Modifiable ici seulement.
+const MESSAGE_WHATSAPP_LEAD =
+  "Bonjour ! 😊 Merci pour votre demande sur HOOMY.MA. Je suis conseiller immobilier et je serais ravi de vous accompagner. Quand seriez-vous disponible pour en parler ?";
+
 const STATUTS = [
   { valeur: "nouveau",  libelle: "Nouveau" },
   { valeur: "contacte", libelle: "Contacté" },
@@ -47,7 +52,7 @@ const STATUTS = [
 // ── Composant ─────────────────────────────────────────────────────────────────
 
 export default function ActionsLeadQualifie({
-  leadId, nom, telephone, statut, agentId, agentNom, notesInterne, zonesLead, conseillers,
+  leadId, telephone, statut, agentId, agentNom, notesInterne, zonesLead, conseillers,
 }: Props) {
   const [enCours, demarrer] = useTransition();
   const [modalConseiller, setModalConseiller] = useState(false);
@@ -55,9 +60,7 @@ export default function ActionsLeadQualifie({
   const [notes, setNotes] = useState(notesInterne ?? "");
 
   const tel = formatPhoneMaroc(telephone);
-  const messageWA = encodeURIComponent(
-    `Bonjour ${nom}, HOOMY.MA — nous avons bien reçu votre demande et un conseiller s'occupe de votre projet. Quand pouvons-nous vous appeler ?`
-  );
+  const messageWA = encodeURIComponent(MESSAGE_WHATSAPP_LEAD);
 
   function changerStatut(nouveau: string) {
     if (nouveau === statut) return;

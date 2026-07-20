@@ -8,6 +8,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizePhone, upsertContactParTelephone } from "@/lib/leads/upsert";
 
 const STATUTS_LEAD = ["nouveau", "contacte", "qualifie", "transmis", "converti", "perdu"] as const;
 export type StatutLead = (typeof STATUTS_LEAD)[number];
@@ -73,6 +74,60 @@ export async function affecterLeadConseiller(leadId: string, agentId: string | n
 
   revalidatePath("/admin/leads");
   revalidatePath("/admin/leads/file");
+}
+
+/**
+ * Corrige le numéro d'un lead 'a_verifier' (téléphone Meta absent/mal saisi) :
+ * normalise le numéro, crée/dédoublonne le CONTACT comme pour un lead normal,
+ * puis fait rejoindre le lead au circuit habituel (statut 'nouveau' → file
+ * d'affectation).
+ */
+export async function corrigerNumeroLeadAVerifier(leadId: string, telephoneBrut: string): Promise<void> {
+  await exigerAdmin();
+
+  const telephone = normalizePhone(telephoneBrut);
+  if (!telephone) throw new Error("Numéro de téléphone invalide.");
+
+  const admin = createAdminClient();
+
+  const { data: lead } = await admin
+    .from("leads")
+    .select("id, nom, email, statut")
+    .eq("id", leadId)
+    .maybeSingle();
+  if (!lead) throw new Error("Lead introuvable.");
+  if (lead.statut !== "a_verifier") throw new Error("Ce lead n'est plus en attente de vérification.");
+
+  const contactId = await upsertContactParTelephone(admin, telephone, lead.nom, null, lead.email);
+
+  const { error } = await admin
+    .from("leads")
+    .update({ telephone, contact_id: contactId, statut: "nouveau" })
+    .eq("id", leadId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/leads");
+  revalidatePath("/admin/leads/file");
+  revalidatePath("/admin/leads/a-verifier");
+}
+
+/**
+ * Ignore/supprime un lead 'a_verifier' irrécupérable (spam, numéro
+ * incompréhensible). Scopé strictement à ce statut : ne peut jamais
+ * supprimer un lead déjà entré dans le circuit normal.
+ */
+export async function ignorerLeadAVerifier(leadId: string): Promise<void> {
+  await exigerAdmin();
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("leads")
+    .delete()
+    .eq("id", leadId)
+    .eq("statut", "a_verifier");
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/leads/a-verifier");
 }
 
 export async function enregistrerNotesLead(leadId: string, notes: string): Promise<void> {

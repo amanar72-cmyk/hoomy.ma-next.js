@@ -66,16 +66,17 @@ export async function POST(req: NextRequest) {
   const nom = nomSepare ?? nomComplet ?? "";
   const prenom = nomSepare ? prenomSepare : null;
 
-  const telephone = champ(corps, "phone_number", "phone", "telephone");
-  if (!telephone) {
-    return NextResponse.json({ erreur: "Téléphone manquant." }, { status: 400 });
-  }
+  // Téléphone absent ou mal saisi : on ne rejette plus le lead (Make ne doit
+  // pas réessayer en boucle) — il est gardé en statut 'a_verifier' par
+  // upsertLeadEtContact (permettreSansTelephone), à corriger côté admin.
+  const telephone = champ(corps, "phone_number", "phone", "telephone") ?? "";
 
   try {
     const resultat = await upsertLeadEtContact({
       nom,
       prenom,
       telephone,
+      permettreSansTelephone: true,
       email: champ(corps, "email"),
       typeProjet: champ(corps, "type_projet", "typeProjet"),
       budget: champ(corps, "budget"),

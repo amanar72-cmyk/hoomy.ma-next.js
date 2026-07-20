@@ -118,7 +118,10 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
     .order("cree_le", { ascending: false })
     .limit(200);
 
+  // Sans filtre de statut ("Tous"), on exclut les leads 'a_verifier' (pas de
+  // téléphone exploitable) — ils ne vivent que dans /admin/leads/a-verifier.
   if (fStatut) query = query.eq("statut", fStatut);
+  else query = query.neq("statut", "a_verifier");
   if (fScore)  query = query.eq("score", fScore);
   if (fType)   query = query.eq("type_projet", fType);
   if (fSource) query = query.eq("source", fSource);
@@ -135,6 +138,9 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
 
   const leads = (raw ?? []) as unknown as Lead[];
   const tous = (tousRaw ?? []) as { statut: string; agent_id: string | null }[];
+  // « Leads qualifiés » = tout sauf les leads sans téléphone exploitable
+  // (statut 'a_verifier', page dédiée /admin/leads/a-verifier)
+  const tousQualifies = tous.filter((l) => l.statut !== "a_verifier");
 
   const compteurs: Record<string, number> = {};
   for (const l of tous) compteurs[l.statut] = (compteurs[l.statut] ?? 0) + 1;
@@ -165,7 +171,7 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
         <div>
           <h1 className="text-xl font-semibold mb-0.5" style={{ color: "#111" }}>Leads qualifiés</h1>
           <p className="text-sm" style={{ color: "#999" }}>
-            {tous.length} lead{tous.length !== 1 ? "s" : ""} au total · score calculé automatiquement
+            {tousQualifies.length} lead{tousQualifies.length !== 1 ? "s" : ""} au total · score calculé automatiquement
           </p>
         </div>
         {/* File d'affectation — les leads 'nouveau' en attente d'un conseiller */}
@@ -184,13 +190,29 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
             </span>
           )}
         </Link>
+        {/* Leads Meta sans téléphone exploitable — hors circuit tant qu'ils ne sont pas corrigés */}
+        {(compteurs["a_verifier"] ?? 0) > 0 && (
+          <Link
+            href="/admin/leads/a-verifier"
+            className="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl border"
+            style={{ borderColor: "#F2D6D1", color: "#B3412F", textDecoration: "none" }}
+          >
+            À vérifier
+            <span
+              className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+              style={{ background: "#FDEBE7", color: "#B3412F" }}
+            >
+              {compteurs["a_verifier"]}
+            </span>
+          </Link>
+        )}
       </div>
 
       {/* ── Onglets statut avec compteurs ──────────────────────────────── */}
       <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
         {ONGLETS.map((o) => {
           const actif = fStatut === o.key;
-          const n = o.key === "" ? tous.length : compteurs[o.key] ?? 0;
+          const n = o.key === "" ? tousQualifies.length : compteurs[o.key] ?? 0;
           return (
             <Link
               key={o.key}
