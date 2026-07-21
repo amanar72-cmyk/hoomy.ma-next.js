@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import TableauAdmin from "@/components/admin/TableauAdmin";
 import Pagination from "@/components/pro/Pagination";
 import { parseUserAgent } from "@/lib/securite/parseUserAgent";
+import { nettoyerRecherche } from "@/lib/utils/recherche";
 import Link from "next/link";
 
 // Logs des tentatives de connexion (succès + échecs) avec IP + appareil.
@@ -35,7 +36,7 @@ export default async function PageAdminLogs({ searchParams }: { searchParams: Se
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const filtre = sp.r === "succes" || sp.r === "echec" ? sp.r : null;
-  const recherche = sp.q?.trim() ?? "";
+  const recherche = nettoyerRecherche(sp.q?.trim() ?? "");
 
   const supabase = createAdminClient();
   let query = supabase

@@ -41,6 +41,11 @@ export async function verifierBien(id: string) {
 
 export async function deverifierBien(id: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
+
   await supabase.from("biens").update({ verifie: false }).eq("id", id);
   revalidatePath("/admin");
   revalidatePath("/admin/biens");
@@ -48,6 +53,11 @@ export async function deverifierBien(id: string) {
 
 export async function supprimerBien(id: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
+
   await supabase.from("biens").delete().eq("id", id);
   revalidatePath("/admin");
   revalidatePath("/admin/biens");
@@ -127,6 +137,11 @@ export async function modifierBien(bienId: string, donnees: DonneesBien) {
 
 export async function mettreDansFile(bienId: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
+
   const { error } = await supabase.rpc("mettre_dans_file", { bien_id: bienId });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/affectation");
@@ -134,6 +149,11 @@ export async function mettreDansFile(bienId: string) {
 
 export async function retirerBienAgent(bienId: string, remettreEnFile: boolean) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
+
   const { error } = await supabase.rpc("retirer_bien_agent", {
     bien_id: bienId,
     remettre_en_file: remettreEnFile,
@@ -352,6 +372,11 @@ export async function changerStatutLeadAdmin(leadId: string, statut: string) {
 
 export async function modifierZonesAgent(agentId: string, zones: string[]) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
+
   await supabase.from("profils").update({ zones }).eq("id", agentId);
   revalidatePath("/admin/agents");
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import ActionsLeadQualifie, { type ConseillerLead } from "@/components/admin/leads/ActionsLeadQualifie";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
+import { nettoyerRecherche } from "@/lib/utils/recherche";
 import ErreurChargement from "@/components/ui/ErreurChargement";
 
 export const metadata: Metadata = {
@@ -125,7 +126,7 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
   if (fScore)  query = query.eq("score", fScore);
   if (fType)   query = query.eq("type_projet", fType);
   if (fSource) query = query.eq("source", fSource);
-  if (q)       query = query.or(`nom.ilike.%${q}%,telephone.ilike.%${q}%`);
+  if (q)       query = query.or(`nom.ilike.%${nettoyerRecherche(q)}%,telephone.ilike.%${nettoyerRecherche(q)}%`);
 
   // ── Compteurs par statut + charge des conseillers + liste conseillers ──
   // L'erreur de la requête principale est LUE et affichée : un échec (embed,

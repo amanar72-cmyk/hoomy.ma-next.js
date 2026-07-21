@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import TableauAdmin from "@/components/admin/TableauAdmin";
+import { nettoyerRecherche } from "@/lib/utils/recherche";
 
 // Répertoire des propriétaires (vendeurs) — Server Component PARTAGÉ entre
 // /admin/proprietaires et /pro/proprietaires (seul `base` change).
@@ -21,7 +22,7 @@ export default async function ListeProprietaires({ base, q }: Props) {
 
   if (q) {
     // Recherche nom / prénom / téléphone (chiffres tels que saisis)
-    const motif = `%${q.trim()}%`;
+    const motif = `%${nettoyerRecherche(q.trim())}%`;
     query = query.or(
       `nom.ilike.${motif},prenom.ilike.${motif},telephone.ilike.${motif}`
     );
