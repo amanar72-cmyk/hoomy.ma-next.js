@@ -337,7 +337,7 @@ export default function FormulaireInscription() {
 
             <button type="button" onClick={creerCompte} disabled={chargement}
               className="w-full py-3 rounded-xl text-sm font-semibold hover:opacity-90 mt-1 cursor-pointer disabled:opacity-60"
-              style={{ background: "var(--accent)", color: "var(--primaire)" }}>
+              style={{ background: "var(--accent)", color: "var(--texte-sur-accent)" }}>
               {chargement ? "Création en cours…" : "Créer mon compte"}
             </button>
           </div>

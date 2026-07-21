@@ -21,7 +21,12 @@ export default function PourquoiHoomy() {
         >
           Pourquoi choisir HOOMY.MA ?
         </h2>
-        <p className="text-center text-sm mb-14" style={{ color: "var(--texte-tertiaire)" }}>
+        {/* var(--texte-tertiaire) est pensé pour un fond neutre (carte/page), pas
+            pour ce fond var(--primaire) coloré (vert clair/or nuit) : sur fond or
+            en mode sombre, le sage sourd devient illisible. On utilise le token
+            "texte sur primaire" (contrasté dans les 2 thèmes), atténué par opacité
+            pour garder la hiérarchie visuelle sous le titre. */}
+        <p className="text-center text-sm mb-14" style={{ color: "var(--texte-sur-primaire)", opacity: 0.75 }}>
           La plateforme immobilière de confiance au Maroc.
         </p>
 

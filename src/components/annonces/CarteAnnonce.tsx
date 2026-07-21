@@ -198,7 +198,7 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
             {estNouveau && (
               <span
                 className="badge-nouveau text-xs font-semibold px-2.5 py-1 rounded-full w-fit leading-none"
-                style={{ background: "var(--accent)", color: "var(--primaire)" }}
+                style={{ background: "var(--accent)", color: "var(--texte-sur-accent)" }}
               >
                 Nouveau
               </span>
@@ -207,7 +207,7 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
               className="text-xs font-semibold px-2.5 py-1 rounded-full w-fit leading-none"
               style={
                 bien.transaction === "location"
-                  ? { background: "var(--accent)", color: "var(--primaire)" }
+                  ? { background: "var(--accent)", color: "var(--texte-sur-accent)" }
                   : { background: "var(--primaire)", color: "var(--fond-secondaire)" }
               }
             >
@@ -240,7 +240,7 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
           {nbPhotos > 1 && (
             <div
               className="absolute bottom-3 left-3 flex items-center gap-1 text-xs px-2 py-1 rounded-full pointer-events-none"
-              style={{ background: "rgba(0,0,0,0.48)", color: "var(--fond-secondaire)", backdropFilter: "blur(4px)" }}
+              style={{ background: "rgba(0,0,0,0.48)", color: "#fff", backdropFilter: "blur(4px)" }}
             >
               <IcCamera />
               <span className="tabular-nums">{nbPhotos}</span>

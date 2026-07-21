@@ -144,7 +144,7 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
             <button
               onClick={filtrer}
               className="px-5 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90 cursor-pointer"
-              style={{ background: "var(--accent)", color: "var(--primaire)" }}
+              style={{ background: "var(--accent)", color: "var(--texte-sur-accent)" }}
             >
               Filtrer
             </button>

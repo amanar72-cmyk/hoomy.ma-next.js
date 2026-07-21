@@ -64,7 +64,7 @@ export default function BarreComparateur() {
                   height: 16,
                   borderRadius: "50%",
                   background: "var(--accent)",
-                  color: "var(--primaire)",
+                  color: "var(--texte-sur-accent)",
                   border: "none",
                   cursor: "pointer",
                   display: "flex",
@@ -98,7 +98,7 @@ export default function BarreComparateur() {
         {/* Texte */}
         <p
           className="hidden sm:block"
-          style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 500, flexShrink: 0 }}
+          style={{ color: "var(--texte-sur-primaire)", opacity: 0.85, fontSize: 13, fontWeight: 500, flexShrink: 0 }}
         >
           {biens.length} bien{biens.length > 1 ? "s" : ""} sélectionné{biens.length > 1 ? "s" : ""}
           {biens.length < 2 && (
@@ -116,7 +116,8 @@ export default function BarreComparateur() {
               borderRadius: 8,
               border: "none",
               background: "rgba(255,255,255,0.12)",
-              color: "rgba(255,255,255,0.75)",
+              color: "var(--texte-sur-primaire)",
+              opacity: 0.85,
               fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
@@ -133,7 +134,7 @@ export default function BarreComparateur() {
               borderRadius: 8,
               border: "none",
               background: "var(--accent)",
-              color: "var(--primaire)",
+              color: "var(--texte-sur-accent)",
               fontSize: 13,
               fontWeight: 700,
               cursor: biens.length >= 2 ? "pointer" : "not-allowed",

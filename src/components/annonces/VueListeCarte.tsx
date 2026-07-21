@@ -145,7 +145,7 @@ export default function VueListeCarte({ points, children }: Props) {
           <div className="absolute inset-0" style={{ background: "rgba(10,30,20,0.28)" }} />
           <span
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-full transition-transform group-hover:scale-105"
-            style={{ background: "var(--primaire)", color: "#fff", boxShadow: "0 8px 28px rgba(15,76,58,0.35)" }}
+            style={{ background: "var(--primaire)", color: "var(--texte-sur-primaire)", boxShadow: "0 8px 28px rgba(15,76,58,0.35)" }}
           >
             <IcCarte />
             Voir sur la carte ({nb})

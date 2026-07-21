@@ -172,9 +172,9 @@ export default function BarreMobileContact({
                 href={`/simulateur-credit?prix=${prix}`}
                 className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
                 style={{
-                  background: "rgba(212,175,55,0.12)",
-                  color: "#9A7A1A",
-                  border: "1px solid rgba(212,175,55,0.4)",
+                  background: "var(--accent)",
+                  color: "var(--texte-sur-accent)",
+                  border: "1px solid var(--accent)",
                   textDecoration: "none",
                 }}
               >

@@ -60,7 +60,7 @@ export default function Footer() {
             <div key={col.titre}>
               <p
                 className="text-sm font-medium mb-4"
-                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--accent)" }}
+                style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--texte-sur-primaire)" }}
               >
                 {col.titre}
               </p>
@@ -70,7 +70,7 @@ export default function Footer() {
                     <Link
                       href={lien.href}
                       className="text-sm hover:opacity-80 transition-opacity"
-                      style={{ color: "var(--texte-tertiaire)", textDecoration: "none" }}
+                      style={{ color: "var(--texte-sur-primaire)", opacity: 0.75, textDecoration: "none" }}
                     >
                       {lien.label}
                     </Link>
@@ -99,9 +99,13 @@ export default function Footer() {
               letterSpacing: "0.12em",
             }}
           >
-            HOOMY<span style={{ color: "var(--accent)" }}>.MA</span>
+            {/* var(--accent) est aussi gold en mode sombre (comme var(--primaire),
+                le fond de ce footer) — invisible sur son propre fond. On reprend
+                la teinte de "HOOMY" (déjà contrastée dans les 2 thèmes via
+                var(--fond-secondaire)), distinguée par une opacité réduite. */}
+            HOOMY<span style={{ color: "var(--fond-secondaire)", opacity: 0.75 }}>.MA</span>
           </span>
-          <p className="text-xs text-center" style={{ color: "var(--texte-tertiaire)" }}>
+          <p className="text-xs text-center" style={{ color: "var(--texte-sur-primaire)", opacity: 0.75 }}>
             © 2026 HOOMY.MA — L'immobilier premium au Maroc. Tous droits réservés.
           </p>
         </div>

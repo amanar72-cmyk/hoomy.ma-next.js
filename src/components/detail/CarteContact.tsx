@@ -46,7 +46,7 @@ export default function CarteContact({ prix, transaction, titre, chemin, bienId,
         className="rounded-2xl overflow-hidden sticky top-[72px]"
         style={{
           background: "var(--fond-secondaire)",
-          border: "1px solid #EDE7D7",
+          border: "1px solid var(--bordure)",
           boxShadow: "0 8px 32px rgba(15,76,58,0.10)",
         }}
       >
@@ -134,7 +134,7 @@ export default function CarteContact({ prix, transaction, titre, chemin, bienId,
             type="button"
             onClick={() => setModalRappelOuvert(true)}
             className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all hover:bg-opacity-10 cursor-pointer flex items-center justify-center gap-2"
-            style={{ border: "1.5px solid #0F4C3A", color: "var(--primaire)", background: "transparent" }}
+            style={{ border: "1.5px solid var(--bordure-action)", color: "var(--primaire)", background: "transparent" }}
           >
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />

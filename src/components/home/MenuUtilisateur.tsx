@@ -96,7 +96,7 @@ export default function MenuUtilisateur({ nomComplet, email, avatarUrl, role }: 
         ) : (
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
-            style={{ background: "var(--primaire)", color: "var(--accent)" }}
+            style={{ background: "var(--primaire)", color: "var(--texte-sur-primaire)" }}
           >
             {ini}
           </div>

@@ -181,14 +181,17 @@ export default function InfosBien({ bien }: { bien: Bien }) {
         {bien.verifie ? (
           <span
             className="text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1"
-            style={{ background: "#E8F5EE", color: "var(--primaire-clair)" }}
+            // Fond fixe (#E8F5EE, ne suit pas le thème) : var(--primaire-clair)
+            // devient or clair en mode sombre, faible contraste sur ce fond
+            // toujours pâle. Emeraude fixe pour rester lisible dans les 2 thèmes.
+            style={{ background: "#E8F5EE", color: "#146C43" }}
           >
             ✅ Bien vérifié
           </span>
         ) : (
           <span
             className="text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1"
-            style={{ background: "var(--primaire)", color: "#fff" }}
+            style={{ background: "var(--primaire)", color: "var(--texte-sur-primaire)" }}
           >
             Bientôt disponible
           </span>

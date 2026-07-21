@@ -224,9 +224,12 @@ export default function HeroSection({ nbBiensVerifies = 0 }: PropsHero) {
         </p>
 
         {/* ── Titre ───────────────────────────────────────────────────────── */}
+        {/* Fond du Hero fixe (dégradé vert, jamais sombre) : var(--fond-secondaire)
+            deviendrait vert nuit en mode sombre → titre invisible sur son propre
+            fond. Blanc fixe, cohérent avec le reste de ce Hero. */}
         <h1
           className="text-3xl md:text-5xl font-normal mb-3 leading-tight"
-          style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--fond-secondaire)" }}
+          style={{ fontFamily: "var(--font-marcellus), serif", color: "#fff" }}
         >
           Trouvez votre prochain bien<br />
           <span style={{ color: "var(--accent)", fontStyle: "italic" }}>au Maroc</span>
@@ -659,7 +662,7 @@ export default function HeroSection({ nbBiensVerifies = 0 }: PropsHero) {
                     width: 48,
                     height: 48,
                     background: "linear-gradient(135deg, #E9C766, #D4AF37)",
-                    color: "var(--primaire)",
+                    color: "var(--texte-sur-accent)",
                     border: "none",
                     boxShadow: "0 4px 16px rgba(212,175,55,0.35)",
                   }}

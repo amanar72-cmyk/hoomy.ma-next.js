@@ -28,9 +28,11 @@ export default async function PageFraisAcquisition({ searchParams }: Props) {
         <p className="text-xs tracking-widest mb-3" style={{ color: "var(--accent)", letterSpacing: "0.2em" }}>
           OUTIL · SIMULATION GRATUITE
         </p>
+        {/* En-tête en dégradé fixe (toujours vert) : var(--fond-secondaire)
+            deviendrait vert nuit en mode sombre → titre invisible. */}
         <h1
           className="text-3xl md:text-4xl font-normal mb-3"
-          style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--fond-secondaire)" }}
+          style={{ fontFamily: "var(--font-marcellus), serif", color: "#fff" }}
         >
           Frais d'acquisition immobilière
         </h1>

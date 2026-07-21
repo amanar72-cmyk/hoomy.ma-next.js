@@ -31,19 +31,19 @@ export default function PageEstimer() {
             {/* Badge */}
             <span
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-6"
-              style={{ background: "rgba(212,175,55,0.16)", color: "var(--accent)", border: "1px solid rgba(212,175,55,0.3)" }}
+              style={{ background: "rgba(212,175,55,0.16)", color: "var(--texte-sur-primaire)", border: "1px solid rgba(212,175,55,0.3)" }}
             >
-              <span style={{ width: 7, height: 7, borderRadius: 999, background: "var(--accent)", display: "inline-block" }} />
+              <span style={{ width: 7, height: 7, borderRadius: 999, background: "var(--texte-sur-primaire)", display: "inline-block" }} />
               Bientôt disponible
             </span>
 
             <h1
               className="text-3xl lg:text-4xl font-normal mb-4 leading-snug"
-              style={{ fontFamily: "var(--font-marcellus), serif", color: "#fff" }}
+              style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--texte-sur-primaire)" }}
             >
               L&apos;estimation en ligne arrive très bientôt
             </h1>
-            <p className="text-sm lg:text-base leading-relaxed mb-9 max-w-xl mx-auto" style={{ color: "#A8D5B8" }}>
+            <p className="text-sm lg:text-base leading-relaxed mb-9 max-w-xl mx-auto" style={{ color: "var(--texte-sur-primaire)", opacity: 0.75 }}>
               Nous finalisons notre modèle basé sur les prix réels du marché marocain pour vous
               donner une estimation juste et fiable. En attendant, un conseiller HOOMY peut
               estimer votre bien et vous accompagner dès aujourd&apos;hui.
@@ -53,7 +53,7 @@ export default function PageEstimer() {
               <Link
                 href="/publier"
                 className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-sm font-semibold transition-transform hover:scale-[1.02]"
-                style={{ background: "var(--accent)", color: "var(--primaire)", textDecoration: "none" }}
+                style={{ background: "var(--accent)", color: "var(--texte-sur-accent)", textDecoration: "none" }}
               >
                 Déposer mon bien
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -63,7 +63,7 @@ export default function PageEstimer() {
               <Link
                 href="/#contact-conseiller"
                 className="inline-flex items-center justify-center px-7 py-3.5 rounded-xl text-sm font-semibold"
-                style={{ background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.35)", textDecoration: "none" }}
+                style={{ background: "transparent", color: "var(--texte-sur-primaire)", border: "1.5px solid var(--texte-sur-primaire)", textDecoration: "none" }}
               >
                 Être rappelé par un conseiller
               </Link>

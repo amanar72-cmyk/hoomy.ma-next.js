@@ -133,11 +133,13 @@ export default function PageContact() {
         >
           HOOMY.MA · CONTACT
         </p>
+        {/* Bannière en dégradé fixe (toujours vert) : var(--fond-secondaire)
+            deviendrait vert nuit en mode sombre → titre invisible. */}
         <h1
           className="text-3xl md:text-4xl font-normal mb-4"
           style={{
             fontFamily: "var(--font-marcellus), serif",
-            color: "var(--fond-secondaire)",
+            color: "#fff",
           }}
         >
           Contactez-nous

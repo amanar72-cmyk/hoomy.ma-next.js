@@ -1246,12 +1246,15 @@ export default function WizardEstimation() {
                 className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{ background: "var(--primaire)" }}
               >
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2.5">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--texte-sur-primaire)" strokeWidth="2.5">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </div>
               <div>
-                <p className="text-base font-semibold" style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
+                {/* Carte englobante en dégradé fixe (#F0FAF4/#E8F5EE, jamais
+                    sombre) : titre en vert fixe pour garder un fort contraste
+                    même quand var(--primaire) devient or en mode sombre. */}
+                <p className="text-base font-semibold" style={{ fontFamily: "var(--font-marcellus), serif", color: "#0F4C3A" }}>
                   Créez votre compte pour découvrir l'estimation de votre bien
                 </p>
                 <p className="text-xs mt-1" style={{ color: "#6B9E7A" }}>
@@ -1674,7 +1677,10 @@ export default function WizardEstimation() {
               className="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all disabled:opacity-60"
               style={{
                 background: chargement ? "#6B9E7A" : "linear-gradient(135deg, #0F4C3A 0%, #146C43 100%)",
-                color: "var(--fond-secondaire)",
+                // Fond toujours vert, fixe : var(--fond-secondaire) deviendrait
+                // vert nuit foncé en mode sombre → texte quasi invisible sur
+                // son propre bouton. Blanc fixe, comme le reste de cet en-tête.
+                color: "#fff",
                 boxShadow: chargement ? "none" : "0 4px 14px rgba(15,76,58,0.3)",
               }}
             >

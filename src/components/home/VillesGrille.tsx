@@ -61,9 +61,11 @@ export default function VillesGrille({ comptesParVille }: { comptesParVille: Rec
               className="absolute inset-0 opacity-10"
               style={{ backgroundImage: "radial-gradient(circle at 80% 20%, #D4AF37 0%, transparent 60%)" }}
             />
+            {/* Carte en dégradé fixe (toujours vert) : var(--fond-secondaire)
+                deviendrait vert nuit en mode sombre → nom de ville invisible. */}
             <p
               className="relative text-xl font-normal"
-              style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--fond-secondaire)" }}
+              style={{ fontFamily: "var(--font-marcellus), serif", color: "#fff" }}
             >
               {nom}
             </p>

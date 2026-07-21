@@ -60,6 +60,10 @@
   /* ── Sémantique boutons (évite les conflits texte-sur-fond en mode sombre) ── */
   --texte-sur-accent: var(--primaire);   /* texte sur fond var(--accent) → vert sur or */
   --bordure-action:   var(--primaire);   /* bordure + texte du bouton outline → vert */
+  /* var(--primaire) devient or en mode sombre (comme var(--accent)) : tout
+     texte/icône posé sur un fond var(--primaire) doit utiliser CE token,
+     jamais var(--accent) directement (sinon or-sur-or en mode sombre). */
+  --texte-sur-primaire: #FFFFFF;         /* texte sur fond var(--primaire) → blanc sur vert */
 
   /* ── Héritage Tailwind (requis pour --color-background/foreground) ── */
   --background: #FAF7F0;
@@ -107,6 +111,7 @@
   /* ── Sémantique boutons ── */
   --texte-sur-accent:  #0A1F18;   /* quasi-noir sur fond or · 9:1 de contraste ✓ */
   --bordure-action:    #D4AF37;   /* or · bouton outline sur fond sombre */
+  --texte-sur-primaire: #0A1F18;  /* quasi-noir sur fond var(--primaire) devenu or · 9:1 ✓ */
 
   /* ── États sémantiques ── */
   --succes-fond:       #0E281C;   /* vert très sombre */

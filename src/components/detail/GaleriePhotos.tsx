@@ -55,6 +55,9 @@ function Lightbox({
       aria-label={`Galerie — ${titre}`}
       className="fixed inset-0 z-[200] flex flex-col"
       style={{ background: "rgba(8,12,10,0.97)" }}
+      // Fond de la lightbox toujours quasi-noir (jamais réactif au thème) :
+      // les icônes/textes ci-dessous restent blancs en dur — var(--fond-secondaire)
+      // deviendrait vert nuit foncé en mode sombre, invisible sur ce fond.
     >
       <div
         className="flex items-center justify-between px-5 py-4 flex-shrink-0"
@@ -72,7 +75,7 @@ function Lightbox({
             onClick={onClose}
             aria-label="Fermer la galerie"
             className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-colors"
-            style={{ background: "rgba(255,255,255,0.1)", color: "var(--fond-secondaire)" }}
+            style={{ background: "rgba(255,255,255,0.1)", color: "#fff" }}
           >
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -96,7 +99,7 @@ function Lightbox({
               onClick={precedent}
               aria-label="Photo précédente"
               className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105"
-              style={{ background: "rgba(255,255,255,0.12)", color: "var(--fond-secondaire)" }}
+              style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
             >
               <svg width="19" height="19" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="15 18 9 12 15 6" />
@@ -107,7 +110,7 @@ function Lightbox({
               onClick={suivant}
               aria-label="Photo suivante"
               className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105"
-              style={{ background: "rgba(255,255,255,0.12)", color: "var(--fond-secondaire)" }}
+              style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
             >
               <svg width="19" height="19" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="9 18 15 12 9 6" />
@@ -156,7 +159,7 @@ function Badges({ transaction, verifie }: { transaction: string; verifie: boolea
         className="text-xs font-semibold px-3 py-1.5 rounded-full w-fit"
         style={
           transaction === "location"
-            ? { background: "var(--accent)", color: "var(--primaire)" }
+            ? { background: "var(--accent)", color: "var(--texte-sur-accent)" }
             : { background: "var(--primaire)", color: "var(--fond-secondaire)" }
         }
       >

@@ -31,9 +31,11 @@ export default async function PageSimulateurCredit({ searchParams }: Props) {
         >
           OUTIL · SIMULATION GRATUITE
         </p>
+        {/* En-tête en dégradé fixe (toujours vert) : var(--fond-secondaire)
+            deviendrait vert nuit en mode sombre → titre invisible. */}
         <h1
           className="text-3xl md:text-4xl font-normal mb-3"
-          style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--fond-secondaire)" }}
+          style={{ fontFamily: "var(--font-marcellus), serif", color: "#fff" }}
         >
           Simulateur de crédit immobilier
         </h1>

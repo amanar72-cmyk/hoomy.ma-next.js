@@ -104,7 +104,7 @@ function CarteCarrousel({ bien }: { bien: BienPublic }) {
                   : "var(--primaire)",
               color:
                 bien.transaction === "location"
-                  ? "var(--primaire)"
+                  ? "var(--texte-sur-accent)"
                   : "var(--fond-secondaire)",
               fontSize: 10,
               fontWeight: 700,
@@ -125,7 +125,7 @@ function CarteCarrousel({ bien }: { bien: BienPublic }) {
                 top: 10,
                 right: 10,
                 background: "var(--accent)",
-                color: "var(--primaire)",
+                color: "var(--texte-sur-accent)",
                 fontSize: 10,
                 fontWeight: 700,
                 padding: "4px 10px",

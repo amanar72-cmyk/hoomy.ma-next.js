@@ -241,7 +241,7 @@ export default function MenuMobileHamburger({ estConnecte, nomComplet }: Props) 
                   fontSize: 14,
                   fontWeight: 600,
                   background: "var(--accent)",
-                  color: "var(--primaire)",
+                  color: "var(--texte-sur-accent)",
                   textDecoration: "none",
                 }}
               >
