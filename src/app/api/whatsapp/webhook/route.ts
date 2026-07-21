@@ -1,12 +1,22 @@
 import { NextRequest } from "next/server";
 import twilio from "twilio";
-import { genererReponseAgent } from "@/lib/agent/cerveau";
+import { genererReponseAgent, type CriteresAgent } from "@/lib/agent/cerveau";
 import {
   trouverOuCreerConversation,
   chargerHistorique,
   enregistrerMessage,
   enregistrerMemoire,
+  normaliserTelephone,
 } from "@/lib/agent/conversation";
+import { creerDemandeVisiteWhatsApp } from "@/lib/agent/visite";
+
+// Mémoire persistée (JSONB) élargie d'un bit de bookkeeping propre à ce
+// webhook : une fois une visite créée pour un rendez-vous convenu, on ne veut
+// PAS en recréer une à chaque message suivant ("merci", "parfait"...) tant que
+// le client ne propose pas un NOUVEAU créneau. cerveau.ts l'ignore totalement
+// (fusionnerCriteres ne connaît que CLES_CRITERES) : ce bit ne vit que côté
+// persistance, géré ici.
+type MemoireEtendue = Partial<CriteresAgent> & { visite_creee?: boolean };
 
 // WEBHOOK WhatsApp (Twilio sandbox) — reçoit les messages entrants et répond
 // via le CERVEAU partagé de l'agent (src/lib/agent/cerveau.ts).
@@ -19,7 +29,10 @@ import {
 // - MÉMOIRE : la conversation (fil + critères accumulés) est persistée via
 //   src/lib/agent/conversation.ts, avec la clé service_role — Twilio est un
 //   service externe, il n'y a AUCUNE session utilisateur ici.
-// - Toujours aucun lead ni visite créé (étape suivante).
+// - Si le client vient de convenir d'un créneau de visite précis (jour+heure),
+//   une demande de visite RÉELLE est créée (demandes_visite, statut 'nouvelle')
+//   + notification push/email — voir src/lib/agent/visite.ts. Jamais côté
+//   simulateur admin (/api/agent/simulateur), qui n'appelle pas cette fonction.
 // - Toujours 200 + TwiML vide : la réponse au client part par l'API REST
 //   Twilio, pas par le TwiML (permettra plusieurs messages plus tard).
 // Credentials 100 % serveur — jamais exposées au navigateur.
@@ -123,7 +136,24 @@ export async function POST(req: NextRequest) {
     if (resultat.reponse.trim()) {
       texteReponse = resultat.reponse.trim().slice(0, LONGUEUR_MAX);
     }
-    await enregistrerMemoire(conversation.id, resultat.memoire);
+
+    // ── Visite convenue : crée la demande réelle (jamais côté simulateur) ─────
+    let memoireAPersister: MemoireEtendue = resultat.memoire;
+    const memoireAvant = conversation.memoire as MemoireEtendue;
+    if (resultat.visite.confirmee && !memoireAvant.visite_creee) {
+      try {
+        const { creee } = await creerDemandeVisiteWhatsApp({
+          telephone: normaliserTelephone(from),
+          nomClient: resultat.memoire.prenom ?? null,
+          visite: resultat.visite,
+        });
+        if (creee) memoireAPersister = { ...resultat.memoire, visite_creee: true };
+      } catch (e) {
+        console.error("[whatsapp] création demande de visite échouée :", e);
+      }
+    }
+
+    await enregistrerMemoire(conversation.id, memoireAPersister);
   } catch (e) {
     // Cerveau ou base en échec : on log et on part sur le repli poli.
     console.error("[whatsapp] cerveau/mémoire en échec :", e);
