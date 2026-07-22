@@ -9,14 +9,25 @@ import {
   normaliserTelephone,
 } from "@/lib/agent/conversation";
 import { creerDemandeVisiteWhatsApp } from "@/lib/agent/visite";
+import { creerLeadWhatsApp } from "@/lib/agent/lead";
 
-// Mémoire persistée (JSONB) élargie d'un bit de bookkeeping propre à ce
-// webhook : une fois une visite créée pour un rendez-vous convenu, on ne veut
-// PAS en recréer une à chaque message suivant ("merci", "parfait"...) tant que
-// le client ne propose pas un NOUVEAU créneau. cerveau.ts l'ignore totalement
-// (fusionnerCriteres ne connaît que CLES_CRITERES) : ce bit ne vit que côté
-// persistance, géré ici.
-type MemoireEtendue = Partial<CriteresAgent> & { visite_creee?: boolean };
+// Mémoire persistée (JSONB) élargie de bits de bookkeeping propres à ce
+// webhook : cerveau.ts l'ignore totalement (fusionnerCriteres ne connaît que
+// CLES_CRITERES) — ces champs ne vivent que côté persistance, gérés ici.
+//   - visite_creee : une fois une visite créée pour un rendez-vous convenu, on
+//     ne veut PAS en recréer une à chaque message suivant ("merci", "parfait"...)
+//     tant que le client ne propose pas un NOUVEAU créneau.
+//   - lead_cree : un seul lead par conversation, même si nom/prénom/besoin
+//     restent connus (donc la condition resterait vraie) sur tous les tours suivants.
+//   - refs_montrees : biens déjà envoyés au client, pour ne jamais les reproposer.
+type MemoireEtendue = Partial<CriteresAgent> & {
+  visite_creee?: boolean;
+  lead_cree?: boolean;
+  refs_montrees?: string[];
+};
+
+/** Source par défaut faute de mécanisme de contexte publicitaire (referral Meta) branché. */
+const SOURCE_LEAD_WHATSAPP = "whatsapp";
 
 // WEBHOOK WhatsApp (Twilio sandbox) — reçoit les messages entrants et répond
 // via le CERVEAU partagé de l'agent (src/lib/agent/cerveau.ts).
@@ -31,8 +42,11 @@ type MemoireEtendue = Partial<CriteresAgent> & { visite_creee?: boolean };
 //   service externe, il n'y a AUCUNE session utilisateur ici.
 // - Si le client vient de convenir d'un créneau de visite précis (jour+heure),
 //   une demande de visite RÉELLE est créée (demandes_visite, statut 'nouvelle')
-//   + notification push/email — voir src/lib/agent/visite.ts. Jamais côté
-//   simulateur admin (/api/agent/simulateur), qui n'appelle pas cette fonction.
+//   + notification push/email — voir src/lib/agent/visite.ts.
+// - Dès que prénom + nom + un besoin (intention acheteur/vendeur) sont connus,
+//   un LEAD réel est créé une fois par conversation — voir src/lib/agent/lead.ts.
+//   Ni l'un ni l'autre côté simulateur admin (/api/agent/simulateur), qui
+//   n'importe aucune de ces deux fonctions.
 // - Toujours 200 + TwiML vide : la réponse au client part par l'API REST
 //   Twilio, pas par le TwiML (permettra plusieurs messages plus tard).
 // Credentials 100 % serveur — jamais exposées au navigateur.
@@ -57,6 +71,16 @@ function twimlVide(status = 200): Response {
 /** Préfixe whatsapp: si absent (tolère un TWILIO_WHATSAPP_NUMBER nu). */
 function numeroWhatsApp(brut: string): string {
   return brut.startsWith("whatsapp:") ? brut : `whatsapp:${brut}`;
+}
+
+/** Éclate un ISO (UTC) en date/heure LOCALES Maroc — pour l'email, lisible par un humain. */
+function versDateHeureMaroc(iso: string): { date: string; heure: string } {
+  const d = new Date(iso);
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca" }).format(d); // AAAA-MM-JJ
+  const heure = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Africa/Casablanca", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(d);
+  return { date, heure };
 }
 
 /**
@@ -127,19 +151,29 @@ export async function POST(req: NextRequest) {
     const historique = await chargerHistorique(conversation.id);
     await enregistrerMessage(conversation.id, "client", body);
 
+    const memoireAvant = conversation.memoire as MemoireEtendue;
+
     const resultat = await genererReponseAgent({
       message: body,
       historique,
       memoire: conversation.memoire,
+      refsDejaMontrees: memoireAvant.refs_montrees ?? [],
     });
 
     if (resultat.reponse.trim()) {
       texteReponse = resultat.reponse.trim().slice(0, LONGUEUR_MAX);
     }
 
+    // Biens déjà montrés : mis à jour à CHAQUE tour (contrairement aux bits
+    // ci-dessous, qui ne passent qu'une fois de false à true).
+    const memoireAPersister: MemoireEtendue = {
+      ...resultat.memoire,
+      refs_montrees: resultat.refsMontrees,
+      visite_creee: memoireAvant.visite_creee,
+      lead_cree: memoireAvant.lead_cree,
+    };
+
     // ── Visite convenue : crée la demande réelle (jamais côté simulateur) ─────
-    let memoireAPersister: MemoireEtendue = resultat.memoire;
-    const memoireAvant = conversation.memoire as MemoireEtendue;
     if (resultat.visite.confirmee && !memoireAvant.visite_creee) {
       try {
         const { creee } = await creerDemandeVisiteWhatsApp({
@@ -147,9 +181,35 @@ export async function POST(req: NextRequest) {
           nomClient: resultat.memoire.prenom ?? null,
           visite: resultat.visite,
         });
-        if (creee) memoireAPersister = { ...resultat.memoire, visite_creee: true };
+        if (creee) memoireAPersister.visite_creee = true;
       } catch (e) {
         console.error("[whatsapp] création demande de visite échouée :", e);
+      }
+    }
+
+    // ── Lead qualifié : prénom + nom + besoin identifié (intention connue),
+    //    une seule fois par conversation (jamais côté simulateur) ────────────
+    const { nom, prenom } = resultat.criteres;
+    if (!memoireAvant.lead_cree && nom && prenom && resultat.intention !== "autre") {
+      try {
+        // Bien qui intéresse le client : celui d'une visite en cours de
+        // discussion en priorité, sinon le premier bien montré (meilleure
+        // approximation disponible sans demander explicitement au client).
+        const bienInteresse = resultat.visite.bien_ref ?? resultat.refsMontrees[0] ?? null;
+
+        await creerLeadWhatsApp({
+          telephone: normaliserTelephone(from),
+          criteres: resultat.criteres,
+          intention: resultat.intention,
+          source: SOURCE_LEAD_WHATSAPP,
+          bienInteresse,
+          biensProposes: resultat.refsMontrees,
+          visiteSouhaitee: resultat.visite.date_iso ? versDateHeureMaroc(resultat.visite.date_iso) : null,
+          resume: resultat.resume,
+        });
+        memoireAPersister.lead_cree = true;
+      } catch (e) {
+        console.error("[whatsapp] création lead échouée :", e);
       }
     }
 
