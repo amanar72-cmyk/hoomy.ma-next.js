@@ -114,8 +114,8 @@ export default async function PageDetailLocation({ params }: Props) {
         </nav>
       </div>
 
-      {/* ── Galerie pleine largeur ──────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-6 pt-4">
+      {/* ── Galerie pleine largeur (plein bord sur mobile, insérée sur desktop) ── */}
+      <div className="max-w-7xl mx-auto px-0 md:px-6 pt-4">
         <GaleriePhotos
           photos={bien.photos ?? []}
           titre={bien.titre}

@@ -2,6 +2,34 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 
+// ── Geste de balayage tactile (swipe) ──────────────────────────────────────────
+// Seuil de 40px : assez court pour être réactif, assez long pour ne pas
+// confondre un swipe horizontal avec un tap ou un scroll vertical accidentel.
+const SEUIL_SWIPE_PX = 40;
+
+function useSwipe(onGauche: () => void, onDroite: () => void) {
+  const debutX = useRef<number | null>(null);
+  const debutY = useRef<number | null>(null);
+
+  return {
+    onTouchStart: (e: React.TouchEvent) => {
+      debutX.current = e.touches[0].clientX;
+      debutY.current = e.touches[0].clientY;
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      if (debutX.current === null || debutY.current === null) return;
+      const deltaX = e.changedTouches[0].clientX - debutX.current;
+      const deltaY = e.changedTouches[0].clientY - debutY.current;
+      debutX.current = null;
+      debutY.current = null;
+      // Un geste surtout vertical = scroll de page, pas une navigation photo.
+      if (Math.abs(deltaX) < SEUIL_SWIPE_PX || Math.abs(deltaX) < Math.abs(deltaY)) return;
+      if (deltaX < 0) onDroite();
+      else onGauche();
+    },
+  };
+}
+
 type Props = {
   photos: string[];
   titre: string;
@@ -48,6 +76,8 @@ function Lightbox({
     };
   }, [onClose, precedent, suivant]);
 
+  const swipe = useSwipe(precedent, suivant);
+
   return (
     <div
       role="dialog"
@@ -84,7 +114,10 @@ function Lightbox({
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center relative min-h-0 px-16 py-4">
+      <div
+        className="flex-1 flex items-center justify-center relative min-h-0 px-16 py-4"
+        {...swipe}
+      >
         <img
           key={index}
           src={photos[index]}
@@ -398,12 +431,19 @@ function CarrouselMobile({
   onOpen: (i: number) => void;
 }) {
   const [index, setIndex] = useState(0);
+  const precedent = () => setIndex((i) => (i - 1 + photos.length) % photos.length);
+  const suivant = () => setIndex((i) => (i + 1) % photos.length);
+  const swipe = useSwipe(precedent, suivant);
 
+  // Plein bord (pas d'arrondi, pas de marge) : le conteneur parent n'a plus de
+  // padding sur mobile — voir px-0 md:px-6 dans les pages /acheter et /louer.
+  // aspect-[4/3] (pas une hauteur fixe) : les photos restent grandes et
+  // proportionnées quelle que soit la largeur de l'écran.
   return (
-    <div className="relative rounded-2xl overflow-hidden md:hidden" style={{ height: 280 }}>
+    <div className="relative overflow-hidden md:hidden aspect-[4/3]" {...swipe}>
       <div className="w-full h-full cursor-pointer" onClick={() => onOpen(index)}>
         {photos[index] ? (
-          <img src={photos[index]} alt={`${titre} — photo ${index + 1}`} className="w-full h-full object-cover" />
+          <img src={photos[index]} alt={`${titre} — photo ${index + 1}`} className="w-full h-full object-cover" draggable={false} />
         ) : (
           <Placeholder />
         )}
@@ -415,7 +455,7 @@ function CarrouselMobile({
         <>
           <button
             type="button"
-            onClick={() => setIndex((i) => (i - 1 + photos.length) % photos.length)}
+            onClick={precedent}
             aria-label="Photo précédente"
             className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
             style={{ background: "rgba(255,255,255,0.88)", color: "var(--primaire)" }}
@@ -426,7 +466,7 @@ function CarrouselMobile({
           </button>
           <button
             type="button"
-            onClick={() => setIndex((i) => (i + 1) % photos.length)}
+            onClick={suivant}
             aria-label="Photo suivante"
             className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
             style={{ background: "rgba(255,255,255,0.88)", color: "var(--primaire)" }}
