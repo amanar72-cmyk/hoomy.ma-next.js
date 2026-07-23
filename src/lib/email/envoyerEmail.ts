@@ -31,12 +31,18 @@ export type EmailAEnvoyer = {
   texte: string;
   /** Destinataire — par défaut la boîte HOOMY (SMTP_USER, notifications admin) */
   destinataire?: string;
+  /**
+   * Corps HTML optionnel (ex. template stylé HOOMY). `texte` reste TOUJOURS
+   * fourni comme repli (clients mail sans HTML, filtres anti-spam) — aucun
+   * appelant existant n'est affecté, ce paramètre est ignoré si absent.
+   */
+  html?: string;
 };
 
 // Envoi best-effort : ne lève JAMAIS d'exception — une panne email ne doit jamais
 // casser l'action métier (création de bien, demande de visite, etc.). Les erreurs
 // sont loggées pour rester diagnosticables.
-export async function envoyerEmail({ sujet, texte, destinataire }: EmailAEnvoyer): Promise<void> {
+export async function envoyerEmail({ sujet, texte, destinataire, html }: EmailAEnvoyer): Promise<void> {
   try {
     const transport = obtenirTransporteur();
     const adresse = process.env.SMTP_USER as string;
@@ -45,6 +51,7 @@ export async function envoyerEmail({ sujet, texte, destinataire }: EmailAEnvoyer
       to: destinataire ?? adresse,
       subject: sujet,
       text: texte,
+      ...(html ? { html } : {}),
     });
   } catch (err) {
     console.error("[email] Échec d'envoi :", err instanceof Error ? err.message : err);

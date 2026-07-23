@@ -55,17 +55,21 @@ export default function BarreMobileContact({
 
   return (
     <>
-      {/* Pill flottant — caché sur ≥ lg — z-[10000] pour passer au-dessus de la bulle IA */}
+      {/* Bandeau plein bord — caché sur ≥ lg — z-[10000] pour passer au-dessus de la bulle IA */}
       <div
-        className="lg:hidden fixed bottom-4 left-3 right-3"
+        className="lg:hidden fixed bottom-0 left-0 right-0"
         style={{ zIndex: 10000 }}
       >
         <div
-          className="rounded-2xl overflow-hidden"
+          className="rounded-t-3xl overflow-hidden"
           style={{
             background: "var(--fond-secondaire)",
-            border: "1px solid var(--bordure)",
-            boxShadow: "0 6px 28px rgba(0,0,0,0.16)",
+            borderTop: "1px solid var(--bordure)",
+            boxShadow: "0 -10px 32px rgba(0,0,0,0.16)",
+            // Marge de sécurité iPhone (barre d'accueil) : le bandeau ne colle
+            // plus le contenu au bord système, sans réintroduire de vide visuel
+            // au-dessus (c'est du padding interne, pas une marge externe).
+            paddingBottom: "env(safe-area-inset-bottom, 0px)",
           }}
         >
           {/* ── Ligne 1 : ref+ville | PRIX | favoris+partager ── */}

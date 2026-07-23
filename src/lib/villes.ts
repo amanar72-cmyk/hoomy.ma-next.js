@@ -10,7 +10,7 @@
 // lien direct (les biens des autres villes restent en ligne, juste absents
 // des résultats de recherche).
 
-export const VILLES_ACTIVES = ["Agadir", "Marrakech"] as const;
+export const VILLES_ACTIVES = ["Agadir", "Casablanca", "Fès", "Marrakech", "Rabat", "Tanger"] as const;
 
 /** Normalisation : minuscules + accents retirés (données réelles hétérogènes). */
 function normaliser(v: string): string {

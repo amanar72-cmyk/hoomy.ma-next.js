@@ -84,14 +84,19 @@ const IcoFermer = () => (
 
 // ── Menu items ────────────────────────────────────────────────────────────────
 
+// "Mes recherches" (/mon-compte/recherches — alertes sur recherche sauvegardée)
+// est un placeholder inactif : masqué du menu tant que la fonctionnalité n'est
+// pas développée (un menu vers une page vide dessert le produit). La page et
+// son code restent intacts, juste non-listée — remettre l'entrée ici pour la
+// réactiver le moment venu.
 const MENU = [
-  { href: "/mon-compte",             label: "Tableau de bord", icone: <IcoDashboard />,  exact: true },
-  { href: "/mon-compte/favoris",     label: "Mes favoris",     icone: <IcoCoeur />,      exact: false },
-  { href: "/mon-compte/recherches",  label: "Mes recherches",  icone: <IcoRecherche />,  exact: false },
-  { href: "/mon-compte/demandes",    label: "Mes demandes",    icone: <IcoBoite />,      exact: false },
-  { href: "/mon-compte/visites",     label: "Mes visites",     icone: <IcoCalendrier />, exact: false },
-  { href: "/mon-compte/mes-biens",   label: "Mes biens",       icone: <IcoBien />,       exact: false },
-  { href: "/mon-compte/parametres",  label: "Mon compte",      icone: <IcoParametres />, exact: false },
+  { href: "/mon-compte",                    label: "Tableau de bord",       icone: <IcoDashboard />,  exact: true },
+  { href: "/mon-compte/favoris",            label: "Mes favoris",           icone: <IcoCoeur />,      exact: false },
+  { href: "/mon-compte/demandes-recherche", label: "Ma recherche publiée",  icone: <IcoRecherche />,  exact: false },
+  { href: "/mon-compte/demandes",           label: "Mes visites et messages", icone: <IcoBoite />,    exact: false },
+  { href: "/mon-compte/visites",            label: "Mes visites",           icone: <IcoCalendrier />, exact: false },
+  { href: "/mon-compte/mes-biens",          label: "Mes biens",             icone: <IcoBien />,       exact: false },
+  { href: "/mon-compte/parametres",         label: "Mon compte",            icone: <IcoParametres />, exact: false },
 ];
 
 // ── Composant ─────────────────────────────────────────────────────────────────
