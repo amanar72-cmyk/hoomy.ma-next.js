@@ -28,6 +28,7 @@
     "react-map-gl": "^8.1.1",
     "react-phone-number-input": "^3.4.17",
     "server-only": "^0.0.1",
+    "sharp": "^0.35.0",
     "twilio": "^6.0.2",
     "web-push": "^3.6.7"
   },
@@ -45,6 +46,7 @@
   },
   "overrides": {
     "postcss": "^8.5.10",
+    "sharp": "^0.35.0",
     "eslint": {
       "minimatch": {
         "brace-expansion": "^1.1.16"
