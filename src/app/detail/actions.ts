@@ -11,6 +11,7 @@ import {
 import { notifierNouvelleActiviteLead, notifierNouveauLead } from "@/lib/email/notifications";
 import { envoyerEmail } from "@/lib/email/envoyerEmail";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
+import { lireIP as lireIPPartagee } from "@/lib/securite/lireIP";
 import { upsertLeadEtContact, normalizePhone } from "@/lib/leads/upsert";
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -28,7 +29,7 @@ function telephoneValide(tel: string): boolean {
 
 async function lireIP(): Promise<string> {
   const hdrs = await headers();
-  return hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  return lireIPPartagee(hdrs);
 }
 
 // ── Throttle email ────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { upsertLeadEtContact } from "@/lib/leads/upsert";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
+import { lireIP } from "@/lib/securite/lireIP";
 
 // Réception des leads du SITE (landing pages publicitaires → fetch POST).
 // Le formulaire React existant passe, lui, par la server action soumettreLead —
@@ -11,7 +12,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   // 1. Rate limit : 5 soumissions / 10 min / IP (public)
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "inconnue";
+  const ip = lireIP(req.headers);
   if (!verifierRateLimit(`${ip}-lead`, 5, 10 * 60 * 1000)) {
     return NextResponse.json(
       { erreur: "Trop de soumissions. Veuillez patienter quelques minutes." },

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Bien } from "@/lib/types";
+import type { BienPublic } from "@/lib/types";
 import type { NiveauBien } from "@/components/partage/CompositionNiveaux";
 import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
 
@@ -153,7 +153,7 @@ function SectionComposition({ composition }: { composition: NiveauBien[] }) {
   );
 }
 
-export default function InfosBien({ bien }: { bien: Bien }) {
+export default function InfosBien({ bien }: { bien: BienPublic }) {
   const equipements = (bien.equipements ?? []) as string[];
   const composition = (bien.composition ?? []) as NiveauBien[];
   const estVente = bien.transaction !== "location";

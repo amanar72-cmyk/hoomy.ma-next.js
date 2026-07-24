@@ -12,21 +12,6 @@
 
 import "server-only";
 import { createHash } from "node:crypto";
-import type { PointCarte } from "@/lib/types";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-/** Bien minimal géolocalisable (coordonnées exactes, en entrée uniquement). */
-type BienGeolocalisable = {
-  id: string;
-  slug: string | null;
-  titre: string;
-  prix: number;
-  transaction: string;
-  photos: string[] | null;
-  latitude: number | null;
-  longitude: number | null;
-};
 
 // ── Secret serveur ────────────────────────────────────────────────────────────
 
@@ -81,30 +66,4 @@ export function flouterPosition(
     lat: Number((latitude + dLat).toFixed(5)),
     lng: Number((longitude + dLng).toFixed(5)),
   };
-}
-
-/**
- * Construit les points de carte floutés à partir d'une liste de biens.
- * Les biens sans coordonnées sont exclus proprement (jamais de crash) —
- * le compteur du bouton « Afficher la carte » reflète donc le nombre
- * de biens réellement affichables.
- */
-export function construirePointsCarte(biens: BienGeolocalisable[]): PointCarte[] {
-  const points: PointCarte[] = [];
-  for (const b of biens) {
-    if (typeof b.latitude !== "number" || typeof b.longitude !== "number") continue;
-    const pos = flouterPosition(b.id, b.latitude, b.longitude);
-    if (!pos) continue; // secret absent → aucun point, carte simplement désactivée
-    points.push({
-      id: b.id,
-      slug: b.slug,
-      titre: b.titre,
-      prix: b.prix,
-      transaction: b.transaction,
-      photo: b.photos?.[0] ?? null,
-      latApprox: pos.lat,
-      lngApprox: pos.lng,
-    });
-  }
-  return points;
 }

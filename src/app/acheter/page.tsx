@@ -6,9 +6,9 @@ import FiltresBar from "@/components/annonces/FiltresBar";
 import CarteAnnonce from "@/components/annonces/CarteAnnonce";
 import TriSelect from "@/components/annonces/TriSelect";
 import VueListeCarte from "@/components/annonces/VueListeCarte";
-import { construirePointsCarte } from "@/lib/geo/floutage";
-import type { Bien, FiltresActifs } from "@/lib/types";
-import { TRI_MAP } from "@/lib/types";
+import { obtenirPointsCarteDepuisIds } from "@/lib/geo/positionApprox";
+import type { BienPublic, FiltresActifs } from "@/lib/types";
+import { TRI_MAP, COLONNES_BIEN_PUBLIC } from "@/lib/types";
 import { FILTRE_VILLES_ACTIVES_OR, LIBELLE_VILLES_ACTIVES } from "@/lib/villes";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +57,7 @@ export default async function PageAcheter({ searchParams }: Props) {
   // les biens des autres villes restent accessibles par lien direct.
   let query = supabase
     .from("biens")
-    .select("*")
+    .select(COLONNES_BIEN_PUBLIC) // jamais latitude/longitude côté anon (voir lib/geo/positionApprox.ts)
     .eq("transaction", "vente")
     .or(FILTRE_VILLES_ACTIVES_OR);
 
@@ -78,12 +78,13 @@ export default async function PageAcheter({ searchParams }: Props) {
   query = query.order(triConfig.colonne, { ascending: triConfig.ascending });
 
   const { data } = await query;
-  const biens = (data ?? []) as Bien[];
+  const biens = (data ?? []) as unknown as BienPublic[];
+  const biensPublics = biens; // select() ne renvoie déjà plus latitude/longitude
 
-  // Floutage côté serveur : la carte ne reçoit que des coordonnées approximatives,
-  // et les cartes annonces ne reçoivent AUCUNE coordonnée (BienPublic).
-  const pointsCarte = construirePointsCarte(biens);
-  const biensPublics = biens.map(({ latitude, longitude, ...reste }) => reste);
+  // Coordonnées lues séparément en service_role puis floutées (jamais via la
+  // clé anon — voir lib/geo/positionApprox.ts) ; les cartes annonces, elles,
+  // ne reçoivent AUCUNE coordonnée.
+  const pointsCarte = await obtenirPointsCarteDepuisIds(biens);
 
   return (
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>

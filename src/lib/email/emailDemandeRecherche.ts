@@ -14,12 +14,27 @@ const VERT_ROYAL = "#0F4C3A";
 const OR = "#D4AF37";
 const FOND = "#FAF7F0";
 
+// Échappement HTML — OBLIGATOIRE : `valeur` provient de champs libres soumis
+// par un visiteur non authentifié via /api/demandes/proposer (description,
+// atouts, nom_agence, adresse_approx...). Sans ça, une proposition contenant
+// par ex. un <img onerror=...> s'insère telle quelle dans l'email HTML reçu
+// par l'admin/l'agent — vérifié par audit sécurité.
+function echapperHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function ligne(label: string, valeur: string | number | null | undefined): string {
   if (valeur === null || valeur === undefined || valeur === "") return "";
+  const valeurSure = typeof valeur === "string" ? echapperHtml(valeur) : valeur;
   return `
     <tr>
       <td style="padding:4px 12px 4px 0;color:#6B7A71;font-size:13px;white-space:nowrap;vertical-align:top;">${label}</td>
-      <td style="padding:4px 0;color:#1A2822;font-size:13px;">${valeur}</td>
+      <td style="padding:4px 0;color:#1A2822;font-size:13px;">${valeurSure}</td>
     </tr>`;
 }
 

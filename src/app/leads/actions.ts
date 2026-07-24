@@ -17,6 +17,7 @@
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
+import { lireIP as lireIPPartagee } from "@/lib/securite/lireIP";
 import { notifierNouveauLead } from "@/lib/email/notifications";
 import { upsertLeadEtContact } from "@/lib/leads/upsert";
 
@@ -69,7 +70,7 @@ function estUUID(s: string): boolean {
 
 async function lireIP(): Promise<string> {
   const hdrs = await headers();
-  return hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  return lireIPPartagee(hdrs);
 }
 
 function dansListe<T extends readonly string[]>(liste: T, v: string): v is T[number] {

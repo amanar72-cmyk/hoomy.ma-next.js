@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { upsertLeadEtContact } from "@/lib/leads/upsert";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
+import { lireIP } from "@/lib/securite/lireIP";
 
 // Réception des leads Meta (formulaire natif) relayés par Make.
 // Sécurité : en-tête `x-hoomy-secret` == META_LEADS_SECRET (env), sinon 401.
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Rate limit (généreux : Make est un serveur) — 60 requêtes / minute / IP
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "inconnue";
+  const ip = lireIP(req.headers);
   if (!verifierRateLimit(`leads-meta:${ip}`, 60, 60_000)) {
     return NextResponse.json({ erreur: "Trop de requêtes." }, { status: 429 });
   }

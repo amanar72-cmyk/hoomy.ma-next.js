@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
+import { lireIP } from "@/lib/securite/lireIP";
 
 // Enregistre une tentative de connexion (succès ou échec) avec l'IP + user-agent
 // de la personne. Écriture via service_role (RLS fermée à tout le reste).
@@ -10,18 +11,12 @@ export const runtime = "nodejs";
 
 const METHODES = ["mot_de_passe", "google", "pro"] as const;
 
-function extraireIp(req: NextRequest): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? "inconnue";
-}
-
 function chaine(v: unknown, max: number): string | null {
   return typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
 }
 
 export async function POST(req: NextRequest) {
-  const ip = extraireIp(req);
+  const ip = lireIP(req.headers);
 
   // Anti-abus : 30 journalisations / minute / IP
   if (!verifierRateLimit(`conn-log:${ip}`, 30, 60_000)) {

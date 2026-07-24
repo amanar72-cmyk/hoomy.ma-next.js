@@ -1,9 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import { notFound, permanentRedirect } from "next/navigation";
 import { formaterPrix } from "@/lib/format";
-import { flouterPosition } from "@/lib/geo/floutage";
+import { obtenirPositionApprox } from "@/lib/geo/positionApprox";
 import type { Metadata } from "next";
-import type { Bien } from "@/lib/types";
+import type { BienPublic } from "@/lib/types";
+import { COLONNES_BIEN_PUBLIC } from "@/lib/types";
 import Link from "next/link";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
@@ -22,14 +23,17 @@ export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }> };
 
 /** Cherche un bien par slug, puis par id (UUID) en fallback. */
+// jamais latitude/longitude côté anon (voir lib/geo/positionApprox.ts)
+const COLONNES_DETAIL = `${COLONNES_BIEN_PUBLIC}, agent_id`;
+
 async function fetchBien(slug: string) {
   const { data: bySlug } = await supabase
-    .from("biens").select("*, agent_id").eq("slug", slug).maybeSingle();
+    .from("biens").select(COLONNES_DETAIL).eq("slug", slug).maybeSingle();
   if (bySlug) return bySlug;
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
   if (!isUUID) return null;
   const { data: byId } = await supabase
-    .from("biens").select("*, agent_id").eq("id", slug).maybeSingle();
+    .from("biens").select(COLONNES_DETAIL).eq("id", slug).maybeSingle();
   return byId ?? null;
 }
 
@@ -69,7 +73,7 @@ export default async function PageDetailAchat({ params }: Props) {
   const data = await fetchBien(slug);
   if (!data) notFound();
 
-  const bien = data as Bien & { agent_id: string | null };
+  const bien = data as BienPublic & { agent_id: string | null };
 
   // Un bien en location ne doit jamais être servi sous /acheter → URL canonique
   if (bien.transaction === "location") {
@@ -81,11 +85,9 @@ export default async function PageDetailAchat({ params }: Props) {
     permanentRedirect(`/acheter/${bien.slug}`);
   }
 
-  // Floutage côté serveur : le navigateur ne reçoit jamais la position exacte
-  const positionApprox =
-    bien.latitude != null && bien.longitude != null
-      ? flouterPosition(bien.id, bien.latitude, bien.longitude)
-      : null;
+  // Coordonnées lues séparément en service_role puis floutées : le navigateur
+  // ne reçoit jamais la position exacte (voir lib/geo/positionApprox.ts).
+  const positionApprox = await obtenirPositionApprox(bien.id);
 
   return (
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>

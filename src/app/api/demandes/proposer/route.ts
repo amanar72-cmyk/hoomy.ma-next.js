@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
+import { lireIP } from "@/lib/securite/lireIP";
 import { envoyerEmail } from "@/lib/email/envoyerEmail";
 import { construireEmailProposition } from "@/lib/email/emailDemandeRecherche";
 import type { DemandeRecherche, PropositionBien } from "@/lib/demandes/types";
@@ -28,10 +29,6 @@ function champ(fd: FormData, cle: string): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
-async function lireIP(req: NextRequest): Promise<string> {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-}
-
 export async function POST(req: NextRequest) {
   let fd: FormData;
   try {
@@ -52,7 +49,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Couche 3 — Rate limiting par IP (5 propositions / 10 min)
-  const ip = await lireIP(req);
+  const ip = lireIP(req.headers);
   if (!verifierRateLimit(`${ip}-proposition`, 5, 10 * 60 * 1000)) {
     return NextResponse.json({ ok: false, erreur: "Trop de soumissions. Réessayez dans quelques minutes." }, { status: 429 });
   }
