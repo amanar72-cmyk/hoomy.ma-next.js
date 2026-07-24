@@ -10,6 +10,8 @@ const LIENS_NAV = [
   { label: "Acheter",               href: "/acheter" },
   { label: "Louer",                 href: "/louer" },
   { label: "Neuf",                  href: "/neuf" },
+  { label: "Demande d'achat",       href: "/demandes?transaction=achat" },
+  { label: "Demande de location",   href: "/demandes?transaction=location" },
   { label: "Vendre mon bien",       href: "/publier" },
   { label: "Simulateur de crédit",  href: "/simulateur-credit" },
 ] as const;

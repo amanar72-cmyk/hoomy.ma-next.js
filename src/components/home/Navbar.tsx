@@ -54,6 +54,42 @@ export default async function Navbar() {
           <Link href="/neuf" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
             Neuf
           </Link>
+
+          {/* Demander — menu déroulant au survol (CSS pur, pas de JS nécessaire) */}
+          <div className="relative group">
+            <Link
+              href="/demandes"
+              className="hover:opacity-70 transition-all cursor-pointer inline-flex items-center gap-1"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              Demander
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </Link>
+            <div className="absolute left-0 top-full pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+              <div
+                className="rounded-xl overflow-hidden"
+                style={{ background: "var(--fond-secondaire)", border: "1px solid var(--bordure)", minWidth: 200, boxShadow: "0 10px 32px rgba(15,76,58,0.16)" }}
+              >
+                <Link
+                  href="/demandes?transaction=achat"
+                  className="block px-4 py-3 text-sm hover:opacity-70 transition-opacity"
+                  style={{ textDecoration: "none", color: "inherit", borderBottom: "1px solid var(--bordure)" }}
+                >
+                  Demande d&apos;achat
+                </Link>
+                <Link
+                  href="/demandes?transaction=location"
+                  className="block px-4 py-3 text-sm hover:opacity-70 transition-opacity"
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  Demande de location
+                </Link>
+              </div>
+            </div>
+          </div>
+
           <Link href="/publier" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "var(--primaire-clair)" }}>
             Vendre
           </Link>

@@ -15,11 +15,12 @@ const COULEURS_STATUT: Record<string, { bg: string; color: string }> = {
   archivee:      { bg: "#F3F4F6", color: "#6B7280" },
 };
 
-type SearchParams = Promise<{ statut?: string }>;
+type SearchParams = Promise<{ statut?: string; transaction?: string }>;
 
 export default async function PageAdminDemandesRecherche({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
   const filtreStatut = sp.statut ?? "en_validation";
+  const filtreTransaction = sp.transaction === "achat" || sp.transaction === "location" ? sp.transaction : "toutes";
 
   const supabase = await createClient();
 
@@ -28,11 +29,15 @@ export default async function PageAdminDemandesRecherche({ searchParams }: { sea
     .select("*, propositions:propositions_bien(count)")
     .order("cree_le", { ascending: false });
   if (filtreStatut !== "toutes") query = query.eq("statut", filtreStatut);
+  if (filtreTransaction !== "toutes") query = query.eq("transaction", filtreTransaction);
 
   const { data, error } = await query.limit(200);
   const demandes = (data ?? []) as (DemandeRecherche & { propositions: { count: number }[] })[];
 
-  const { data: comptesRaw } = await supabase.from("demandes_recherche").select("statut");
+  // Compteurs par statut — filtrés par la transaction active pour rester cohérents avec la liste
+  let comptesQuery = supabase.from("demandes_recherche").select("statut");
+  if (filtreTransaction !== "toutes") comptesQuery = comptesQuery.eq("transaction", filtreTransaction);
+  const { data: comptesRaw } = await comptesQuery;
   const comptes: Record<string, number> = {};
   (comptesRaw ?? []).forEach((d) => { comptes[d.statut] = (comptes[d.statut] ?? 0) + 1; });
 
@@ -44,11 +49,34 @@ export default async function PageAdminDemandesRecherche({ searchParams }: { sea
     { key: "toutes", label: "Toutes" },
   ];
 
+  const ONGLETS_TRANSACTION = [
+    { key: "toutes", label: "Achat + Location" },
+    { key: "achat", label: "Achat" },
+    { key: "location", label: "Location" },
+  ];
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       <div className="mb-5">
         <h1 className="text-xl font-semibold mb-0.5" style={{ color: "#111" }}>Demandes de recherche</h1>
         <p className="text-sm" style={{ color: "#999" }}>Place de marché inversée — modération avant publication anonyme.</p>
+      </div>
+
+      {/* ── Séparation achat / location ── */}
+      <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
+        {ONGLETS_TRANSACTION.map((t) => {
+          const actif = filtreTransaction === t.key;
+          return (
+            <Link
+              key={t.key}
+              href={`/admin/demandes-recherche?statut=${filtreStatut}&transaction=${t.key}`}
+              className="text-sm px-3.5 py-2 rounded-xl whitespace-nowrap"
+              style={{ background: actif ? "#D4AF37" : "#F4F6F5", color: actif ? "#fff" : "#6B7A71", textDecoration: "none", fontWeight: actif ? 600 : 400 }}
+            >
+              {t.label}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1">
@@ -58,7 +86,7 @@ export default async function PageAdminDemandesRecherche({ searchParams }: { sea
           return (
             <Link
               key={o.key}
-              href={`/admin/demandes-recherche?statut=${o.key}`}
+              href={`/admin/demandes-recherche?statut=${o.key}&transaction=${filtreTransaction}`}
               className="flex items-center gap-1.5 text-sm px-3.5 py-2 rounded-xl whitespace-nowrap"
               style={{ background: actif ? "#0F4C3A" : "#F4F6F5", color: actif ? "#fff" : "#6B7A71", textDecoration: "none", fontWeight: actif ? 600 : 400 }}
             >
