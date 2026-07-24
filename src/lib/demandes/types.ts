@@ -37,6 +37,11 @@ export type DemandePublique = {
 /** Ligne complète (privée) — contact inclus, jamais envoyée à un visiteur public. */
 export type DemandeRecherche = DemandePublique & {
   demandeur_id: string | null;
+  // Renseignés uniquement pour une demande créée en interne (admin/agent) —
+  // voir src/lib/demandes/creerInterne.ts. Jamais exposés côté public (la vue
+  // demandes_publiques ne les liste pas).
+  contact_id: string | null;
+  cree_par: string | null;
   nom: string;
   prenom: string | null;
   telephone: string;

@@ -6,13 +6,23 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { StatutProposition } from "@/lib/demandes/types";
+import { creerDemandeRechercheInterne, type DonneesDemandeRechercheInterne } from "@/lib/demandes/creerInterne";
 
-async function exigerAdmin(): Promise<void> {
+async function exigerAdmin(): Promise<string> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Non authentifié.");
   const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
   if (profil?.role !== "admin") throw new Error("Accès refusé.");
+  return user.id;
+}
+
+/** Création manuelle par l'admin — voir creerInterne.ts (statut forcé en_validation par le trigger). */
+export async function creerDemandeRechercheAdmin(donnees: DonneesDemandeRechercheInterne): Promise<{ id: string }> {
+  const adminId = await exigerAdmin();
+  const id = await creerDemandeRechercheInterne(donnees, adminId);
+  revalidatePath("/admin/demandes-recherche");
+  return { id };
 }
 
 /**

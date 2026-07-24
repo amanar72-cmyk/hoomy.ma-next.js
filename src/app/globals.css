@@ -235,6 +235,32 @@ body {
   .badge-nouveau { animation: none; }
 }
 
+/* ── Liens de la barre de navigation — soulignement animé au survol ────────── */
+.lien-nav {
+  position: relative;
+  padding-bottom: 3px;
+  transition: opacity 0.2s ease;
+}
+.lien-nav::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.lien-nav:hover {
+  opacity: 0.8;
+}
+.lien-nav:hover::after {
+  width: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lien-nav, .lien-nav::after { transition: none; }
+}
+
 /* ── Double parcours acheteur/vendeur (accueil) ──────────────────────────── */
 .parcours-carte {
   position: relative;

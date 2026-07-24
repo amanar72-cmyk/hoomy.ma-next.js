@@ -182,5 +182,30 @@ export async function POST(req: NextRequest) {
     console.error("[demandes/proposer] notification email échouée :", e);
   }
 
+  // ── Notification au créateur interne de la demande (agent ou admin) ───────
+  // Même si un admin a déjà été notifié ci-dessus : si un AGENT a créé cette
+  // demande pour son client (cree_par), il doit être prévenu lui aussi — lien
+  // vers SA page (/pro, pas /admin, auquel il n'a pas accès).
+  const creePar = (demande as DemandeRecherche).cree_par;
+  if (creePar) {
+    try {
+      const { data: createur } = await admin
+        .from("profils")
+        .select("email_contact")
+        .eq("id", creePar)
+        .maybeSingle();
+      if (createur?.email_contact) {
+        const { sujet, texte, html } = construireEmailProposition({
+          demande: demande as DemandeRecherche,
+          proposition: { ...proposition, photos: cheminsPhotos } as PropositionBien,
+          urlBackOffice: `https://pro.hoomy.ma/pro/demandes-recherche/${demandeId}`,
+        });
+        await envoyerEmail({ sujet, texte, html, destinataire: createur.email_contact });
+      }
+    } catch (e) {
+      console.error("[demandes/proposer] notification email créateur échouée :", e);
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

@@ -96,7 +96,8 @@ const NAV_AGENT = [
   { href: "/pro/leads",        ico: "leads",      label: "Leads" },
   { href: "/pro/contacts",     ico: "contacts",   label: "Contacts" },
   { href: "/pro/calendrier",   ico: "calendrier", label: "Calendrier" },
-  { href: "/pro/demandes",     ico: "demandes",   label: "Demandes" },
+  { href: "/pro/demandes",     ico: "demandes",   label: "Demandes de visite" },
+  { href: "/pro/demandes-recherche", ico: "leads", label: "Recherches clients" },
   { href: "/pro/catalogue-neuf", ico: "catalogue", label: "Catalogue neuf" },
 ] as const;
 

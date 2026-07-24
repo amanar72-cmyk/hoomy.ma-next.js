@@ -5,6 +5,7 @@ import BiensVedette from "@/components/home/BiensVedette";
 import SectionVilles from "@/components/home/SectionVilles";
 import PourquoiHoomy from "@/components/home/PourquoiHoomy";
 import DoubleParcours from "@/components/home/DoubleParcours";
+import SectionDemandes from "@/components/home/SectionDemandes";
 import Footer from "@/components/home/Footer";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
 import ApparitionScroll from "@/components/ui/ApparitionScroll";
@@ -64,6 +65,9 @@ export default async function Accueil() {
       <ParcoursProprietaire />
       <Reveal>
         <DoubleParcours />
+      </Reveal>
+      <Reveal>
+        <SectionDemandes />
       </Reveal>
       <Reveal>
         <SectionVilles comptesParVille={comptesParVille} />

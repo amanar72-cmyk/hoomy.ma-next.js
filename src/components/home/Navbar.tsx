@@ -45,13 +45,13 @@ export default async function Navbar() {
 
         {/* ── Navigation desktop ──────────────────────────────────────────── */}
         <nav className="hidden md:flex items-center gap-8 text-[15px]" style={{ color: "var(--texte-corps)" }}>
-          <Link href="/acheter" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link href="/acheter" className="lien-nav cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
             Acheter
           </Link>
-          <Link href="/louer" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link href="/louer" className="lien-nav cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
             Louer
           </Link>
-          <Link href="/neuf" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link href="/neuf" className="lien-nav cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
             Neuf
           </Link>
 
@@ -59,7 +59,7 @@ export default async function Navbar() {
           <div className="relative group">
             <Link
               href="/demandes"
-              className="hover:opacity-70 transition-all cursor-pointer inline-flex items-center gap-1"
+              className="lien-nav cursor-pointer inline-flex items-center gap-1"
               style={{ textDecoration: "none", color: "inherit" }}
             >
               Demander
@@ -74,14 +74,14 @@ export default async function Navbar() {
               >
                 <Link
                   href="/demandes?transaction=achat"
-                  className="block px-4 py-3 text-sm hover:opacity-70 transition-opacity"
+                  className="block px-4 py-3 text-sm transition-colors duration-150 hover:bg-[var(--fond-vert-leger)]"
                   style={{ textDecoration: "none", color: "inherit", borderBottom: "1px solid var(--bordure)" }}
                 >
                   Demande d&apos;achat
                 </Link>
                 <Link
                   href="/demandes?transaction=location"
-                  className="block px-4 py-3 text-sm hover:opacity-70 transition-opacity"
+                  className="block px-4 py-3 text-sm transition-colors duration-150 hover:bg-[var(--fond-vert-leger)]"
                   style={{ textDecoration: "none", color: "inherit" }}
                 >
                   Demande de location
@@ -90,10 +90,12 @@ export default async function Navbar() {
             </div>
           </div>
 
-          <Link href="/publier" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "var(--primaire-clair)" }}>
+          {/* Couleur fixe (pas var(--primaire-clair)) : "Vendre" doit rester vert
+              même en thème sombre, où ce token bascule sur l'or. */}
+          <Link href="/publier" className="lien-nav cursor-pointer font-semibold" style={{ textDecoration: "none", color: "#146C43" }}>
             Vendre
           </Link>
-          <Link href="/simulateur-credit" className="hover:opacity-70 hover:underline transition-all cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link href="/simulateur-credit" className="lien-nav cursor-pointer" style={{ textDecoration: "none", color: "inherit" }}>
             Crédit
           </Link>
         </nav>
@@ -108,7 +110,7 @@ export default async function Navbar() {
               {/* Bouton publier un bien — visible connecté */}
               <Link
                 href="/publier"
-                className="hidden sm:inline-block text-sm px-4 py-2 rounded-lg font-semibold transition-opacity hover:opacity-90"
+                className="hidden sm:inline-block text-sm px-4 py-2 rounded-lg font-semibold transition-all hover:opacity-90 hover:scale-[1.03] active:scale-[0.97]"
                 style={{ background: "var(--accent)", color: "var(--texte-sur-accent)", textDecoration: "none" }}
               >
                 Publier un bien
@@ -125,14 +127,14 @@ export default async function Navbar() {
             <>
               <Link
                 href="/connexion"
-                className="hidden md:inline-block text-sm px-4 py-2 rounded-lg border transition-opacity hover:opacity-80"
+                className="hidden md:inline-block text-sm px-4 py-2 rounded-lg border transition-all hover:opacity-80 hover:scale-[1.03] active:scale-[0.97]"
                 style={{ borderColor: "var(--bordure-action)", color: "var(--bordure-action)", textDecoration: "none" }}
               >
                 Se connecter
               </Link>
               <Link
                 href="/publier"
-                className="hidden sm:inline-block text-sm px-4 py-2 rounded-lg font-semibold transition-opacity hover:opacity-90"
+                className="hidden sm:inline-block text-sm px-4 py-2 rounded-lg font-semibold transition-all hover:opacity-90 hover:scale-[1.03] active:scale-[0.97]"
                 style={{ background: "var(--accent)", color: "var(--texte-sur-accent)", textDecoration: "none" }}
               >
                 Publier un bien

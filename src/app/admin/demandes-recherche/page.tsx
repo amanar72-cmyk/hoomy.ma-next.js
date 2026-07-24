@@ -57,9 +57,19 @@ export default async function PageAdminDemandesRecherche({ searchParams }: { sea
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="mb-5">
-        <h1 className="text-xl font-semibold mb-0.5" style={{ color: "#111" }}>Demandes de recherche</h1>
-        <p className="text-sm" style={{ color: "#999" }}>Place de marché inversée — modération avant publication anonyme.</p>
+      <div className="mb-5 flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl font-semibold mb-0.5" style={{ color: "#111" }}>Demandes de recherche</h1>
+          <p className="text-sm" style={{ color: "#999" }}>Place de marché inversée — modération avant publication anonyme.</p>
+        </div>
+        <Link
+          href="/admin/demandes-recherche/nouvelle"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl"
+          style={{ background: "#0F4C3A", color: "#fff", textDecoration: "none" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+          Ajouter une demande
+        </Link>
       </div>
 
       {/* ── Séparation achat / location ── */}
