@@ -418,45 +418,33 @@ export default function BulleChat() {
       </div>
 
       {/* ── Bouton flottant ─────────────────────────────────────────────── */}
-      <button
-        type="button"
-        onClick={() => setOuvert((v) => !v)}
-        aria-label={ouvert ? "Fermer l'assistant HOOMY" : "Ouvrir l'assistant HOOMY"}
-        aria-expanded={ouvert}
-        aria-controls="chat-hoomy"
-        className={[
-          "fixed z-[9999] bottom-6 right-6",
-          "w-14 h-14 rounded-full flex items-center justify-center",
-          "motion-safe:transition-all motion-safe:duration-200",
-          ouvert
-            ? "scale-90"
-            : "hover:scale-105",
-        ].join(" ")}
-        style={{
-          background: "var(--primaire)",
-          color: "var(--texte-sur-primaire)",
-          boxShadow: ouvert
-            ? "0 4px 14px rgba(15,76,58,0.25)"
-            : "0 8px 24px rgba(15,76,58,0.38), 0 2px 8px rgba(15,76,58,0.18)",
-        }}
-      >
-        {/* Icône : chat quand fermé, X quand ouvert */}
-        <span
-          className="motion-safe:transition-transform motion-safe:duration-200"
-          style={{ transform: ouvert ? "rotate(90deg)" : "rotate(0deg)" }}
+      {/* Masqué à l'ouverture : sinon il recouvre le bouton "Envoyer" du
+          formulaire, aussi placé en bas à droite. L'en-tête du chat a déjà
+          son propre bouton de fermeture. */}
+      {!ouvert && (
+        <button
+          type="button"
+          onClick={() => setOuvert(true)}
+          aria-label="Ouvrir l'assistant HOOMY"
+          aria-expanded={false}
+          aria-controls="chat-hoomy"
+          className="fixed z-[9999] bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center motion-safe:transition-all motion-safe:duration-200 hover:scale-105"
+          style={{
+            background: "var(--primaire)",
+            color: "var(--texte-sur-primaire)",
+            boxShadow: "0 8px 24px rgba(15,76,58,0.38), 0 2px 8px rgba(15,76,58,0.18)",
+          }}
         >
-          {ouvert ? <IcFermer /> : <IcChat />}
-        </span>
+          <IcChat />
 
-        {/* Pastille gold (indicateur) — visible uniquement quand fermé */}
-        {!ouvert && (
+          {/* Pastille gold (indicateur) */}
           <span
             aria-hidden="true"
             className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white motion-safe:animate-pulse"
             style={{ background: "var(--accent)", animationDuration: "2.5s" }}
           />
-        )}
-      </button>
+        </button>
+      )}
     </>
   );
 }
