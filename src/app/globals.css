@@ -163,6 +163,13 @@
   /* États */
   --color-succes:          var(--succes-texte);
   --color-erreur:          var(--erreur);
+
+  /* Polices HOOMY — @theme inline n'émet PAS ces variables, il inline leur
+     valeur dans les utilitaires : var(--font-marcellus) continue donc de
+     résoudre la variable posée par next/font (layout.tsx), sans collision.
+     Expose les utilitaires font-marcellus (titres) et font-outfit (corps). */
+  --font-marcellus:        var(--font-marcellus), Georgia, serif;
+  --font-outfit:           var(--font-outfit), system-ui, sans-serif;
 }
 
 /* ── Transition douce lors du basculement de thème ──────────────────────────

@@ -1,0 +1,13 @@
+Assets de la page d'accueil immersive (AccueilImmersif.tsx).
+
+Fichiers attendus ici :
+  ciel.webp          plan de fond          2400x1400
+  palmeraie.webp     plan lointain         2400x900
+  medina.webp        masse bâtie           2400x1000
+  arche.png          PNG détouré (alpha)   1600x1800
+  quartier.webp      vue rapprochée du bien
+  drone.webm + .mp4  boucle 6 s, muette
+  poster-drone.webp  image de secours de la vidéo
+
+Tant qu'ils sont absents, la page d'accueil affiche des aplats de
+couleur à la place (dégradés de repli) — aucune image cassée.
