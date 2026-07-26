@@ -86,6 +86,11 @@ export async function POST(req: NextRequest) {
       profilClient: champ(corps, "profil_client", "profilClient"),
       message: champ(corps, "message", "notes"),
       source: "meta_ads",
+      // Date de soumission RÉELLE côté Facebook. Sans elle, un historique
+      // remonté d'un coup arrive daté de l'import : tous les leads
+      // apparaissent « créés à l'instant » et le tri chronologique du
+      // back-office est faux.
+      dateSoumission: champ(corps, "created_time", "date_creation", "cree_le"),
       campagne: champ(corps, "campaign_name", "campagne", "adset_name"),
       bienRef: champ(corps, "bien_ref", "reference", "ref"),
       metaLeadId: champ(corps, "leadgen_id", "lead_id", "meta_lead_id", "id"),

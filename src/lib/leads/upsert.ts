@@ -81,7 +81,32 @@ export type LeadEntrant = {
   // à rejeter un numéro invalide : un humain sur le site peut le corriger
   // tout de suite, un formulaire Meta déjà soumis ne le peut pas.
   permettreSansTelephone?: boolean;
+  /**
+   * Date de soumission RÉELLE du lead chez la source (Meta : `created_time`).
+   * Sans elle, un lead importé porte l'heure de l'import : tout un historique
+   * remonté d'un coup apparaît « créé à l'instant » et le classement
+   * chronologique du back-office devient faux.
+   *
+   * Écrite dans `cree_le`, volontairement : pour un lead du site, `cree_le`
+   * EST déjà l'heure de soumission. Renseigner la vraie date Meta harmonise
+   * donc le sens de la colonne entre toutes les sources, au lieu d'introduire
+   * une seconde date concurrente dans les tris et les affichages.
+   * Ignorée si absente ou non parsable (repli sur le DEFAULT now()).
+   */
+  dateSoumission?: string | null;
 };
+
+/** ISO 8601 → date valide, ou null (jamais d'exception, jamais de date absurde). */
+function dateValide(brut: string | null | undefined): string | null {
+  if (!brut) return null;
+  const d = new Date(brut);
+  if (Number.isNaN(d.getTime())) return null;
+  // Garde-fou : une date future (ou antérieure à 2015) trahit un mauvais
+  // mapping côté Make — on préfère le DEFAULT now() à une donnée aberrante.
+  const an = d.getUTCFullYear();
+  if (d.getTime() > Date.now() + 86_400_000 || an < 2015) return null;
+  return d.toISOString();
+}
 
 export type ResultatUpsert = {
   leadId: string;
@@ -236,6 +261,11 @@ async function insererLeadAVerifier(
       contact_id: null,
       meta_lead_id: champs.metaLeadId,
       statut: "a_verifier",
+      // Date réelle de soumission si la source la fournit ; sinon on laisse le
+      // DEFAULT now() de la colonne s'appliquer (clé absente de l'objet).
+      ...(dateValide(payload.dateSoumission)
+        ? { cree_le: dateValide(payload.dateSoumission) }
+        : {}),
       ...(payload.metaAdId !== undefined || payload.metaFormId !== undefined
         ? {
             meta_ad_id: payload.metaAdId?.trim().slice(0, 100) || null,
@@ -272,6 +302,7 @@ export async function upsertLeadEtContact(payload: LeadEntrant): Promise<Resulta
   const message = payload.message?.trim().slice(0, 1000) || null;
   const campagne = payload.campagne?.trim().slice(0, 200) || null;
   const metaLeadId = payload.metaLeadId?.trim().slice(0, 100) || null;
+  const dateSoumission = dateValide(payload.dateSoumission);
 
   const source = siDansListe(SOURCES, payload.source) ?? "site";
   // type_projet alimente le scoring (NOT NULL en base) — défaut prudent : achat
@@ -354,6 +385,9 @@ export async function upsertLeadEtContact(payload: LeadEntrant): Promise<Resulta
       contact_id: contactId,
       meta_lead_id: metaLeadId,
       statut: "nouveau",
+      // Date réelle de soumission si la source la fournit ; sinon on laisse le
+      // DEFAULT now() de la colonne s'appliquer (clé absente de l'objet).
+      ...(dateSoumission ? { cree_le: dateSoumission } : {}),
       // Colonnes de traçabilité pub — uniquement quand le webhook Meta les
       // fournit (exige meta_leads_webhook.sql exécuté au préalable)
       ...(payload.metaAdId !== undefined || payload.metaFormId !== undefined
