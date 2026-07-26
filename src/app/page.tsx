@@ -4,7 +4,6 @@ import HeroSection from "@/components/home/HeroSection";
 import BiensVedette from "@/components/home/BiensVedette";
 import SectionVilles from "@/components/home/SectionVilles";
 import PourquoiHoomy from "@/components/home/PourquoiHoomy";
-import DoubleParcours from "@/components/home/DoubleParcours";
 import SectionDemandes from "@/components/home/SectionDemandes";
 import Footer from "@/components/home/Footer";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
@@ -53,29 +52,40 @@ export default async function Accueil() {
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
       <HeroSection nbBiensVerifies={nbBiensVerifies ?? 0} />
-      {/* Ordre orienté conversion :
-          Hero → Biens en vedette → Double parcours → Villes → Pourquoi HOOMY
-          → Bloc vendeurs → Contact. Apparitions au scroll — Hero exclu (LCP).
-          BiensVedette (proche de la ligne de flottaison) garde ApparitionScroll
-          (rendu SSR visible) ; les sections plus bas utilisent Reveal (Framer). */}
+
+      {/* Ordre groupé par AUDIENCE plutôt qu'alterné, pour éviter les
+          allers-retours acheteur/vendeur qui cassaient la lecture :
+            1. Bloc ACHETEUR   → Biens en vedette, Explorer par ville
+            2. Confiance       → Pourquoi HOOMY (charnière, sert les deux)
+            3. Bloc OFFRE      → Parcours propriétaire, Demandes de recherche
+            4. Conversion      → Contact conseiller
+          Apparitions au scroll — Hero exclu (LCP). BiensVedette, proche de la
+          ligne de flottaison, garde ApparitionScroll (rendu SSR visible) ;
+          les sections plus bas utilisent Reveal (Framer Motion). */}
+
+      {/* ── Bloc acheteur ── */}
       <ApparitionScroll>
         <BiensVedette biens={biens} />
       </ApparitionScroll>
-      {/* Parcours propriétaire — anime lui-même ses étapes au scroll (fil d'or) */}
-      <ParcoursProprietaire />
-      <Reveal>
-        <DoubleParcours />
-      </Reveal>
-      <Reveal>
-        <SectionDemandes />
-      </Reveal>
       <Reveal>
         <SectionVilles comptesParVille={comptesParVille} />
       </Reveal>
+
       <SeparateurZellige className="max-w-6xl mx-auto px-6 py-4" />
+
+      {/* ── Confiance (charnière entre les deux audiences) ── */}
       <Reveal>
         <PourquoiHoomy />
       </Reveal>
+
+      {/* ── Bloc offre : vendeurs, bailleurs, agences ── */}
+      {/* Parcours propriétaire — anime lui-même ses étapes au scroll (fil d'or) */}
+      <ParcoursProprietaire />
+      <Reveal>
+        <SectionDemandes />
+      </Reveal>
+
+      {/* ── Conversion ── */}
       <Reveal>
         <SectionLead />
       </Reveal>
