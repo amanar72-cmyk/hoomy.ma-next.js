@@ -6,6 +6,7 @@
 
 import { useTransition } from "react";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
+import { lienWhatsAppLead } from "@/lib/leads/messageWhatsApp";
 import { afficherToast } from "@/components/ui/Toaster";
 import { changerStatutLeadQualifieAgent } from "@/app/pro/actions";
 
@@ -22,14 +23,19 @@ type Props = {
   nom: string;
   telephone: string;
   statut: string;
+  /** Ce que le prospect a écrit — repris dans le message WhatsApp. */
+  message?: string | null;
+  /** Rappel programmé, mentionné dans le message WhatsApp s'il existe. */
+  dateRappel?: string | null;
+  /** Origine du lead — adapte la 1re phrase du message WhatsApp. */
+  source?: string | null;
+  /** Titre du bien concerné, si le lead vient d'une fiche. */
+  titreBien?: string | null;
 };
 
-export default function ActionsLeadAffecte({ leadId, nom, telephone, statut }: Props) {
+export default function ActionsLeadAffecte({ leadId, nom, telephone, statut, message, dateRappel, source, titreBien }: Props) {
   const [enCours, demarrer] = useTransition();
   const tel = formatPhoneMaroc(telephone);
-  const messageWA = encodeURIComponent(
-    `Bonjour ${nom}, HOOMY.MA — je suis votre conseiller dédié. Quand pouvons-nous échanger sur votre projet ?`
-  );
 
   function changerStatut(nouveau: string) {
     if (nouveau === statut) return;
@@ -59,7 +65,7 @@ export default function ActionsLeadAffecte({ leadId, nom, telephone, statut }: P
       )}
       {tel.numeroWA && (
         <a
-          href={`https://wa.me/${tel.numeroWA}?text=${messageWA}`}
+          href={lienWhatsAppLead(tel.numeroWA, { nom, message, dateRappel, source, titreBien })}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl"

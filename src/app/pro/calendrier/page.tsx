@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import ActionsLead from "@/components/pro/ActionsLead";
 import { changerStatutLead } from "@/app/pro/actions";
 import BoutonCalendrier from "@/components/ui/BoutonCalendrier";
+import RappelsAPasser from "@/components/leads/RappelsAPasser";
 
 export const metadata: Metadata = {
   title: "Calendrier des visites — Espace Pro HOOMY.MA",
@@ -156,6 +157,9 @@ export default async function PageProCalendrier({ searchParams }: { searchParams
           </Link>
         ))}
       </div>
+
+      {/* Rappels téléphoniques dus — uniquement sur la vue « à venir » */}
+      {!vuePast && <RappelsAPasser agentId={user.id} />}
 
       {/* État vide */}
       {visites.length === 0 && (

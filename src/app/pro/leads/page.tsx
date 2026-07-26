@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import ActionsLead from "@/components/pro/ActionsLead";
 import ActionsLeadAffecte from "@/components/pro/ActionsLeadAffecte";
+import RappelLead from "@/components/leads/RappelLead";
 import ErreurChargement from "@/components/ui/ErreurChargement";
 import { changerStatutLead } from "@/app/pro/actions";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
@@ -70,6 +71,9 @@ type LeadAffecte = {
   campagne: string | null;
   score: string | null;
   statut: string;
+  date_rappel: string | null;
+  rappel_note: string | null;
+  rappel_fait_le: string | null;
   biens: { titre: string; slug: string | null; transaction: string } | null;
 };
 
@@ -123,12 +127,23 @@ export default async function PageProLeads({ searchParams }: { searchParams: Sea
     .from("leads")
     .select(
       "id, cree_le, nom, telephone, email, type_projet, budget, zones, message, " +
-      "source, campagne, score, statut, biens(titre, slug, transaction)"
+      "source, campagne, score, statut, date_rappel, rappel_note, rappel_fait_le, " +
+      "biens(titre, slug, transaction)"
     )
     .eq("agent_id", user.id)
     .not("statut", "in", "(converti,perdu)")
     .order("cree_le", { ascending: false });
-  const affectes = (affectesRaw ?? []) as unknown as LeadAffecte[];
+  const affectesBruts = (affectesRaw ?? []) as unknown as LeadAffecte[];
+
+  // Rappels dus en tête (du plus urgent au moins urgent), le reste inchangé —
+  // un rappel programmé ne doit jamais se perdre dans la liste.
+  const rappelDu = (l: LeadAffecte) => !!l.date_rappel && !l.rappel_fait_le;
+  const affectes = [
+    ...affectesBruts.filter(rappelDu).sort(
+      (a, b) => new Date(a.date_rappel!).getTime() - new Date(b.date_rappel!).getTime()
+    ),
+    ...affectesBruts.filter((l) => !rappelDu(l)),
+  ];
 
   // Compteurs par statut (sur tous les leads sans filtre)
   const { data: tousRaw } = await supabase
@@ -224,11 +239,24 @@ export default async function PageProLeads({ searchParams }: { searchParams: Sea
                     </p>
                   )}
 
+                  <div className="mb-2.5">
+                    <RappelLead
+                      leadId={l.id}
+                      dateRappel={l.date_rappel}
+                      rappelNote={l.rappel_note}
+                      rappelFaitLe={l.rappel_fait_le}
+                    />
+                  </div>
+
                   <ActionsLeadAffecte
                     leadId={l.id}
                     nom={l.nom}
                     telephone={l.telephone}
                     statut={l.statut}
+                    message={l.message}
+                    dateRappel={l.rappel_fait_le ? null : l.date_rappel}
+                    source={l.source}
+                    titreBien={l.biens?.titre ?? null}
                   />
                 </div>
               );

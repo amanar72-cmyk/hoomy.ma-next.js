@@ -7,6 +7,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
+import { lienWhatsAppLead } from "@/lib/leads/messageWhatsApp";
 import { afficherToast } from "@/components/ui/Toaster";
 import {
   changerStatutLeadQualifie,
@@ -33,12 +34,15 @@ type Props = {
   notesInterne: string | null;
   zonesLead: string[];
   conseillers: ConseillerLead[];
+  /** Ce que le prospect a écrit — repris dans le message WhatsApp. */
+  message?: string | null;
+  /** Rappel programmé, mentionné dans le message WhatsApp s'il existe. */
+  dateRappel?: string | null;
+  /** Origine du lead — adapte la 1re phrase du message WhatsApp. */
+  source?: string | null;
+  /** Titre du bien concerné, si le lead vient d'une fiche. */
+  titreBien?: string | null;
 };
-
-// Message WhatsApp fixe pré-rempli sur la fiche lead — identique à chaque
-// envoi, l'agent n'a plus qu'à appuyer sur envoyer. Modifiable ici seulement.
-const MESSAGE_WHATSAPP_LEAD =
-  "Bonjour ! 😊 Merci pour votre demande sur HOOMY.MA. Je suis conseiller immobilier et je serais ravi de vous accompagner. Quand seriez-vous disponible pour en parler ?";
 
 const STATUTS = [
   { valeur: "nouveau",  libelle: "Nouveau" },
@@ -52,7 +56,8 @@ const STATUTS = [
 // ── Composant ─────────────────────────────────────────────────────────────────
 
 export default function ActionsLeadQualifie({
-  leadId, telephone, statut, agentId, agentNom, notesInterne, zonesLead, conseillers,
+  leadId, nom, telephone, statut, agentId, agentNom, notesInterne, zonesLead, conseillers,
+  message, dateRappel, source, titreBien,
 }: Props) {
   const [enCours, demarrer] = useTransition();
   const [modalConseiller, setModalConseiller] = useState(false);
@@ -60,7 +65,6 @@ export default function ActionsLeadQualifie({
   const [notes, setNotes] = useState(notesInterne ?? "");
 
   const tel = formatPhoneMaroc(telephone);
-  const messageWA = encodeURIComponent(MESSAGE_WHATSAPP_LEAD);
 
   function changerStatut(nouveau: string) {
     if (nouveau === statut) return;
@@ -119,7 +123,7 @@ export default function ActionsLeadQualifie({
         {/* WhatsApp */}
         {tel.numeroWA && (
           <a
-            href={`https://wa.me/${tel.numeroWA}?text=${messageWA}`}
+            href={lienWhatsAppLead(tel.numeroWA, { nom, message, dateRappel, source, titreBien })}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl"

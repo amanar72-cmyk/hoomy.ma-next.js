@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import ActionsLead from "@/components/pro/ActionsLead";
 import { changerStatutLeadAdmin } from "@/app/admin/actions";
+import RappelsAPasser from "@/components/leads/RappelsAPasser";
 
 export const metadata: Metadata = {
   title: "Calendrier global — Administration HOOMY.MA",
@@ -201,6 +202,9 @@ export default async function PageAdminCalendrier({ searchParams }: { searchPara
           </Link>
         ))}
       </div>
+
+      {/* Rappels téléphoniques dus (tous agents) — vue « à venir » uniquement */}
+      {!vuePast && <RappelsAPasser />}
 
       {/* Onglets statut */}
       <div className="flex gap-1 p-1 rounded-2xl mb-5 overflow-x-auto" style={{ background: "#F0F0F0" }}>

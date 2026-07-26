@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import type { Metadata } from "next";
 import ActionsLeadQualifie, { type ConseillerLead } from "@/components/admin/leads/ActionsLeadQualifie";
+import RappelLead from "@/components/leads/RappelLead";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
 import { nettoyerRecherche } from "@/lib/utils/recherche";
 import ErreurChargement from "@/components/ui/ErreurChargement";
@@ -32,6 +33,9 @@ type Lead = {
   statut: string;
   agent_id: string | null;
   notes_interne: string | null;
+  date_rappel: string | null;
+  rappel_note: string | null;
+  rappel_fait_le: string | null;
   biens: { titre: string; slug: string | null; transaction: string } | null;
 };
 
@@ -114,6 +118,7 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
     .select(
       "id, cree_le, nom, telephone, email, type_projet, budget, financement, delai, " +
       "profil_client, zones, source, bien_id, contact_id, message, score, statut, agent_id, notes_interne, " +
+      "date_rappel, rappel_note, rappel_fait_le, " +
       "biens(titre, slug, transaction)"
     )
     .order("cree_le", { ascending: false })
@@ -137,7 +142,19 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
     supabase.from("profils").select("id, nom_complet, zones, role").in("role", ["agent", "agence"]).order("nom_complet"),
   ]);
 
-  const leads = (raw ?? []) as unknown as Lead[];
+  const leadsBruts = (raw ?? []) as unknown as Lead[];
+
+  // Les rappels DUS (échus ou à venir, non traités) remontent en tête, du plus
+  // urgent au moins urgent — sinon un rappel programmé se perd dans une liste
+  // triée par date de réception. Le reste garde l'ordre initial (plus récent
+  // d'abord), déjà appliqué par la requête.
+  const estDu = (l: Lead) => !!l.date_rappel && !l.rappel_fait_le;
+  const leads = [
+    ...leadsBruts.filter(estDu).sort(
+      (a, b) => new Date(a.date_rappel!).getTime() - new Date(b.date_rappel!).getTime()
+    ),
+    ...leadsBruts.filter((l) => !estDu(l)),
+  ];
   const tous = (tousRaw ?? []) as { statut: string; agent_id: string | null }[];
   // « Leads qualifiés » = tout sauf les leads sans téléphone exploitable
   // (statut 'a_verifier', page dédiée /admin/leads/a-verifier)
@@ -433,6 +450,16 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
                 </p>
               )}
 
+              {/* Rappel programmé */}
+              <div className="mb-2">
+                <RappelLead
+                  leadId={lead.id}
+                  dateRappel={lead.date_rappel}
+                  rappelNote={lead.rappel_note}
+                  rappelFaitLe={lead.rappel_fait_le}
+                />
+              </div>
+
               {/* Actions */}
               <div className="pt-2.5" style={{ borderTop: "1px solid #F5F5F5" }}>
                 <ActionsLeadQualifie
@@ -445,6 +472,10 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
                   notesInterne={lead.notes_interne}
                   zonesLead={lead.zones ?? []}
                   conseillers={conseillers}
+                  message={lead.message}
+                  dateRappel={lead.rappel_fait_le ? null : lead.date_rappel}
+                  source={lead.source}
+                  titreBien={lead.biens?.titre ?? null}
                 />
               </div>
             </article>
