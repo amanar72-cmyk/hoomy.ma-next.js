@@ -107,6 +107,7 @@ const NAV_ADMIN = [
   { href: "/admin/leads",         ico: "leads",        label: "Leads" },
   { href: "/admin/demandes",      ico: "clients",      label: "Demandes de visite" },
   { href: "/admin/demandes-recherche", ico: "leads",   label: "Recherches clients" },
+  { href: "/admin/publications",  ico: "ia",           label: "Publications sociales" },
   { href: "/admin/calendrier",    ico: "calendrier",   label: "Calendrier" },
   { href: "/admin/agents",        ico: "agents",       label: "Agents" },
   { href: "/admin/clients",       ico: "clients",      label: "Clients" },
