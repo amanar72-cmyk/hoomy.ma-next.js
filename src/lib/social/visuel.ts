@@ -20,14 +20,24 @@ import { tracerTexte, largeurTexte } from "./polices";
 const VERT_ROYAL = "#0F4C3A";
 const OR = "#D4AF37";
 
-// ── Géométrie (toutes les valeurs du cahier des charges) ──────────────────
+// ── Géométrie ─────────────────────────────────────────────────────────────
+// Le cadre photo du cahier des charges (960×720 à y=380) était un rectangle
+// 4:3 posé dans un format 9:16 : il rognait sévèrement les photos et laissait
+// près de 400 px de fond vide sous les pastilles. Le cadre est agrandi à
+// 960×1180 — la photo occupe désormais 61 % de la hauteur au lieu de 37 % —
+// et le bloc de texte est remonté pour occuper l'espace libéré.
 const L = 1080;
 const H = 1920;
 const MARGE = 60;
 const PHOTO_L = 960;
-const PHOTO_H = 720;
-const PHOTO_Y = 380;
+const PHOTO_H = 1180;
+const PHOTO_Y = 210;
 const RAYON_PHOTO = 24;
+
+// Lignes de base du bloc de texte, sous la photo (qui s'arrête à 1390).
+const Y_LIEU = 1480;
+const Y_PRIX = 1572;
+const Y_PASTILLES = 1650;
 
 export type BienVisuel = {
   type: string | null;
@@ -78,9 +88,15 @@ function chemin(
   return `<path d="${d}" fill="${couleur}"${op}/>`;
 }
 
+/** « appartement » → « Appartement » : la saisie en base n'est pas normalisée. */
+function capitaliser(v: string | null): string | null {
+  if (!v) return v;
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
+
 function svgCalque(bien: BienVisuel): string {
   const localisation = [bien.quartier, bien.ville].filter(Boolean).join(", ");
-  const ligneLieu = [bien.type, localisation].filter(Boolean).join(" · ");
+  const ligneLieu = [capitaliser(bien.type), localisation].filter(Boolean).join(" · ");
 
   // ── Pastilles : largeur mesurée sur les vraies métriques de la police ──
   const TAILLE_PASTILLE = 26;
@@ -95,9 +111,9 @@ function svgCalque(bien: BienVisuel): string {
       curseurX += largeur + 16;
       // Centrage horizontal exact, ligne de base optiquement centrée.
       return `
-        <rect x="${x}" y="1360" width="${largeur.toFixed(1)}" height="${HAUT_PASTILLE}" rx="40"
+        <rect x="${x}" y="${Y_PASTILLES}" width="${largeur.toFixed(1)}" height="${HAUT_PASTILLE}" rx="40"
               fill="none" stroke="${OR}" stroke-opacity="0.35" stroke-width="2"/>
-        ${chemin("corps", texte, x + PAD_X, 1360 + HAUT_PASTILLE / 2 + 9, TAILLE_PASTILLE, "#FFFFFF")}`;
+        ${chemin("corps", texte, x + PAD_X, Y_PASTILLES + HAUT_PASTILLE / 2 + 9, TAILLE_PASTILLE, "#FFFFFF")}`;
     })
     .join("");
 
@@ -115,10 +131,10 @@ function svgCalque(bien: BienVisuel): string {
   ${chemin("corps", "HOOMY.MA", MARGE + 118, 119, 34, OR, 1, 6)}
 
   <!-- Localisation sous la photo -->
-  ${chemin("corps", ligneLieu, MARGE, 1180, 30, "#FFFFFF", 0.65)}
+  ${chemin("corps", ligneLieu, MARGE, Y_LIEU, 30, "#FFFFFF", 0.65)}
 
   <!-- Prix -->
-  ${chemin("titre", formaterPrixVisuel(bien.prix), MARGE, 1268, 76, OR)}
+  ${chemin("titre", formaterPrixVisuel(bien.prix), MARGE, Y_PRIX, 76, OR)}
 
   ${svgPastilles}
 
@@ -130,20 +146,45 @@ function svgCalque(bien: BienVisuel): string {
 }
 
 /**
- * Compose le visuel final. `photoBuffer` est la photo brute du bien ;
- * elle est recadrée en 960×720 sur la zone la plus « intéressante »
- * (fit cover + position attention) puis arrondie.
+ * Compose le visuel final.
+ *
+ * La photo est affichée ENTIÈRE (fit « inside »), jamais recadrée : le
+ * recadrage précédent (fit « cover ») amputait sévèrement les prises de vue
+ * dont le rapport ne correspondait pas au cadre — sur une annonce immobilière,
+ * cacher la moitié du bien est un contresens.
+ *
+ * Le vide laissé autour est comblé par la MÊME photo, élargie pour couvrir le
+ * cadre puis floutée et assombrie. Le bien reste intégralement lisible, le
+ * cadre est plein, et l'ensemble gagne en profondeur.
  */
 export async function composerStory(photoBuffer: Buffer, bien: BienVisuel): Promise<Buffer> {
   // Le SVG produit ne contient que des <path> : aucune police à résoudre au
   // moment du rendu, donc aucune dépendance à l'environnement d'exécution.
   const sharp = (await import("sharp")).default;
 
-  const photo = await sharp(photoBuffer)
+  // Arrière-plan : la photo étirée pour remplir, floutée et assombrie afin de
+  // ne jamais concurrencer le sujet net posé par-dessus.
+  const fond = await sharp(photoBuffer)
     .resize(PHOTO_L, PHOTO_H, { fit: "cover", position: "attention" })
+    .blur(28)
+    .modulate({ brightness: 0.62 })
+    .toBuffer();
+
+  // Sujet : photo complète, mise à l'échelle sans rognage.
+  const sujet = await sharp(photoBuffer)
+    .resize(PHOTO_L, PHOTO_H, { fit: "inside", withoutEnlargement: false })
+    .toBuffer({ resolveWithObject: true });
+
+  const photo = await sharp(fond)
     .composite([
       {
-        // Masque d'arrondi : le canal alpha du rect découpe la photo.
+        input: sujet.data,
+        // Centrage exact à partir des dimensions réelles après mise à l'échelle.
+        top: Math.round((PHOTO_H - sujet.info.height) / 2),
+        left: Math.round((PHOTO_L - sujet.info.width) / 2),
+      },
+      {
+        // Masque d'arrondi : le canal alpha du rect découpe l'ensemble.
         input: Buffer.from(
           `<svg xmlns="http://www.w3.org/2000/svg" width="${PHOTO_L}" height="${PHOTO_H}">
              <rect width="${PHOTO_L}" height="${PHOTO_H}" rx="${RAYON_PHOTO}" fill="#fff"/>
