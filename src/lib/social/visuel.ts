@@ -1,30 +1,24 @@
 import "server-only";
-import { preparerPolices } from "./polices";
+import { tracerTexte, largeurTexte } from "./polices";
 
 // Composition du visuel de story 1080×1920 (Facebook / Instagram).
 //
 // ── Piège n°1 : les polices ────────────────────────────────────────────────
-// sharp rend le SVG via librsvg, qui résout les polices par FONTCONFIG, sur
-// le SYSTÈME. Les polices chargées par next/font n'existent QUE dans le
-// navigateur : côté serveur, librsvg ne les voit pas. Toute la préparation
-// (localisation des .ttf, copie en dossier inscriptible, génération d'un
-// fonts.conf à chemins absolus) est dans ./polices.ts — voir l'explication
-// détaillée en tête de ce fichier, écrite après un premier déploiement sorti
-// SANS AUCUN TEXTE.
-// preparerPolices() est appelé avant tout rendu, et sharp est importé
-// dynamiquement : en ESM les imports sont hissés, un `import sharp` statique
-// s'exécuterait avant que FONTCONFIG_* ne soit positionné.
+// Résolu en supprimant complètement la dépendance aux polices système : chaque
+// texte est converti en CHEMINS VECTORIELS par ./polices.ts. Le SVG ne
+// contient plus une seule balise <text>, donc plus rien que librsvg doive
+// résoudre via fontconfig — mécanisme qui avait produit, par deux fois en
+// production, un visuel sans un seul glyphe. Voir l'explication complète en
+// tête de ./polices.ts.
 //
 // ── Piège n°2 : l'échappement ──────────────────────────────────────────────
-// Tout texte dynamique est injecté dans un SVG. Un titre contenant « & »
-// (« Riad & Spa ») produit un XML invalide : librsvg abandonne le rendu du
-// bloc concerné sans lever d'exception. Tout passe par echapperXml().
+// Devenu sans objet : un texte converti en chemin ne contient plus que des
+// coordonnées numériques. Une esperluette dans un titre ne peut plus casser
+// le XML, puisqu'aucun texte brut n'est injecté dans le SVG.
 
 // ── Charte ────────────────────────────────────────────────────────────────
 const VERT_ROYAL = "#0F4C3A";
 const OR = "#D4AF37";
-const TITRE = "Marcellus";
-const CORPS = "Outfit";
 
 // ── Géométrie (toutes les valeurs du cahier des charges) ──────────────────
 const L = 1080;
@@ -46,29 +40,10 @@ export type BienVisuel = {
   reference: string | null;
 };
 
-/** Échappement XML — indispensable, voir piège n°2 en tête de fichier. */
-function echapperXml(v: unknown): string {
-  return String(v ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
 /** « 1 500 000 DH » — espaces insécables fines comme séparateurs. */
 export function formaterPrixVisuel(prix: number | null): string {
   if (prix === null || !Number.isFinite(prix)) return "Prix sur demande";
   return `${Math.round(prix).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} DH`;
-}
-
-/**
- * Largeur approchée d'un texte — librsvg ne sait pas mesurer avant rendu, et
- * les pastilles doivent être dimensionnées AVANT. Outfit est proche d'une
- * chasse moyenne de 0,52 em ; la marge d'erreur est absorbée par le padding.
- */
-function largeurApprochee(texte: string, taillePolice: number): number {
-  return Math.ceil(texte.length * taillePolice * 0.52);
 }
 
 /** Pastilles : surface, chambres, salles de bain — 3 maximum, vides ignorées. */
@@ -80,51 +55,77 @@ function pastilles(bien: BienVisuel): string[] {
   return p.slice(0, 3);
 }
 
+/** Expose le SVG assemblé — diagnostic uniquement, aucun usage en production. */
+export function svgDeDiagnostic(bien: BienVisuel): string {
+  return svgCalque(bien);
+}
+
+/** Raccourci : un <path> rempli, à partir d'un texte converti en vecteurs. */
+function chemin(
+  famille: "titre" | "corps",
+  texte: string,
+  x: number,
+  y: number,
+  taille: number,
+  couleur: string,
+  opacite = 1,
+  interLettre = 0
+): string {
+  if (!texte) return "";
+  const { d } = tracerTexte(famille, texte, x, y, taille, interLettre);
+  if (!d) return "";
+  const op = opacite === 1 ? "" : ` fill-opacity="${opacite}"`;
+  return `<path d="${d}" fill="${couleur}"${op}/>`;
+}
+
 function svgCalque(bien: BienVisuel): string {
   const localisation = [bien.quartier, bien.ville].filter(Boolean).join(", ");
   const ligneLieu = [bien.type, localisation].filter(Boolean).join(" · ");
 
-  // ── Pastilles posées de gauche à droite depuis la marge ──
+  // ── Pastilles : largeur mesurée sur les vraies métriques de la police ──
   const TAILLE_PASTILLE = 26;
   const PAD_X = 32;
-  const HAUT_PASTILLE = 26 + 16 * 2; // texte + padding vertical 16
+  const HAUT_PASTILLE = TAILLE_PASTILLE + 16 * 2; // texte + padding vertical
   let curseurX = MARGE;
   const svgPastilles = pastilles(bien)
     .map((texte) => {
-      const largeur = largeurApprochee(texte, TAILLE_PASTILLE) + PAD_X * 2;
+      const largeurTxt = largeurTexte("corps", texte, TAILLE_PASTILLE);
+      const largeur = largeurTxt + PAD_X * 2;
       const x = curseurX;
       curseurX += largeur + 16;
+      // Centrage horizontal exact, ligne de base optiquement centrée.
       return `
-        <rect x="${x}" y="1360" width="${largeur}" height="${HAUT_PASTILLE}" rx="40"
+        <rect x="${x}" y="1360" width="${largeur.toFixed(1)}" height="${HAUT_PASTILLE}" rx="40"
               fill="none" stroke="${OR}" stroke-opacity="0.35" stroke-width="2"/>
-        <text x="${x + largeur / 2}" y="${1360 + HAUT_PASTILLE / 2 + 9}" text-anchor="middle"
-              font-family="${CORPS}" font-size="${TAILLE_PASTILLE}" fill="#FFFFFF">${echapperXml(texte)}</text>`;
+        ${chemin("corps", texte, x + PAD_X, 1360 + HAUT_PASTILLE / 2 + 9, TAILLE_PASTILLE, "#FFFFFF")}`;
     })
     .join("");
+
+  // Monogramme centré dans son carré (mesure réelle, pas text-anchor).
+  const largeurH = largeurTexte("titre", "H", 54);
+  // « Lien en bio » aligné à droite : on recule de sa largeur mesurée.
+  const largeurLien = largeurTexte("corps", "Lien en bio", 28);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${L}" height="${H}">
   <rect width="${L}" height="${H}" fill="${VERT_ROYAL}"/>
 
   <!-- En-tête : monogramme encadré or + nom de marque -->
   <rect x="${MARGE}" y="60" width="90" height="90" rx="8" fill="none" stroke="${OR}" stroke-width="2"/>
-  <text x="${MARGE + 45}" y="123" text-anchor="middle" font-family="${TITRE}" font-size="54" fill="${OR}">H</text>
-  <text x="${MARGE + 118}" y="119" font-family="${CORPS}" font-size="34" fill="${OR}" letter-spacing="6">HOOMY.MA</text>
+  ${chemin("titre", "H", MARGE + 45 - largeurH / 2, 123, 54, OR)}
+  ${chemin("corps", "HOOMY.MA", MARGE + 118, 119, 34, OR, 1, 6)}
 
   <!-- Localisation sous la photo -->
-  <text x="${MARGE}" y="1180" font-family="${CORPS}" font-size="30"
-        fill="#FFFFFF" fill-opacity="0.65">${echapperXml(ligneLieu)}</text>
+  ${chemin("corps", ligneLieu, MARGE, 1180, 30, "#FFFFFF", 0.65)}
 
   <!-- Prix -->
-  <text x="${MARGE}" y="1268" font-family="${TITRE}" font-size="76"
-        fill="${OR}">${echapperXml(formaterPrixVisuel(bien.prix))}</text>
+  ${chemin("titre", formaterPrixVisuel(bien.prix), MARGE, 1268, 76, OR)}
 
   ${svgPastilles}
 
   <!-- Pied de page -->
   <line x1="${MARGE}" y1="1790" x2="${L - MARGE}" y2="1790" stroke="${OR}" stroke-opacity="0.2" stroke-width="2"/>
-  <text x="${MARGE}" y="1840" font-family="${CORPS}" font-size="28"
-        fill="#FFFFFF" fill-opacity="0.45">${echapperXml(bien.reference ? `Réf. ${bien.reference}` : "")}</text>
-  <text x="${L - MARGE}" y="1840" text-anchor="end" font-family="${CORPS}" font-size="28" fill="${OR}">Lien en bio</text>
+  ${chemin("corps", bien.reference ? `Réf. ${bien.reference}` : "", MARGE, 1840, 28, "#FFFFFF", 0.45)}
+  ${chemin("corps", "Lien en bio", L - MARGE - largeurLien, 1840, 28, OR)}
 </svg>`;
 }
 
@@ -134,9 +135,8 @@ function svgCalque(bien: BienVisuel): string {
  * (fit cover + position attention) puis arrondie.
  */
 export async function composerStory(photoBuffer: Buffer, bien: BienVisuel): Promise<Buffer> {
-  // Polices d'abord, sharp ensuite : l'ordre est ce qui conditionne le rendu
-  // du texte (voir ./polices.ts).
-  preparerPolices();
+  // Le SVG produit ne contient que des <path> : aucune police à résoudre au
+  // moment du rendu, donc aucune dépendance à l'environnement d'exécution.
   const sharp = (await import("sharp")).default;
 
   const photo = await sharp(photoBuffer)

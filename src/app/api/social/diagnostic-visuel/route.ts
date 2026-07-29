@@ -1,17 +1,15 @@
 import { NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { composerStory } from "@/lib/social/visuel";
-import { preparerPolices, verifierRenduTexte } from "@/lib/social/polices";
+import { composerStory, svgDeDiagnostic } from "@/lib/social/visuel";
+import { etatPolices, tracerTexte } from "@/lib/social/polices";
 import type { BienSocial } from "@/lib/social/types";
 
 // Diagnostic du rendu visuel — À OUVRIR DANS UN NAVIGATEUR.
 //
-// Sert à vérifier de visu que Marcellus et Outfit sont bien appliquées EN
-// PRODUCTION. Les polices sont résolues par fontconfig sur le SYSTÈME hôte
-// (voir lib/social/visuel.ts) : un rendu correct en local ne garantit rien
-// sur Hostinger, où le repli sur une police générique se ferait
-// silencieusement, sans erreur ni log.
+// Sert à vérifier de visu que le texte est bien dessiné EN PRODUCTION. Les
+// textes sont convertis en chemins vectoriels (voir lib/social/polices.ts) :
+// plus aucune police système n'intervient au rendu.
 //
 // Strictement en LECTURE : aucune écriture en base, aucun dépôt dans
 // medias-social, aucun appel à l'API Meta. Le JPEG est composé en mémoire et
@@ -45,38 +43,39 @@ export async function GET(req: NextRequest) {
   // ?mode=infos → rapport texte sur l'état des polices, sans composer d'image.
   // Indispensable : un visuel sans texte ne dit pas POURQUOI il n'y en a pas.
   if (params.get("mode") === "infos") {
-    const etat = preparerPolices();
-    let rendu = "non testé";
+    const etat = etatPolices();
+    let trace = "non testé";
     try {
-      const v = await verifierRenduTexte();
-      rendu = v.policeAppliquee
-        ? `OK — texte dessiné avec la police (${v.octetsAvecPolice} vs ${v.octetsSansPolice} octets sans)`
-        : `ÉCHEC — rendus identiques (${v.octetsAvecPolice} octets) : aucune police appliquée`;
+      const t = tracerTexte("titre", "HOOMY 123", 0, 0, 76);
+      // Un chemin vide signifierait que les glyphes ne produisent rien.
+      trace = t.d.length > 100
+        ? `OK — ${t.d.length} caractères de chemin, largeur ${Math.round(t.largeur)} px`
+        : `ÉCHEC — chemin vide ou quasi vide (${t.d.length} caractères)`;
     } catch (e) {
-      rendu = `exception : ${e instanceof Error ? e.message : String(e)}`;
+      trace = `exception : ${e instanceof Error ? e.message : String(e)}`;
     }
 
     return texte(
       [
         "DIAGNOSTIC POLICES — module de publication sociale",
         "".padEnd(52, "="),
-        `Répertoire de travail : ${process.cwd()}`,
+        "Méthode : texte converti en chemins vectoriels (aucune police système).",
         "",
-        `Polices prêtes        : ${etat.ok ? "OUI" : "NON"}`,
+        `Répertoire de travail : ${process.cwd()}`,
+        `Polices chargées      : ${etat.ok ? "OUI" : "NON"}`,
         `Source trouvée        : ${etat.sourceTrouvee ?? "AUCUNE"}`,
-        `Dossier utilisé       : ${etat.dossierUtilise ?? "—"}`,
-        `Fichier de conf       : ${etat.fichierConf ?? "—"}`,
-        `Fichiers copiés       : ${etat.fichiers.length ? etat.fichiers.join(", ") : "—"}`,
         etat.erreur ? `Erreur                : ${etat.erreur}` : "",
         "",
         "Emplacements testés :",
-        ...etat.candidatsTestes.map((c) => `  - ${c}`),
+        ...etat.candidatsTestes.map((c: string) => `  - ${c}`),
         "",
-        `Rendu de texte réel   : ${rendu}`,
+        `Tracé vectoriel réel  : ${trace}`,
       ].filter(Boolean).join("\n"),
       etat.ok ? 200 : 500
     );
   }
+
+  const modeSvg = params.get("mode") === "svg";
 
   try {
     const admin = createAdminClient();
@@ -112,6 +111,9 @@ export async function GET(req: NextRequest) {
     if (!reponsePhoto.ok) {
       return texte(`Photo source inaccessible (HTTP ${reponsePhoto.status}) : ${photo}`, 502);
     }
+
+    // ?mode=svg → SVG brut, pour inspecter l'assemblage sans passer par sharp.
+    if (modeSvg) return texte(svgDeDiagnostic(bien), 200);
 
     const jpeg = await composerStory(Buffer.from(await reponsePhoto.arrayBuffer()), bien);
 
