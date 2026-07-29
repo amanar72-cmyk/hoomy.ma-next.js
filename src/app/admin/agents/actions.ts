@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { envoyerEmail } from "@/lib/email/envoyerEmail";
+import { emailInvitationAgent } from "@/lib/email/emailInvitationAgent";
 
 // URL publique de l'application (pour le lien d'invitation)
 function getSiteUrl(): string {
@@ -40,19 +42,32 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
   if (profil?.role !== "admin")
     throw new Error("Accès refusé — réservé aux administrateurs.");
 
-  // ── 2. Invitation via le client admin (service_role) ───────────────────────
+  // ── 2. Création du compte + génération du lien (service_role) ──────────────
+  // generateLink (au lieu de inviteUserByEmail) crée le compte ET renvoie le
+  // token SANS envoyer d'e-mail : on maîtrise ainsi le lien ET le message.
   const adminClient = createAdminClient();
 
   const { data: invited, error: inviteError } =
-    await adminClient.auth.admin.inviteUserByEmail(donnees.email, {
-      data: { nom_complet: donnees.nomComplet },
-      redirectTo: `${getSiteUrl()}/auth/callback?next=/auth/definir-mot-de-passe`,
+    await adminClient.auth.admin.generateLink({
+      type: "invite",
+      email: donnees.email,
+      options: { data: { nom_complet: donnees.nomComplet } },
     });
 
   if (inviteError)
     throw new Error(traduireErreurInvitation(inviteError.message));
-  if (!invited?.user)
+  if (!invited?.user || !invited.properties?.hashed_token)
     throw new Error("La création du compte a échoué — réessayez.");
+
+  // Lien construit DIRECTEMENT vers notre callback avec le token_hash : il
+  // court-circuite la redirection Supabase (et son allowlist), qui perdait le
+  // token quand la query-string ?next= n'était pas whitelistée → atterrissage
+  // sur /connexion sans code. verifyOtp(type:'invite') établit la session.
+  const lien =
+    `${getSiteUrl()}/auth/callback` +
+    `?token_hash=${encodeURIComponent(invited.properties.hashed_token)}` +
+    `&type=invite` +
+    `&next=${encodeURIComponent("/auth/definir-mot-de-passe")}`;
 
   // ── 3. Mise à jour du profil (le trigger a créé la ligne de base) ──────────
   const { error: profilError } = await adminClient
@@ -67,6 +82,13 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
 
   if (profilError)
     throw new Error(`Compte créé mais profil non mis à jour : ${profilError.message}`);
+
+  // ── 4. Envoi de l'e-mail d'invitation brandé (best-effort, ne throw pas) ───
+  const { sujet, texte, html } = emailInvitationAgent({
+    nomComplet: donnees.nomComplet,
+    lien,
+  });
+  await envoyerEmail({ destinataire: donnees.email, sujet, texte, html });
 
   revalidatePath("/admin/agents");
 }
