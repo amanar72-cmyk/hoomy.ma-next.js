@@ -1,26 +1,24 @@
 import "server-only";
-import path from "node:path";
+import { preparerPolices } from "./polices";
 
 // Composition du visuel de story 1080×1920 (Facebook / Instagram).
 //
 // ── Piège n°1 : les polices ────────────────────────────────────────────────
 // sharp rend le SVG via librsvg, qui résout les polices par FONTCONFIG, sur
 // le SYSTÈME. Les polices chargées par next/font n'existent QUE dans le
-// navigateur : côté serveur, librsvg ne les voit pas et retombe
-// silencieusement sur une police générique — sans erreur, sans avertissement.
-// On pointe donc fontconfig vers public/fonts/ (Marcellus + Outfit en .ttf,
-// versionnés dans le dépôt) AVANT que sharp ne s'initialise. D'où l'import
-// dynamique plus bas : en ESM les imports sont hissés, un `import sharp`
-// statique s'exécuterait avant ces affectations.
+// navigateur : côté serveur, librsvg ne les voit pas. Toute la préparation
+// (localisation des .ttf, copie en dossier inscriptible, génération d'un
+// fonts.conf à chemins absolus) est dans ./polices.ts — voir l'explication
+// détaillée en tête de ce fichier, écrite après un premier déploiement sorti
+// SANS AUCUN TEXTE.
+// preparerPolices() est appelé avant tout rendu, et sharp est importé
+// dynamiquement : en ESM les imports sont hissés, un `import sharp` statique
+// s'exécuterait avant que FONTCONFIG_* ne soit positionné.
 //
 // ── Piège n°2 : l'échappement ──────────────────────────────────────────────
 // Tout texte dynamique est injecté dans un SVG. Un titre contenant « & »
 // (« Riad & Spa ») produit un XML invalide : librsvg abandonne le rendu du
 // bloc concerné sans lever d'exception. Tout passe par echapperXml().
-
-const RACINE_POLICES = path.resolve(process.cwd(), "public/fonts");
-process.env.FONTCONFIG_FILE = path.join(RACINE_POLICES, "fonts.conf");
-process.env.FONTCONFIG_PATH = RACINE_POLICES;
 
 // ── Charte ────────────────────────────────────────────────────────────────
 const VERT_ROYAL = "#0F4C3A";
@@ -136,8 +134,9 @@ function svgCalque(bien: BienVisuel): string {
  * (fit cover + position attention) puis arrondie.
  */
 export async function composerStory(photoBuffer: Buffer, bien: BienVisuel): Promise<Buffer> {
-  // Import dynamique volontaire : garantit que FONTCONFIG_* (posé en tête de
-  // module) est en place avant l'initialisation de sharp/librsvg.
+  // Polices d'abord, sharp ensuite : l'ordre est ce qui conditionne le rendu
+  // du texte (voir ./polices.ts).
+  preparerPolices();
   const sharp = (await import("sharp")).default;
 
   const photo = await sharp(photoBuffer)

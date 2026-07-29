@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { composerStory } from "@/lib/social/visuel";
+import { preparerPolices, verifierRenduTexte } from "@/lib/social/polices";
 import type { BienSocial } from "@/lib/social/types";
 
 // Diagnostic du rendu visuel — À OUVRIR DANS UN NAVIGATEUR.
@@ -40,6 +41,42 @@ export async function GET(req: NextRequest) {
 
   const params = req.nextUrl.searchParams;
   if (!secretValide(params.get("secret"), attendu)) return texte("Non autorisé.", 401);
+
+  // ?mode=infos → rapport texte sur l'état des polices, sans composer d'image.
+  // Indispensable : un visuel sans texte ne dit pas POURQUOI il n'y en a pas.
+  if (params.get("mode") === "infos") {
+    const etat = preparerPolices();
+    let rendu = "non testé";
+    try {
+      const v = await verifierRenduTexte();
+      rendu = v.policeAppliquee
+        ? `OK — texte dessiné avec la police (${v.octetsAvecPolice} vs ${v.octetsSansPolice} octets sans)`
+        : `ÉCHEC — rendus identiques (${v.octetsAvecPolice} octets) : aucune police appliquée`;
+    } catch (e) {
+      rendu = `exception : ${e instanceof Error ? e.message : String(e)}`;
+    }
+
+    return texte(
+      [
+        "DIAGNOSTIC POLICES — module de publication sociale",
+        "".padEnd(52, "="),
+        `Répertoire de travail : ${process.cwd()}`,
+        "",
+        `Polices prêtes        : ${etat.ok ? "OUI" : "NON"}`,
+        `Source trouvée        : ${etat.sourceTrouvee ?? "AUCUNE"}`,
+        `Dossier utilisé       : ${etat.dossierUtilise ?? "—"}`,
+        `Fichier de conf       : ${etat.fichierConf ?? "—"}`,
+        `Fichiers copiés       : ${etat.fichiers.length ? etat.fichiers.join(", ") : "—"}`,
+        etat.erreur ? `Erreur                : ${etat.erreur}` : "",
+        "",
+        "Emplacements testés :",
+        ...etat.candidatsTestes.map((c) => `  - ${c}`),
+        "",
+        `Rendu de texte réel   : ${rendu}`,
+      ].filter(Boolean).join("\n"),
+      etat.ok ? 200 : 500
+    );
+  }
 
   try {
     const admin = createAdminClient();
