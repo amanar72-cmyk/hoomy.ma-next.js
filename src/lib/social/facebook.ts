@@ -1,5 +1,5 @@
 import "server-only";
-import { appelGraph, baseGraph, jetonMeta, journaliser, pause } from "./types";
+import { appelGraph, baseGraph, jetonPage, journaliser, pause } from "./types";
 
 // Publication sur la Page Facebook.
 //
@@ -21,7 +21,7 @@ async function televerserPhoto(url: string): Promise<string> {
   const corps = new URLSearchParams({
     url,
     published: "false",
-    access_token: jetonMeta(),
+    access_token: await jetonPage(),
   });
   const data = await appelGraph(`${baseGraph()}/${pageId()}/photos`, {
     method: "POST",
@@ -50,7 +50,7 @@ export async function publierFeed(params: {
     await pause(ATTENTE_ENTRE_APPELS);
   }
 
-  const corps = new URLSearchParams({ message, access_token: jetonMeta() });
+  const corps = new URLSearchParams({ message, access_token: await jetonPage() });
   photoIds.forEach((id, i) => {
     corps.append(`attached_media[${i}]`, JSON.stringify({ media_fbid: id }));
   });
@@ -82,7 +82,7 @@ export async function publierStory(params: { medias: string[] }): Promise<string
     await pause(ATTENTE_ENTRE_APPELS);
 
     const data = await appelGraph(
-      `${baseGraph()}/${pageId()}/photo_stories?photo_id=${encodeURIComponent(photoId)}&access_token=${encodeURIComponent(jetonMeta())}`,
+      `${baseGraph()}/${pageId()}/photo_stories?photo_id=${encodeURIComponent(photoId)}&access_token=${encodeURIComponent(await jetonPage())}`,
       { method: "POST", corpsJournal: { photo_id: photoId } }
     );
     identifiants.push((data.post_id ?? data.id) as string);

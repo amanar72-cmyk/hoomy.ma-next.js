@@ -69,6 +69,33 @@ export function jetonMeta(): string {
   return t;
 }
 
+let jetonPageCache: string | null = null;
+
+/**
+ * Jeton de PAGE, obtenu à partir du jeton d'utilisateur système.
+ *
+ * Publier sur une Page exige d'agir « en tant que Page » : avec le seul jeton
+ * système, Meta refuse par « (#200) Unpublished posts must be posted to a page
+ * as the page itself. » Le jeton de Page s'obtient en lisant le champ
+ * access_token de la Page — il ne change pas tant que les permissions de
+ * l'utilisateur système restent en place, d'où la mise en cache par processus.
+ */
+export async function jetonPage(): Promise<string> {
+  if (jetonPageCache) return jetonPageCache;
+
+  const pageId = process.env.META_PAGE_ID;
+  if (!pageId) throw new Error("META_PAGE_ID manquant.");
+
+  const data = await appelGraph(
+    `${baseGraph()}/${pageId}?fields=access_token&access_token=${encodeURIComponent(jetonMeta())}`
+  );
+  const jeton = data.access_token as string | undefined;
+  if (!jeton) throw new Error("Meta n'a pas renvoyé de jeton de Page — vérifier les permissions de l'utilisateur système.");
+
+  jetonPageCache = jeton;
+  return jeton;
+}
+
 /** Journalisation systématique — sans elle, déboguer Graph API est impossible. */
 export function journaliser(etape: string, details: unknown): void {
   console.log(`[social] ${etape} :`, typeof details === "string" ? details : JSON.stringify(details));
