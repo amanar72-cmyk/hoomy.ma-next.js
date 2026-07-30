@@ -78,6 +78,15 @@ const Ico = {
       <path d="M19 14l.9 2.4 2.4.9-2.4.9L19 20.6l-.9-2.4-2.4-.9 2.4-.9z" />
     </svg>
   ),
+  // Porte-voix — icône propre aux publications sociales. Elle partageait
+  // « ia » (étoiles) avec l'Agent IA, ce qui la rendait indistinguable.
+  social: (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+      <path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+    </svg>
+  ),
   logout: (
     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -107,7 +116,7 @@ const NAV_ADMIN = [
   { href: "/admin/leads",         ico: "leads",        label: "Leads" },
   { href: "/admin/demandes",      ico: "clients",      label: "Demandes de visite" },
   { href: "/admin/demandes-recherche", ico: "leads",   label: "Recherches clients" },
-  { href: "/admin/publications",  ico: "ia",           label: "Publications sociales" },
+  { href: "/admin/publications",  ico: "social",       label: "Publications sociales" },
   { href: "/admin/calendrier",    ico: "calendrier",   label: "Calendrier" },
   { href: "/admin/agents",        ico: "agents",       label: "Agents" },
   { href: "/admin/clients",       ico: "clients",      label: "Clients" },
