@@ -40,7 +40,6 @@ export default function FormulaireInvitationAgent() {
   const [chargement, setChargement] = useState(false);
   const [succes, setSucces]         = useState<string | null>(null);
   const [erreur, setErreur]         = useState<string | null>(null);
-  const [lienSecours, setLienSecours] = useState<string | null>(null);
 
   function toggleZone(ville: string) {
     setZones((prev) => prev.includes(ville) ? prev.filter((v) => v !== ville) : [...prev, ville]);
@@ -59,26 +58,14 @@ export default function FormulaireInvitationAgent() {
     setErreur(null);
     setSucces(null);
     setChargement(true);
-    setLienSecours(null);
     try {
-      const res = await ajouterAgent({
+      await ajouterAgent({
         nomComplet: nomComplet.trim(),
         email: email.trim().toLowerCase(),
         telephone: telephone ?? "",
         zones,
       });
-      if (res.emailEnvoye) {
-        setSucces(`Invitation envoyée à ${email.trim().toLowerCase()}`);
-      } else {
-        // Compte créé mais e-mail non parti (SMTP en échec) : on le DIT, et on
-        // donne le lien à transmettre manuellement plutôt qu'un faux succès.
-        setErreur(
-          `Compte créé, mais l'e-mail d'invitation n'a pas pu être envoyé` +
-          (res.erreurEmail ? ` (${res.erreurEmail})` : "") +
-          `. Vérifiez la configuration SMTP. En attendant, transmettez ce lien à l'agent :`
-        );
-        setLienSecours(res.lien);
-      }
+      setSucces(`Invitation envoyée à ${email.trim().toLowerCase()}`);
       setNomComplet("");
       setEmail("");
       setTelephone(undefined);
@@ -107,15 +94,6 @@ export default function FormulaireInvitationAgent() {
         <div className="px-4 py-3 rounded-xl text-sm border"
           style={{ background: "#FEF2F2", color: "#991B1B", borderColor: "#FECACA" }}>
           {erreur}
-          {lienSecours && (
-            <input
-              readOnly
-              value={lienSecours}
-              onFocus={(e) => e.currentTarget.select()}
-              className="mt-2 w-full text-xs px-2 py-1.5 rounded-lg border font-mono"
-              style={{ background: "#fff", borderColor: "#FECACA", color: "#111" }}
-            />
-          )}
         </div>
       )}
 

@@ -3,8 +3,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { envoyerEmail } from "@/lib/email/envoyerEmail";
-import { emailInvitationAgent } from "@/lib/email/emailInvitationAgent";
 
 // Base du lien d'invitation. Les agents vivent sur pro.hoomy.ma : tout le
 // parcours (callback → définition du mot de passe → /pro/biens) doit s'y
@@ -48,16 +46,7 @@ type DonneesAgent = {
   zones: string[];
 };
 
-export type ResultatInvitation = {
-  /** true = l'e-mail brandé est bien parti. false = SMTP en échec. */
-  emailEnvoye: boolean;
-  /** Raison de l'échec SMTP, le cas échéant (pour diagnostic admin). */
-  erreurEmail?: string;
-  /** Lien d'activation — permis à l'admin de le transmettre à la main si l'e-mail n'est pas parti. */
-  lien: string;
-};
-
-export async function ajouterAgent(donnees: DonneesAgent): Promise<ResultatInvitation> {
+export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
   // ── 1. Vérification que l'appelant est admin ────────────────────────────────
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -73,32 +62,26 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<ResultatInvit
   if (!/^\+[1-9]\d{7,14}$/.test(telephone))
     throw new Error("Le numéro de téléphone est requis (format international +212…).");
 
-  // ── 2. Création du compte + génération du lien (service_role) ──────────────
-  // generateLink (au lieu de inviteUserByEmail) crée le compte ET renvoie le
-  // token SANS envoyer d'e-mail : on maîtrise ainsi le lien ET le message.
+  // ── 2. Invitation via Supabase (service_role) ──────────────────────────────
+  // C'est SUPABASE qui envoie l'e-mail : sa délivrance vers les adresses
+  // externes (gmail…) est fiable, contrairement à notre SMTP mutualisé qui ne
+  // délivre bien qu'en interne. redirectTo pointe sur pro.hoomy.ma : les agents
+  // y vivent, et le parcours (callback → mot de passe → /pro/biens) doit s'y
+  // dérouler pour que la session soit sur le bon sous-domaine.
+  // Prérequis dashboard : « https://pro.hoomy.ma/auth/callback** » dans les
+  // Redirect URLs Supabase, sinon le token est perdu (retour /connexion).
   const adminClient = createAdminClient();
 
   const { data: invited, error: inviteError } =
-    await adminClient.auth.admin.generateLink({
-      type: "invite",
-      email: donnees.email,
-      options: { data: { nom_complet: donnees.nomComplet } },
+    await adminClient.auth.admin.inviteUserByEmail(donnees.email, {
+      data: { nom_complet: donnees.nomComplet },
+      redirectTo: `${getProUrl()}/auth/callback?next=/auth/definir-mot-de-passe`,
     });
 
   if (inviteError)
     throw new Error(traduireErreurInvitation(inviteError.message));
-  if (!invited?.user || !invited.properties?.hashed_token)
+  if (!invited?.user)
     throw new Error("La création du compte a échoué — réessayez.");
-
-  // Lien construit DIRECTEMENT vers notre callback avec le token_hash : il
-  // court-circuite la redirection Supabase (et son allowlist), qui perdait le
-  // token quand la query-string ?next= n'était pas whitelistée → atterrissage
-  // sur /connexion sans code. verifyOtp(type:'invite') établit la session.
-  const lien =
-    `${getProUrl()}/auth/callback` +
-    `?token_hash=${encodeURIComponent(invited.properties.hashed_token)}` +
-    `&type=invite` +
-    `&next=${encodeURIComponent("/auth/definir-mot-de-passe")}`;
 
   // ── 3. Mise à jour du profil (le trigger a créé la ligne de base) ──────────
   const { error: profilError } = await adminClient
@@ -114,18 +97,5 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<ResultatInvit
   if (profilError)
     throw new Error(`Compte créé mais profil non mis à jour : ${profilError.message}`);
 
-  // ── 4. Envoi de l'e-mail d'invitation brandé ───────────────────────────────
-  // On NE throw PAS : le compte est déjà créé. On remonte plutôt l'état de
-  // l'envoi à l'admin — s'il échoue (SMTP mal configuré en prod), l'admin voit
-  // la vraie raison ET reçoit le lien pour le transmettre à la main, au lieu
-  // d'un faux « succès » silencieux.
-  const { sujet, texte, html } = emailInvitationAgent({
-    nomComplet: donnees.nomComplet,
-    lien,
-  });
-  const envoi = await envoyerEmail({ destinataire: donnees.email, sujet, texte, html });
-
   revalidatePath("/admin/agents");
-
-  return { emailEnvoye: envoi.ok, erreurEmail: envoi.erreur, lien };
 }
