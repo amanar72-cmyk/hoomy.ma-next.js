@@ -7,20 +7,22 @@ type EmailOtpType = 'signup' | 'invite' | 'magiclink' | 'recovery' | 'email_chan
 // URL de base — résolution robuste derrière un reverse proxy (Hostinger, Vercel, etc.)
 // Priorité : env var > X-Forwarded-Host header > origin de request.url (si externe)
 function baseUrl(request: Request): string {
-  // 1. Variable d'environnement explicite (à définir sur Hostinger)
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-
-  // 2. Headers du reverse proxy Hostinger
+  // 1. Domaine RÉELLEMENT demandé (x-forwarded-host derrière le proxy Hostinger).
+  //    PRIORITAIRE : le cookie de session est posé sur ce domaine, la
+  //    redirection DOIT y rester. Un agent qui arrive sur pro.hoomy.ma doit
+  //    repartir sur pro.hoomy.ma — pas sur hoomy.ma (NEXT_PUBLIC_SITE_URL), où
+  //    sa session n'existerait pas.
   const forwardedHost = request.headers.get('x-forwarded-host');
   const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https';
   if (forwardedHost) return `${forwardedProto}://${forwardedHost}`;
 
-  // 3. Origin de request.url — valide seulement si ce n'est pas une adresse interne
+  // 2. Origin de request.url — valide seulement si ce n'est pas une adresse interne
   const { origin } = new URL(request.url);
   const interne = origin.includes('0.0.0.0') || origin.includes('localhost') || origin.includes('127.0.0.1');
   if (!interne) return origin;
 
-  // 4. Fallback hardcodé — production HOOMY
+  // 3. Repli : variable d'environnement, puis production HOOMY
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
   return 'https://hoomy.ma';
 }
 
@@ -57,16 +59,23 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${base}${next}`);
     }
+    console.error('[auth/callback] exchangeCodeForSession échec :', error.status, error.message);
   }
 
-  // Flux Email OTP — confirmation d'inscription, magic link, reset password
+  // Flux Email OTP — confirmation d'inscription, invitation, recovery, etc.
   // Déclenché quand le template email pointe directement vers /auth/callback
-  // avec ?token_hash=...&type=signup (ou magiclink, recovery, etc.)
+  // avec ?token_hash=...&type=invite (ou signup, recovery, magiclink…)
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type });
     if (!error) {
       return NextResponse.redirect(`${base}${next}`);
     }
+    // Raison réelle loggée pour diagnostic (jeton expiré/consommé, type, etc.)
+    console.error('[auth/callback] verifyOtp échec :', type, error.status, error.message);
+  }
+
+  if (!code && !token_hash) {
+    console.error('[auth/callback] appelé sans code ni token_hash — lien mal formé ?');
   }
 
   return NextResponse.redirect(`${base}/connexion?erreur=auth`);
