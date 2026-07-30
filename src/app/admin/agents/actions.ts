@@ -6,10 +6,27 @@ import { revalidatePath } from "next/cache";
 import { envoyerEmail } from "@/lib/email/envoyerEmail";
 import { emailInvitationAgent } from "@/lib/email/emailInvitationAgent";
 
-// URL publique de l'application (pour le lien d'invitation)
-function getSiteUrl(): string {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+// Base du lien d'invitation. Les agents vivent sur pro.hoomy.ma : tout le
+// parcours (callback → définition du mot de passe → /pro/biens) doit s'y
+// dérouler. Un lien vers hoomy.ma poserait la session sur le mauvais
+// sous-domaine, perdue au moment du renvoi vers /pro/biens.
+function getProUrl(): string {
+  // Variable dédiée en priorité (à poser sur Hostinger : https://pro.hoomy.ma)
+  if (process.env.NEXT_PUBLIC_PRO_URL) return process.env.NEXT_PUBLIC_PRO_URL;
+  // À défaut, dériver du domaine public en préfixant « pro. »
+  const site = process.env.NEXT_PUBLIC_SITE_URL;
+  if (site) {
+    try {
+      const u = new URL(site);
+      if (!u.hostname.startsWith("pro.")) {
+        u.hostname = "pro." + u.hostname.replace(/^www\./, "");
+      }
+      return u.origin;
+    } catch {
+      /* URL mal formée → repli local ci-dessous */
+    }
+  }
+  // En local, pas de sous-domaine : /admin et /pro sont servis depuis localhost.
   return "http://localhost:3000";
 }
 
@@ -78,7 +95,7 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<ResultatInvit
   // token quand la query-string ?next= n'était pas whitelistée → atterrissage
   // sur /connexion sans code. verifyOtp(type:'invite') établit la session.
   const lien =
-    `${getSiteUrl()}/auth/callback` +
+    `${getProUrl()}/auth/callback` +
     `?token_hash=${encodeURIComponent(invited.properties.hashed_token)}` +
     `&type=invite` +
     `&next=${encodeURIComponent("/auth/definir-mot-de-passe")}`;
