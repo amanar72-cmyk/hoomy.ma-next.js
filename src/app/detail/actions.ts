@@ -291,7 +291,9 @@ export async function demanderRappel(donnees: DonneesDemandeRappel) {
     corps: `${nomComplet} (${telephone}) — ${bien.titre}`,
     url: "/pro/leads",
   };
-  const taches: Promise<void>[] = [
+  // Promise<unknown>[] : le tableau mêle des notifications (Promise<void>) et
+  // envoyerEmail qui renvoie désormais un ResultatEmail. allSettled ignore le type.
+  const taches: Promise<unknown>[] = [
     envoyerNotificationAuxAdmins(payload),
     // Email admin — suivi de l'activité des conseillers
     notifierNouveauLead({

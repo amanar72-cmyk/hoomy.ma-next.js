@@ -39,10 +39,14 @@ export type EmailAEnvoyer = {
   html?: string;
 };
 
+export type ResultatEmail = { ok: boolean; erreur?: string };
+
 // Envoi best-effort : ne lève JAMAIS d'exception — une panne email ne doit jamais
 // casser l'action métier (création de bien, demande de visite, etc.). Les erreurs
-// sont loggées pour rester diagnosticables.
-export async function envoyerEmail({ sujet, texte, destinataire, html }: EmailAEnvoyer): Promise<void> {
+// sont loggées ET renvoyées (ok/erreur) pour les appelants qui veulent réagir
+// (ex. l'invitation d'agent, dont l'e-mail EST le livrable). Les appelants qui
+// ignorent la valeur de retour gardent exactement l'ancien comportement.
+export async function envoyerEmail({ sujet, texte, destinataire, html }: EmailAEnvoyer): Promise<ResultatEmail> {
   try {
     const transport = obtenirTransporteur();
     const adresse = process.env.SMTP_USER as string;
@@ -53,7 +57,10 @@ export async function envoyerEmail({ sujet, texte, destinataire, html }: EmailAE
       text: texte,
       ...(html ? { html } : {}),
     });
+    return { ok: true };
   } catch (err) {
-    console.error("[email] Échec d'envoi :", err instanceof Error ? err.message : err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[email] Échec d'envoi :", message);
+    return { ok: false, erreur: message };
   }
 }

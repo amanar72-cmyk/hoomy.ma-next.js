@@ -31,7 +31,16 @@ type DonneesAgent = {
   zones: string[];
 };
 
-export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
+export type ResultatInvitation = {
+  /** true = l'e-mail brandé est bien parti. false = SMTP en échec. */
+  emailEnvoye: boolean;
+  /** Raison de l'échec SMTP, le cas échéant (pour diagnostic admin). */
+  erreurEmail?: string;
+  /** Lien d'activation — permis à l'admin de le transmettre à la main si l'e-mail n'est pas parti. */
+  lien: string;
+};
+
+export async function ajouterAgent(donnees: DonneesAgent): Promise<ResultatInvitation> {
   // ── 1. Vérification que l'appelant est admin ────────────────────────────────
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -41,6 +50,11 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
     .from("profils").select("role").eq("id", user.id).single();
   if (profil?.role !== "admin")
     throw new Error("Accès refusé — réservé aux administrateurs.");
+
+  // ── 1 bis. Validation (le téléphone est désormais OBLIGATOIRE) ─────────────
+  const telephone = donnees.telephone.trim();
+  if (!/^\+[1-9]\d{7,14}$/.test(telephone))
+    throw new Error("Le numéro de téléphone est requis (format international +212…).");
 
   // ── 2. Création du compte + génération du lien (service_role) ──────────────
   // generateLink (au lieu de inviteUserByEmail) crée le compte ET renvoie le
@@ -75,7 +89,7 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
     .upsert({
       id: invited.user.id,
       nom_complet: donnees.nomComplet,
-      telephone: donnees.telephone || null,
+      telephone,
       role: "agent",
       zones: donnees.zones.length > 0 ? donnees.zones : null,
     });
@@ -83,12 +97,18 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
   if (profilError)
     throw new Error(`Compte créé mais profil non mis à jour : ${profilError.message}`);
 
-  // ── 4. Envoi de l'e-mail d'invitation brandé (best-effort, ne throw pas) ───
+  // ── 4. Envoi de l'e-mail d'invitation brandé ───────────────────────────────
+  // On NE throw PAS : le compte est déjà créé. On remonte plutôt l'état de
+  // l'envoi à l'admin — s'il échoue (SMTP mal configuré en prod), l'admin voit
+  // la vraie raison ET reçoit le lien pour le transmettre à la main, au lieu
+  // d'un faux « succès » silencieux.
   const { sujet, texte, html } = emailInvitationAgent({
     nomComplet: donnees.nomComplet,
     lien,
   });
-  await envoyerEmail({ destinataire: donnees.email, sujet, texte, html });
+  const envoi = await envoyerEmail({ destinataire: donnees.email, sujet, texte, html });
 
   revalidatePath("/admin/agents");
+
+  return { emailEnvoye: envoi.ok, erreurEmail: envoi.erreur, lien };
 }

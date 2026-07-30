@@ -40,6 +40,7 @@ export default function FormulaireInvitationAgent() {
   const [chargement, setChargement] = useState(false);
   const [succes, setSucces]         = useState<string | null>(null);
   const [erreur, setErreur]         = useState<string | null>(null);
+  const [lienSecours, setLienSecours] = useState<string | null>(null);
 
   function toggleZone(ville: string) {
     setZones((prev) => prev.includes(ville) ? prev.filter((v) => v !== ville) : [...prev, ville]);
@@ -49,17 +50,35 @@ export default function FormulaireInvitationAgent() {
     e.preventDefault();
     if (!nomComplet.trim()) { setErreur("Le nom complet est requis."); return; }
     if (!email.trim() || !email.includes("@")) { setErreur("Adresse e-mail invalide."); return; }
+    // Téléphone désormais OBLIGATOIRE. react-phone-number-input produit un
+    // numéro E.164 (+212…) une fois complet ; on exige ce format.
+    if (!telephone || !/^\+[1-9]\d{7,14}$/.test(telephone)) {
+      setErreur("Le numéro de téléphone est requis (et doit être complet).");
+      return;
+    }
     setErreur(null);
     setSucces(null);
     setChargement(true);
+    setLienSecours(null);
     try {
-      await ajouterAgent({
+      const res = await ajouterAgent({
         nomComplet: nomComplet.trim(),
         email: email.trim().toLowerCase(),
         telephone: telephone ?? "",
         zones,
       });
-      setSucces(`Invitation envoyée à ${email.trim().toLowerCase()}`);
+      if (res.emailEnvoye) {
+        setSucces(`Invitation envoyée à ${email.trim().toLowerCase()}`);
+      } else {
+        // Compte créé mais e-mail non parti (SMTP en échec) : on le DIT, et on
+        // donne le lien à transmettre manuellement plutôt qu'un faux succès.
+        setErreur(
+          `Compte créé, mais l'e-mail d'invitation n'a pas pu être envoyé` +
+          (res.erreurEmail ? ` (${res.erreurEmail})` : "") +
+          `. Vérifiez la configuration SMTP. En attendant, transmettez ce lien à l'agent :`
+        );
+        setLienSecours(res.lien);
+      }
       setNomComplet("");
       setEmail("");
       setTelephone(undefined);
@@ -88,6 +107,15 @@ export default function FormulaireInvitationAgent() {
         <div className="px-4 py-3 rounded-xl text-sm border"
           style={{ background: "#FEF2F2", color: "#991B1B", borderColor: "#FECACA" }}>
           {erreur}
+          {lienSecours && (
+            <input
+              readOnly
+              value={lienSecours}
+              onFocus={(e) => e.currentTarget.select()}
+              className="mt-2 w-full text-xs px-2 py-1.5 rounded-lg border font-mono"
+              style={{ background: "#fff", borderColor: "#FECACA", color: "#111" }}
+            />
+          )}
         </div>
       )}
 
@@ -105,10 +133,14 @@ export default function FormulaireInvitationAgent() {
             placeholder="agent@exemple.com" autoComplete="email" className={cls} style={inp} />
         </Champ>
 
-        <Champ label="Téléphone">
+        <Champ label="Téléphone" required>
           <div className="phone-input-wrapper">
+            {/* countryOptionsOrder : Maroc en tête du menu déroulant, puis un
+                séparateur, puis le reste (alphabétique). defaultCountry le
+                présélectionne. */}
             <PhoneInput value={telephone} onChange={(val) => setTelephone(val)}
-              defaultCountry="MA" placeholder="+212 6XX XXX XXX" className="phone-input-hoomy" />
+              defaultCountry="MA" countryOptionsOrder={["MA", "|"]}
+              placeholder="+212 6XX XXX XXX" className="phone-input-hoomy" />
           </div>
           <style>{`
             .phone-input-wrapper { position: relative; }

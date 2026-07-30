@@ -120,7 +120,7 @@ export async function creerLeadWhatsApp(
 
   const sujet = `📲 Nouveau lead WhatsApp — ${nomComplet || "sans nom"}${criteres.ville ? ` (${criteres.ville})` : ""}`;
 
-  const taches: Promise<void>[] = [envoyerEmail({ sujet, texte: lignes.join("\n") })];
+  const taches: Promise<unknown>[] = [envoyerEmail({ sujet, texte: lignes.join("\n") })];
   if (emailConseiller) {
     taches.push(envoyerEmail({ sujet, texte: lignes.join("\n"), destinataire: emailConseiller }));
   }
