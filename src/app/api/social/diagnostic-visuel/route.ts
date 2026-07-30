@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { composerStory, svgDeDiagnostic } from "@/lib/social/visuel";
 import { etatPolices, tracerTexte } from "@/lib/social/polices";
+import { normaliserPhotoFeed, resumerNormalisation } from "@/lib/social/photoFeed";
 import type { BienSocial } from "@/lib/social/types";
 
 // Diagnostic du rendu visuel — À OUVRIR DANS UN NAVIGATEUR.
@@ -114,6 +115,31 @@ export async function GET(req: NextRequest) {
 
     // ?mode=svg → SVG brut, pour inspecter l'assemblage sans passer par sharp.
     if (modeSvg) return texte(svgDeDiagnostic(bien), 200);
+
+    // ?mode=feed[&n=2] → photo du carrousel normalisée en 4:5, telle qu'elle
+    // partira à Graph. Aucun dépôt, aucun appel Meta : simple prévisualisation.
+    if (params.get("mode") === "feed") {
+      const n = Math.max(1, Math.min(10, Number(params.get("n") ?? 1) || 1));
+      const source = bien.photos?.[n - 1];
+      if (!source) return texte(`Le bien ${bien.reference ?? bien.id} n'a pas de photo n°${n}.`, 404);
+
+      const reponseN = await fetch(source);
+      if (!reponseN.ok) return texte(`Photo n°${n} inaccessible (HTTP ${reponseN.status}).`, 502);
+
+      const { jpeg: normalisee, infos } = await normaliserPhotoFeed(
+        Buffer.from(await reponseN.arrayBuffer())
+      );
+      return new Response(new Uint8Array(normalisee), {
+        status: 200,
+        headers: {
+          "Content-Type": "image/jpeg",
+          "Cache-Control": "no-store, max-age=0",
+          // Les en-têtes HTTP n'acceptent que du latin-1 : « → » et « × »
+          // feraient échouer la construction de la Response.
+          "X-Hoomy-Normalisation": resumerNormalisation(n, infos).replace(/[^\x20-\x7E]/g, "-"),
+        },
+      });
+    }
 
     const jpeg = await composerStory(Buffer.from(await reponsePhoto.arrayBuffer()), bien);
 

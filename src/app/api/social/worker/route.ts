@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { composerStory } from "@/lib/social/visuel";
+import { normaliserPhotoFeed, resumerNormalisation, FEED_L, FEED_H } from "@/lib/social/photoFeed";
 import { genererLegende, composerTexteFinal } from "@/lib/social/redacteur";
 import * as facebook from "@/lib/social/facebook";
 import * as instagram from "@/lib/social/instagram";
@@ -55,6 +56,46 @@ async function marquerEchec(
     .eq("id", pub.id);
 }
 
+/**
+ * Normalise les photos du post FEED au format 4:5 et les dépose dans le
+ * bucket public. Ce sont ces URLs qui partent à l'API Graph — jamais les
+ * originales, qui sont en 9:16 et qu'Instagram entourerait de bandes noires
+ * (voir lib/social/photoFeed.ts).
+ */
+async function preparerPhotosFeed(
+  admin: ReturnType<typeof createAdminClient>,
+  bien: BienSocial
+): Promise<string[]> {
+  const sources = (bien.photos ?? []).slice(0, NB_PHOTOS_FEED_MAX);
+  if (sources.length === 0) throw new Error("Le bien n'a aucune photo — post impossible.");
+
+  // Référence dans le chemin : plus lisible que l'uuid quand on inspecte le
+  // bucket. Repli sur l'id si la référence manque.
+  const dossier = (bien.reference ?? bien.id).replace(/[^A-Za-z0-9_-]/g, "");
+  const horodatage = Date.now();
+
+  const urls: string[] = [];
+  for (let i = 0; i < sources.length; i++) {
+    const reponse = await fetch(sources[i]);
+    if (!reponse.ok) throw new Error(`Photo ${i + 1} inaccessible (HTTP ${reponse.status}).`);
+
+    const { jpeg, infos } = await normaliserPhotoFeed(Buffer.from(await reponse.arrayBuffer()));
+    journaliser("feed", resumerNormalisation(i + 1, infos));
+
+    const chemin = `feed/${dossier}/${horodatage}-${i + 1}.jpg`;
+    const { error } = await admin.storage
+      .from(BUCKET)
+      .upload(chemin, jpeg, { contentType: "image/jpeg", upsert: true });
+    if (error) throw new Error(`Dépôt de la photo ${i + 1} échoué : ${error.message}`);
+
+    const { data } = admin.storage.from(BUCKET).getPublicUrl(chemin);
+    urls.push(data.publicUrl);
+  }
+
+  journaliser("photos feed prêtes", `${urls.length} image(s) en ${FEED_L}×${FEED_H}`);
+  return urls;
+}
+
 /** Compose les 3 visuels de story et les dépose dans le bucket public. */
 async function preparerVisuelsStory(
   admin: ReturnType<typeof createAdminClient>,
@@ -98,7 +139,7 @@ async function traiterPublication(
     const medias =
       pub.type_pub === "story"
         ? await preparerVisuelsStory(admin, bien)
-        : (bien.photos ?? []).slice(0, NB_PHOTOS_FEED_MAX);
+        : await preparerPhotosFeed(admin, bien);
 
     if (medias.length === 0) throw new Error("Aucun média disponible pour cette publication.");
 
