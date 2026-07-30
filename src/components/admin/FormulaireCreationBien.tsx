@@ -10,7 +10,7 @@ import SelecteurProprietaire, { type ProprietaireOption } from "@/components/pro
 
 // ── Constantes partagées (mêmes que FormulaireEditionBien) ───────────────────
 
-const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
+const TYPES = ["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"];
 const EQUIPEMENTS_LISTE = [
   "Piscine", "Parking", "Terrasse", "Balcon", "Ascenseur", "Gardien",
   "Climatisation", "Chauffage", "Cuisine équipée", "Dressing", "Cave",

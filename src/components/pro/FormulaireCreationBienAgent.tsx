@@ -9,7 +9,7 @@ import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 import SelecteurProprietaire, { type ProprietaireOption } from "@/components/proprietaires/SelecteurProprietaire";
 
-const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
+const TYPES = ["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"];
 const EQUIPEMENTS_LISTE = [
   "Parking", "Piscine", "Jardin", "Terrasse", "Balcon", "Ascenseur",
   "Gardien", "Climatisation", "Chauffage central", "Double vitrage",

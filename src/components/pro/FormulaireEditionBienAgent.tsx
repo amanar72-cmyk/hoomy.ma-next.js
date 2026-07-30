@@ -69,7 +69,7 @@ function Champ({ label, children }: { label: string; children: React.ReactNode }
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
+const TYPES = ["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"];
 const EQUIPEMENTS_LISTE = [
   "Piscine", "Parking", "Terrasse", "Balcon", "Ascenseur", "Gardien",
   "Climatisation", "Chauffage", "Cuisine équipée", "Dressing", "Cave",

@@ -53,9 +53,11 @@ const ETAPE_LABELS_BASE = [
 
 const TYPES_BIENS = [
   { valeur: "Appartement", icone: "🏢" },
+  { valeur: "Maison", icone: "🏠" },
   { valeur: "Villa", icone: "🏡" },
   { valeur: "Riad", icone: "🕌" },
   { valeur: "Bureau", icone: "🏢" },
+  { valeur: "Local commercial", icone: "🏬" },
   { valeur: "Terrain", icone: "🌍" },
 ];
 

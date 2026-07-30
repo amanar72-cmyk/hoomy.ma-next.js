@@ -124,7 +124,7 @@ export default async function PageAdminBiens({ searchParams }: { searchParams: S
   }
 
   const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"];
-  const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
+  const TYPES = ["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"];
   const baseUrlPagination = urlAvec({ q, ville, type, statut, tri: tri !== "recent" ? tri : undefined });
 
   return (

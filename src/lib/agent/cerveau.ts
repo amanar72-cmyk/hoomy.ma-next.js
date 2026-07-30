@@ -181,7 +181,7 @@ function memoireVersCriteres(memoire: Partial<CriteresAgent>): CriteresAgent {
 // IMPORTANT : la classification extrait N'IMPORTE QUELLE ville marocaine — c'est
 // le CODE qui décide ensuite (estVilleActive) : ville active → recherche ;
 // ville reconnue mais inactive → réponse honnête « pas encore présents ».
-const TYPES_BIEN = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
+const TYPES_BIEN = ["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"];
 
 // response_format json_object garantit un objet JSON syntaxiquement valide ;
 // la STRUCTURE exacte est décrite ici (exigence OpenAI : le mot « JSON » doit

@@ -153,7 +153,7 @@ export default function FormulaireProposerBien({ demandeId, reference }: Props) 
           <label className={LABEL} style={LABEL_STYLE}>Type de bien *</label>
           <select name="type" required className={CHAMP} style={CHAMP_STYLE}>
             <option value="">Sélectionner</option>
-            {["Appartement", "Villa", "Riad", "Bureau", "Terrain"].map((t) => <option key={t} value={t}>{t}</option>)}
+            {["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"].map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
         <div>

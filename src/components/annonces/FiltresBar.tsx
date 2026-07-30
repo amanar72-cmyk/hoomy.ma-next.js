@@ -7,7 +7,7 @@ import { LISTE_VILLES_ACTIVES } from "@/lib/villes";
 
 // Diffusion publique limitée aux villes actives (source : src/lib/villes.ts)
 const VILLES = LISTE_VILLES_ACTIVES;
-const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
+const TYPES = ["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"];
 const CHAMBRES = ["1", "2", "3", "4", "5+"];
 
 type Props = {

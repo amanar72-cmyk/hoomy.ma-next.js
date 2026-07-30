@@ -60,7 +60,7 @@ function Champ({ label, children }: { label: string; children: React.ReactNode }
 
 // ── Constantes ───────────────────────────────────────────────────────────────
 
-const TYPES = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"];
+const TYPES = ["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"];
 const STATUTS = [
   "brouillon", "en_attente_affectation", "dans_la_file",
   "affecte", "finalise", "rejete", "suspendu", "archive", "transacte",

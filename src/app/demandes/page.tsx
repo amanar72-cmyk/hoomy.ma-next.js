@@ -83,7 +83,7 @@ export default async function PageDemandes({ searchParams }: Props) {
           </select>
           <select name="type" defaultValue={type} className="border rounded-xl px-4 py-2 text-sm" style={{ borderColor: "var(--bordure-chaude)", color: "var(--texte-corps)" }}>
             <option value="">Tous types</option>
-            {["Appartement", "Villa", "Riad", "Bureau", "Terrain"].map((t) => <option key={t} value={t}>{t}</option>)}
+            {["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"].map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
           <input name="budgetMax" defaultValue={budgetMax} type="number" placeholder="Budget max (DH)" className="border rounded-xl px-4 py-2 text-sm w-40" style={{ borderColor: "var(--bordure-chaude)", color: "var(--texte-corps)" }} />
           <button type="submit" className="px-5 py-2 rounded-xl text-sm font-medium cursor-pointer" style={{ background: "var(--primaire)", color: "var(--fond-secondaire)" }}>

@@ -117,7 +117,7 @@ export default function FormulaireDemandeRecherche({ initial }: Props) {
           <label className={LABEL} style={LABEL_STYLE}>Type de bien</label>
           <select value={typeBien} onChange={(e) => setTypeBien(e.target.value)} className={CHAMP} style={CHAMP_STYLE}>
             <option value="">Peu importe</option>
-            {["Appartement", "Villa", "Riad", "Bureau", "Terrain"].map((t) => <option key={t} value={t}>{t}</option>)}
+            {["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"].map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
         <div>

@@ -14,7 +14,7 @@ type Mode = "acheter" | "louer" | "neuf";
 
 // Diffusion publique limitée aux villes actives (source : src/lib/villes.ts)
 const VILLES = LISTE_VILLES_ACTIVES;
-const TYPES_BIEN = ["Appartement", "Villa", "Riad", "Bureau", "Terrain"] as const;
+const TYPES_BIEN = ["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"] as const;
 
 const BUDGETS_VENTE = [
   { label: "Tout budget" },
