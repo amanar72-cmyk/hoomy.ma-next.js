@@ -6,6 +6,7 @@ import { modifierBien, supprimerBien } from "@/app/admin/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
+import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 import { createClient } from "@/lib/supabase/client";
 import { appliquerWatermark } from "@/lib/images/watermark";
 import { appliquerFlou } from "@/lib/images/flou";
@@ -26,6 +27,7 @@ type BienComplet = {
   salles_bain: number;
   surface: number;
   equipements: string[] | null;
+  composition: NiveauBien[] | null;
   photos: string[] | null;
   photos_originales: string[] | null;
   verifie: boolean;
@@ -88,6 +90,7 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
   const [sallesBain, setSallesBain] = useState(bien.salles_bain.toString());
   const [surface, setSurface] = useState(bien.surface.toString());
   const [equipements, setEquipements] = useState<string[]>(bien.equipements ?? []);
+  const [composition, setComposition] = useState<NiveauBien[]>(bien.composition ?? []);
   const [photos, setPhotos] = useState<PhotoEdition[]>(
     (bien.photos ?? []).map((url, i) => ({ url, cheminPrive: bien.photos_originales?.[i] ?? "" }))
   );
@@ -220,6 +223,7 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
         salles_bain: type === "Terrain" ? 0 : Math.max(0, parseInt(sallesBain) || 0),
         surface: Math.max(0, parseFloat(surface) || 0),
         equipements: equipements.length > 0 ? equipements : null,
+        composition: composition.length > 0 ? composition : null,
         photos: photos.length > 0 ? photos.map((p) => p.url) : null,
         photosOriginales: photos.length > 0 ? photos.map((p) => p.cheminPrive) : null,
         verifie,
@@ -469,6 +473,14 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
             {equipements.length} équipement{equipements.length > 1 ? "s" : ""} sélectionné{equipements.length > 1 ? "s" : ""}
           </p>
         )}
+      </Section>
+
+      {/* Composition par niveau — parité avec l'espace agent (étages, pièces) */}
+      <Section titre="Composition par niveau">
+        <p className="text-xs mb-3" style={{ color: "#9DB8AD" }}>
+          Optionnel — décrivez le bien niveau par niveau (RDC, étages…) avec les pièces et leur quantité.
+        </p>
+        <CompositionNiveaux valeur={composition} onChange={setComposition} />
       </Section>
 
       {/* Statut & Modération */}

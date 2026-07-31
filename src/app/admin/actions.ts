@@ -81,6 +81,7 @@ type DonneesBien = {
   salles_bain: number;
   surface: number;
   equipements: string[] | null;
+  composition: unknown[] | null;
   photos: string[] | null;
   photosOriginales: string[] | null;
   verifie: boolean;
