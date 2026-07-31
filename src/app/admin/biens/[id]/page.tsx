@@ -9,6 +9,7 @@ import FicheInfosBien, { type BienFiche } from "@/components/partage/FicheInfosB
 import CarteContactProfil, { type ProfilContact } from "@/components/partage/CarteContactProfil";
 import CarteLocalisationBO from "@/components/partage/CarteLocalisationBO";
 import ListeDemandesVisite, { type DemandeVisiteFiche } from "@/components/partage/ListeDemandesVisite";
+import DocumentsFiche from "@/components/pro/DocumentsFiche";
 import { urlsPhotosNettes } from "@/lib/images/photosBien";
 import { formaterPrix } from "@/lib/format";
 import { documentsParType, TYPES_DOCUMENTS_FICHE } from "@/lib/documents/fiche";
@@ -18,21 +19,6 @@ import VendeurEtAcheteursBien from "@/components/proprietaires/VendeurEtAcheteur
 type Props = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ modifier?: string; onglet?: string }>;
-};
-
-// Libellés des documents du dossier (affichage lecture seule côté admin —
-// le dépôt reste côté agent, la validation dans /admin/verifications)
-const LIBELLES_DOCUMENTS: Record<string, string> = {
-  mandat: "Mandat signé",
-  cin: "CIN",
-  certificat_propriete: "Certificat de propriété",
-};
-
-const BADGES_DOC: Record<string, { label: string; bg: string; color: string }> = {
-  en_attente: { label: "En attente", bg: "#FEF3C7", color: "#92400E" },
-  signe:      { label: "Signé",      bg: "#D4AF37", color: "#0F4C3A" },
-  verifie:    { label: "Vérifié ✓",  bg: "#D1FAE5", color: "#065F46" },
-  depose:     { label: "Déposé",     bg: "#DBEAFE", color: "#1E40AF" },
 };
 
 function formaterDate(d: string | null | undefined) {
@@ -72,6 +58,9 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
 
   const modeEdition = modifier === "1";
 
+  // Documents du dossier — nécessaires en édition (dépôt admin) ET en lecture.
+  const documents = await documentsParType(supabase, bien.id);
+
   // ── Mode édition — logique existante inchangée ──────────────────────────────
   if (modeEdition) {
     return (
@@ -107,18 +96,26 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
         </div>
 
         <FormulaireEditionBien bien={bienRaw} />
+
+        {/* Documents du dossier — dépôt/visualisation aussi côté admin */}
+        <section className="mt-10 max-w-4xl">
+          <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>
+            Documents du dossier
+          </h2>
+          <DocumentsFiche bienId={bien.id} documents={documents} role="admin" />
+        </section>
       </div>
     );
   }
 
   // ── Données du mode lecture ─────────────────────────────────────────────────
-  const [photos, documents, demandesRes, agentsRes, proprietaireRes] = await Promise.all([
+  // documents déjà chargé plus haut (partagé avec le mode édition).
+  const [photos, demandesRes, agentsRes, proprietaireRes] = await Promise.all([
     urlsPhotosNettes(
       Array.isArray(bien.photos) ? (bien.photos as string[]) : [],
       Array.isArray(bien.photos_originales) ? (bien.photos_originales as string[]) : [],
       bien.verifie
     ),
-    documentsParType(supabase, bien.id),
     supabase
       .from("demandes_visite")
       .select("id, nom_client, email_client, telephone_client, date_souhaitee, date_confirmee, message, statut, cree_le")
@@ -298,40 +295,10 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
           )}
 
           {ongletActif === "documents" && (
-            <section className="flex flex-col gap-3">
-              {TYPES_DOCUMENTS_FICHE.map((type) => {
-                const doc = documents.find((d) => d.type_document === type);
-                const badge = doc
-                  ? (BADGES_DOC[doc.statut] ?? { label: doc.statut, bg: "#F4F6F5", color: "#6B7A71" })
-                  : { label: "Manquant", bg: "#FEE2E2", color: "#991B1B" };
-                return (
-                  <div
-                    key={type}
-                    className="rounded-2xl p-4 flex items-center justify-between gap-3 flex-wrap"
-                    style={{ background: "#fff", border: "1px solid #F0EDE5" }}
-                  >
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: "#1f2a24" }}>
-                        {LIBELLES_DOCUMENTS[type] ?? type}
-                      </p>
-                      {doc && (
-                        <p className="text-xs mt-0.5" style={{ color: "#9DB8AD" }}>
-                          Déposé le {formaterDate(doc.cree_le)}
-                          {doc.signe_le ? ` · Signé le ${formaterDate(doc.signe_le)}` : ""}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                      style={{ background: badge.bg, color: badge.color }}
-                    >
-                      {badge.label}
-                    </span>
-                  </div>
-                );
-              })}
-              <p className="text-xs" style={{ color: "#9DB8AD" }}>
-                La consultation et la validation des documents se font dans{" "}
+            <section>
+              <DocumentsFiche bienId={bien.id} documents={documents} role="admin" />
+              <p className="text-xs mt-3" style={{ color: "#9DB8AD" }}>
+                La validation finale des documents se fait dans{" "}
                 <Link href="/admin/verifications" className="underline" style={{ color: "#0F4C3A" }}>
                   Vérifications
                 </Link>.

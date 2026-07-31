@@ -427,7 +427,7 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
           disabled={uploadEnCours}
           className="w-full mb-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer disabled:opacity-60 transition-opacity hover:opacity-90"
           style={{ background: "#0F4C3A", color: "#fff" }}>
-          {uploadEnCours ? "Upload en cours…" : "Ajouter des photos (depuis votre ordinateur)"}
+          {uploadEnCours ? "Upload en cours…" : "＋ Ajouter des photos"}
         </button>
 
         {/* Ajout par URL (option alternative) */}

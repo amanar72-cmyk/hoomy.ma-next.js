@@ -47,9 +47,11 @@ function nettoyerNom(nom: string): string {
 type Props = {
   bienId: string;
   documents: DocumentFiche[]; // le plus récent par type (préparé côté serveur)
+  /** Rôle de l'uploadeur — trace qui a déposé (agent en pro, admin en back-office). */
+  role?: "agent" | "admin";
 };
 
-export default function DocumentsFiche({ bienId, documents }: Props) {
+export default function DocumentsFiche({ bienId, documents, role = "agent" }: Props) {
   const router = useRouter();
   const [docs, setDocs] = useState<Record<string, DocumentFiche>>(
     Object.fromEntries(documents.map((d) => [d.type_document, d]))
@@ -100,7 +102,7 @@ export default function DocumentsFiche({ bienId, documents }: Props) {
         statut,
         signe_le: signeLe,
         uploaded_by: user.id,
-        uploaded_by_role: "agent",
+        uploaded_by_role: role,
       };
 
       const { data: ligne, error: eLigne } = existant
