@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/client";
 import { publierBien } from "@/app/publier/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
-import { appliquerWatermark } from "@/lib/images/watermark";
 import { appliquerFlou } from "@/lib/images/flou";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 import { sauvegarderBrouillon, chargerBrouillon, supprimerBrouillon } from "@/lib/publier/brouillon";
@@ -381,12 +380,8 @@ export default function WizardPublication({ userId }: { userId: string | null })
       setUploadsProgression((prev) => ({ ...prev, [id]: 0 }));
 
       const chemin = `${userId}/${Date.now()}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      let nette: File | Blob = fichier;
-      try {
-        nette = await appliquerWatermark(fichier);
-      } catch (err) {
-        console.warn("[HOOMY] Watermark échoué, upload original :", err);
-      }
+      // Filigrane retiré : la photo est uploadée telle quelle.
+      const nette: File | Blob = fichier;
 
       // 1. Version NETTE → bucket privé (jamais public tant que non validé)
       const { error: erreurPrive } = await supabase.storage.from("biens-prive").upload(chemin, nette);
@@ -451,12 +446,8 @@ export default function WizardPublication({ userId }: { userId: string | null })
     for (const photo of donnees.photos) {
       if (photo.uploadee || !photo.fichier) { photosFinales.push(photo); continue; }
       const chemin = `${uid}/${Date.now()}-${photo.fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      let nette: File | Blob = photo.fichier;
-      try {
-        nette = await appliquerWatermark(photo.fichier);
-      } catch (err) {
-        console.warn("[HOOMY] Watermark échoué, upload original :", err);
-      }
+      // Filigrane retiré : la photo est uploadée telle quelle.
+      const nette: File | Blob = photo.fichier;
 
       // 1. Version NETTE → bucket privé
       const { error: erreurPrive } = await supabase.storage.from("biens-prive").upload(chemin, nette);

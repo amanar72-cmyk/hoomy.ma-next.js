@@ -11,7 +11,6 @@ import {
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
-import { appliquerWatermark } from "@/lib/images/watermark";
 import { appliquerFlou } from "@/lib/images/flou";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 
@@ -161,12 +160,8 @@ export default function FormulaireEditionBienAgent({
 
     for (const fichier of liste) {
       const chemin = `${agentId}/${Date.now()}-${fichier.name.replace(/\s+/g, "_")}`;
-      let nette: File | Blob = fichier;
-      try {
-        nette = await appliquerWatermark(fichier);
-      } catch (err) {
-        console.warn("[HOOMY] Watermark échoué, upload original :", err);
-      }
+      // Filigrane retiré : la photo est uploadée telle quelle.
+      const nette: File | Blob = fichier;
 
       // 1. Version NETTE → bucket privé (jamais public tant que non validé)
       const { error: erreurPrive } = await supabase.storage

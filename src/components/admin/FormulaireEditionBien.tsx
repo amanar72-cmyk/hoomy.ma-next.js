@@ -8,7 +8,6 @@ import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier"
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 import { createClient } from "@/lib/supabase/client";
-import { appliquerWatermark } from "@/lib/images/watermark";
 import { appliquerFlou } from "@/lib/images/flou";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -164,12 +163,8 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
     const nouvellesPhotos: PhotoEdition[] = [];
     for (const fichier of liste) {
       const chemin = `${prefix}/${Date.now()}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      let nette: File | Blob = fichier;
-      try {
-        nette = await appliquerWatermark(fichier);
-      } catch (err) {
-        console.warn("[HOOMY] Watermark échoué, upload original :", err);
-      }
+      // Filigrane retiré : la photo est uploadée telle quelle.
+      const nette: File | Blob = fichier;
 
       // 1. Version NETTE → bucket privé
       const { error: erreurPrive } = await supabase.storage.from("biens-prive").upload(chemin, nette);
