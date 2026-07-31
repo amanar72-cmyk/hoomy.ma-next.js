@@ -1,6 +1,11 @@
 // Filigrane canvas — gravé dans le fichier image avant upload (pas un overlay CSS)
 // Reproduit le logo HOOMY depuis Logo.tsx (viewBox "0 0 60 66")
 
+// Opacité du filigrane (0 = invisible, 1 = opaque). Réglée volontairement
+// discrète : présente pour la protection de marque, sans gêner la lecture de
+// la photo. Abaissée de 0.30 → 0.16 (filigrane jugé trop visible).
+const OPACITE_FILIGRANE = 0.16;
+
 function chargerImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -111,7 +116,7 @@ export async function appliquerWatermark(file: File): Promise<Blob> {
   if (!ctx) throw new Error("Canvas 2D non disponible dans ce navigateur");
 
   ctx.drawImage(img, 0, 0, w, h);
-  dessinerLogoHoomy(ctx, w / 2, h / 2, w, 0.30);
+  dessinerLogoHoomy(ctx, w / 2, h / 2, w, OPACITE_FILIGRANE);
 
   // Conserver le format original (PNG lossless, WebP, ou JPEG par défaut)
   const type =
