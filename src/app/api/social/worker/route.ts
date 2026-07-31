@@ -85,7 +85,11 @@ async function preparerPhotosFeed(
     const chemin = `feed/${dossier}/${horodatage}-${i + 1}.jpg`;
     const { error } = await admin.storage
       .from(BUCKET)
-      .upload(chemin, jpeg, { contentType: "image/jpeg", upsert: true });
+      // new Uint8Array(jpeg) : sharp peut renvoyer un Buffer adossé à un
+      // SharedArrayBuffer, que le storage Supabase (fetch/undici) refuse
+      // (« SharedArrayBuffer is not allowed »). La copie force un ArrayBuffer
+      // standard, non partagé.
+      .upload(chemin, new Uint8Array(jpeg), { contentType: "image/jpeg", upsert: true });
     if (error) throw new Error(`Dépôt de la photo ${i + 1} échoué : ${error.message}`);
 
     const { data } = admin.storage.from(BUCKET).getPublicUrl(chemin);
@@ -113,7 +117,8 @@ async function preparerVisuelsStory(
     const chemin = `social/${bien.id}/story-${i + 1}-${Date.now()}.jpg`;
     const { error } = await admin.storage
       .from(BUCKET)
-      .upload(chemin, jpeg, { contentType: "image/jpeg", upsert: true });
+      // new Uint8Array : cf. preparerPhotosFeed — évite « SharedArrayBuffer is not allowed ».
+      .upload(chemin, new Uint8Array(jpeg), { contentType: "image/jpeg", upsert: true });
     if (error) throw new Error(`Dépôt du visuel ${i + 1} échoué : ${error.message}`);
 
     const { data } = admin.storage.from(BUCKET).getPublicUrl(chemin);
