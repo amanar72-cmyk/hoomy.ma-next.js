@@ -12,6 +12,7 @@ import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte"
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import { appliquerFlou } from "@/lib/images/flou";
+import { optimiserImage } from "@/lib/images/optimiser";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -160,8 +161,9 @@ export default function FormulaireEditionBienAgent({
 
     for (const fichier of liste) {
       const chemin = `${agentId}/${Date.now()}-${fichier.name.replace(/\s+/g, "_")}`;
-      // Filigrane retiré : la photo est uploadée telle quelle.
-      const nette: File | Blob = fichier;
+      // Optimisation avant upload (orientation EXIF, resize 2000px, JPEG 0.92,
+      // EXIF/GPS effacé) — aucun filigrane.
+      const nette: File | Blob = await optimiserImage(fichier);
 
       // 1. Version NETTE → bucket privé (jamais public tant que non validé)
       const { error: erreurPrive } = await supabase.storage

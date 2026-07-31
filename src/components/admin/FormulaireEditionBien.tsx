@@ -9,6 +9,7 @@ import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 import { createClient } from "@/lib/supabase/client";
 import { appliquerFlou } from "@/lib/images/flou";
+import { optimiserImage } from "@/lib/images/optimiser";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -163,8 +164,9 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
     const nouvellesPhotos: PhotoEdition[] = [];
     for (const fichier of liste) {
       const chemin = `${prefix}/${Date.now()}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      // Filigrane retiré : la photo est uploadée telle quelle.
-      const nette: File | Blob = fichier;
+      // Optimisation avant upload (orientation EXIF, resize 2000px, JPEG 0.92,
+      // EXIF/GPS effacé) — aucun filigrane.
+      const nette: File | Blob = await optimiserImage(fichier);
 
       // 1. Version NETTE → bucket privé
       const { error: erreurPrive } = await supabase.storage.from("biens-prive").upload(chemin, nette);

@@ -8,6 +8,7 @@ import { publierBien } from "@/app/publier/actions";
 import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte";
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import { appliquerFlou } from "@/lib/images/flou";
+import { optimiserImage } from "@/lib/images/optimiser";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 import { sauvegarderBrouillon, chargerBrouillon, supprimerBrouillon } from "@/lib/publier/brouillon";
 import LogoHoomy from "@/components/home/LogoHoomy";
@@ -380,8 +381,9 @@ export default function WizardPublication({ userId }: { userId: string | null })
       setUploadsProgression((prev) => ({ ...prev, [id]: 0 }));
 
       const chemin = `${userId}/${Date.now()}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      // Filigrane retiré : la photo est uploadée telle quelle.
-      const nette: File | Blob = fichier;
+      // Optimisation avant upload (orientation EXIF, resize 2000px, JPEG 0.92,
+      // EXIF/GPS effacé) — aucun filigrane.
+      const nette: File | Blob = await optimiserImage(fichier);
 
       // 1. Version NETTE → bucket privé (jamais public tant que non validé)
       const { error: erreurPrive } = await supabase.storage.from("biens-prive").upload(chemin, nette);
@@ -446,8 +448,9 @@ export default function WizardPublication({ userId }: { userId: string | null })
     for (const photo of donnees.photos) {
       if (photo.uploadee || !photo.fichier) { photosFinales.push(photo); continue; }
       const chemin = `${uid}/${Date.now()}-${photo.fichier.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      // Filigrane retiré : la photo est uploadée telle quelle.
-      const nette: File | Blob = photo.fichier;
+      // Optimisation avant upload (orientation EXIF, resize 2000px, JPEG 0.92,
+      // EXIF/GPS effacé) — aucun filigrane.
+      const nette: File | Blob = await optimiserImage(photo.fichier);
 
       // 1. Version NETTE → bucket privé
       const { error: erreurPrive } = await supabase.storage.from("biens-prive").upload(chemin, nette);
