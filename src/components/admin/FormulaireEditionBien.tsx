@@ -211,7 +211,7 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
     setSucces(false);
     setChargement(true);
     try {
-      await modifierBien(bien.id, {
+      const res = await modifierBien(bien.id, {
         titre: titre.trim(),
         description: description.trim() || null,
         type,
@@ -231,6 +231,8 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
         latitude,
         longitude,
       });
+      // Le titre a pu être régénéré par l'IA côté serveur : on l'affiche.
+      if (res?.titre) setTitre(res.titre);
       setSucces(true);
       router.refresh();
     } catch (err) {

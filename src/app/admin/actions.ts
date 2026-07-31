@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { envoyerNotificationPush } from "@/lib/push/notifications";
 import { promouvoirPhotosNettes } from "@/lib/images/promouvoirPhotos";
+import { genererTitreSEO } from "@/lib/ia/genererTitreSEO";
 
 // ── Biens ────────────────────────────────────────────────────────────────────
 
@@ -103,6 +104,21 @@ export async function modifierBien(bienId: string, donnees: DonneesBien) {
   const { photosOriginales, ...reste } = donnees;
   const updates: Record<string, unknown> = { ...reste, photos_originales: photosOriginales };
 
+  // Titre SEO généré par l'IA à CHAQUE enregistrement : le titre saisi sert
+  // d'indice, l'IA produit le titre final attractif et indexable. Best-effort —
+  // si l'IA échoue (clé absente, timeout…), on garde le titre saisi.
+  const titreIA = await genererTitreSEO({
+    type: donnees.type,
+    transaction: donnees.transaction,
+    ville: donnees.ville,
+    quartier: donnees.quartier,
+    prix: donnees.prix,
+    surface: donnees.surface,
+    chambres: donnees.chambres,
+    titreActuel: donnees.titre,
+  });
+  if (titreIA) updates.titre = titreIA;
+
   // Passage non-validé → validé dans la même soumission : promouvoir les photos privées en public.
   // Zip par index avec donnees.photos pour ne remplacer QUE les entrées ayant un original privé
   // (les URLs collées manuellement, sans original, restent inchangées).
@@ -132,6 +148,10 @@ export async function modifierBien(bienId: string, donnees: DonneesBien) {
   revalidatePath(`/admin/biens/${bienId}`);
   revalidatePath("/admin/affectation");
   revalidatePath("/admin/verifications");
+
+  // Titre finalement enregistré (IA si dispo, sinon saisi) — pour que le
+  // formulaire affiche immédiatement le titre réel après sauvegarde.
+  return { titre: (updates.titre as string) ?? donnees.titre };
 }
 
 // ── Affectation ───────────────────────────────────────────────────────────────
