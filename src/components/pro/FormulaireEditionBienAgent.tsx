@@ -14,6 +14,8 @@ import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import { appliquerFlou } from "@/lib/images/flou";
 import { optimiserImage } from "@/lib/images/optimiser";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
+import ChampsCaracteristiques from "@/components/partage/ChampsCaracteristiques";
+import { filtrerCaracteristiques, type Caracteristiques } from "@/lib/biens/caracteristiques";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -32,6 +34,7 @@ export type BienEditable = {
   surface: number;
   equipements: string[] | null;
   composition: NiveauBien[] | null;
+  caracteristiques: Caracteristiques | null;
   photos: string[] | null;
   photos_originales: string[] | null;
   statut: string | null;
@@ -107,6 +110,7 @@ export default function FormulaireEditionBienAgent({
   const [surface, setSurface] = useState(bien.surface.toString());
   const [equipements, setEquipements] = useState<string[]>(bien.equipements ?? []);
   const [composition, setComposition] = useState<NiveauBien[]>(bien.composition ?? []);
+  const [caracteristiques, setCaracteristiques] = useState<Caracteristiques>(bien.caracteristiques ?? {});
   const [photos, setPhotos] = useState<PhotoEdition[]>(
     (bien.photos ?? []).map((url, i) => ({ url, cheminPrive: bien.photos_originales?.[i] ?? "" }))
   );
@@ -232,6 +236,7 @@ export default function FormulaireEditionBienAgent({
       surface: Math.max(0, parseFloat(surface) || 0),
       equipements: equipements.length > 0 ? equipements : null,
       composition: composition.length > 0 ? composition : null,
+      caracteristiques: filtrerCaracteristiques(type, caracteristiques),
       photos: photos.length > 0 ? photos.map((p) => p.url) : null,
       photosOriginales: photos.length > 0 ? photos.map((p) => p.cheminPrive) : null,
       latitude,
@@ -554,6 +559,14 @@ export default function FormulaireEditionBienAgent({
             {equipements.length} équipement{equipements.length > 1 ? "s" : ""} sélectionné{equipements.length > 1 ? "s" : ""}
           </p>
         )}
+      </Section>
+
+      {/* ── Caractéristiques spécifiques au type (étage, terrain, titre…) ────── */}
+      <Section titre={`Caractéristiques — ${type}`}>
+        <p className="text-xs mb-4" style={{ color: "#9DB8AD" }}>
+          Détails propres à un {type.toLowerCase()}. Les champs s'adaptent au type de bien.
+        </p>
+        <ChampsCaracteristiques type={type} valeur={caracteristiques} onChange={setCaracteristiques} />
       </Section>
 
       {/* ── Composition par niveau ──────────────────────────────────────────── */}

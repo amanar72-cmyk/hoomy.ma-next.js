@@ -168,6 +168,7 @@ export type DonneesModificationBienAgent = {
   surface: number;
   equipements: string[] | null;
   composition: import("@/components/partage/CompositionNiveaux").NiveauBien[] | null;
+  caracteristiques: import("@/lib/biens/caracteristiques").Caracteristiques;
   photos: string[] | null;
   photosOriginales: string[] | null;
   latitude: number | null;
