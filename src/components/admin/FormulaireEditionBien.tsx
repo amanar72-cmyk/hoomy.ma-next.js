@@ -282,7 +282,7 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
 
       {/* Informations générales */}
       <Section titre="Informations générales">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Champ label="Titre *">
             <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)}
               className={cls} style={inp} placeholder="Appartement lumineux…" />
