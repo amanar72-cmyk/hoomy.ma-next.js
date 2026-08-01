@@ -24,6 +24,10 @@ create index if not exists proprietaires_cree_par_idx
 drop policy if exists "Pros et admin lisent les proprietaires"    on public.proprietaires;
 drop policy if exists "Pros et admin modifient les proprietaires" on public.proprietaires;
 drop policy if exists "Pros et admin creent les proprietaires"    on public.proprietaires;
+-- Nouveaux noms aussi, pour que le script soit rejouable sans erreur 42710.
+drop policy if exists "Lecture proprietaires par agent"           on public.proprietaires;
+drop policy if exists "Modification proprietaires par agent"      on public.proprietaires;
+drop policy if exists "Creation proprietaires par agent"          on public.proprietaires;
 
 create policy "Lecture proprietaires par agent"
   on public.proprietaires for select
