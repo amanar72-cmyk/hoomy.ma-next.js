@@ -145,6 +145,24 @@ export default function FormulaireEditionBienAgent({
     setPhotos(arr);
   }
 
+  function descendrePhoto(i: number) {
+    if (i >= photos.length - 1) return;
+    const arr = [...photos];
+    [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
+    setPhotos(arr);
+  }
+
+  // Place la photo en tête = photo principale (celle affichée partout).
+  function definirPrincipale(i: number) {
+    if (i === 0) return;
+    setPhotos((prev) => {
+      const arr = [...prev];
+      const [choisie] = arr.splice(i, 1);
+      arr.unshift(choisie);
+      return arr;
+    });
+  }
+
   async function uploadFichiers(fichiers: FileList | File[]) {
     const liste = Array.from(fichiers).filter((f) =>
       ["image/jpeg", "image/png", "image/webp"].includes(f.type) && f.size <= 5 * 1024 * 1024
@@ -454,34 +472,31 @@ export default function FormulaireEditionBienAgent({
                 />
                 {i === 0 && (
                   <span
-                    className="absolute top-1.5 left-1.5 text-xs px-1.5 py-0.5 rounded-md font-medium"
-                    style={{ background: "rgba(15,76,58,0.88)", color: "#fff" }}
+                    className="absolute top-1.5 left-1.5 text-xs px-1.5 py-0.5 rounded-md font-medium z-10"
+                    style={{ background: "rgba(15,76,58,0.92)", color: "#fff" }}
                   >
-                    Principale
+                    ★ Principale
                   </span>
                 )}
-                <div
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ background: "rgba(0,0,0,0.55)" }}
-                >
+                {/* Contrôles TOUJOURS visibles (utilisables au tactile / mobile) */}
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 p-1"
+                  style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
                   {i > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => monterPhoto(i)}
-                      className="text-white text-xs px-2.5 py-1 rounded-lg cursor-pointer"
-                      style={{ background: "rgba(255,255,255,0.2)" }}
-                    >
-                      ↑ Principale
+                    <button type="button" onClick={() => definirPrincipale(i)} title="Définir comme principale"
+                      className="text-white text-[11px] px-2 py-1 rounded-md cursor-pointer font-medium"
+                      style={{ background: "rgba(212,175,55,0.95)", color: "#0F4C3A" }}>
+                      ★ Principale
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => supprimerPhoto(p.url)}
-                    className="text-white text-xs px-2.5 py-1 rounded-lg cursor-pointer"
-                    style={{ background: "rgba(220,38,38,0.8)" }}
-                  >
-                    ✕ Supprimer
-                  </button>
+                  <button type="button" onClick={() => monterPhoto(i)} disabled={i === 0} title="Monter"
+                    className="text-white text-xs w-6 h-6 rounded-md cursor-pointer disabled:opacity-30"
+                    style={{ background: "rgba(255,255,255,0.25)" }}>↑</button>
+                  <button type="button" onClick={() => descendrePhoto(i)} disabled={i === photos.length - 1} title="Descendre"
+                    className="text-white text-xs w-6 h-6 rounded-md cursor-pointer disabled:opacity-30"
+                    style={{ background: "rgba(255,255,255,0.25)" }}>↓</button>
+                  <button type="button" onClick={() => supprimerPhoto(p.url)} title="Supprimer"
+                    className="text-white text-xs w-6 h-6 rounded-md cursor-pointer"
+                    style={{ background: "rgba(220,38,38,0.85)" }}>✕</button>
                 </div>
               </div>
             ))}
