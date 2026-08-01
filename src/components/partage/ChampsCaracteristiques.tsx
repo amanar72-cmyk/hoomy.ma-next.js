@@ -27,7 +27,7 @@ export default function ChampsCaracteristiques({ type, valeur, onChange }: Props
   const clsInput = "border rounded-xl px-3 py-2 text-sm w-full focus:outline-none";
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {champs.map((c) => {
         const v = valeur[c.cle];
 
@@ -62,7 +62,7 @@ export default function ChampsCaracteristiques({ type, valeur, onChange }: Props
               </select>
             ) : (
               <input
-                type={c.type === "nombre" ? "number" : "text"}
+                type={c.type === "nombre" ? "number" : c.type === "date" ? "date" : "text"}
                 inputMode={c.type === "nombre" ? "decimal" : undefined}
                 value={v === undefined || v === null ? "" : String(v)}
                 onChange={(e) =>

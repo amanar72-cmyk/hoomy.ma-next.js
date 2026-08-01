@@ -7,7 +7,7 @@
 // sont pertinents. Les champs communs (état, année, titre juridique, meublé)
 // sont ajoutés à tous sauf le terrain.
 
-export type TypeChamp = "nombre" | "texte" | "bool" | "select";
+export type TypeChamp = "nombre" | "texte" | "bool" | "select" | "date";
 
 export type ChampCarac = {
   cle: string;
@@ -23,14 +23,20 @@ export type Caracteristiques = Record<string, ValeurCarac>;
 
 // Champs communs (bâti) — ajoutés à tous les types sauf Terrain.
 const COMMUNS: ChampCarac[] = [
-  { cle: "etat", label: "État du bien", type: "select", options: ["Neuf", "Bon état", "À rénover"] },
+  { cle: "surface_totale", label: "Surface totale", type: "nombre", suffixe: "m²" },
+  { cle: "etat", label: "État du bien", type: "select", options: ["Neuf", "Récemment rénové", "Bon état", "À rénover"] },
   { cle: "annee_construction", label: "Année de construction", type: "nombre" },
+  { cle: "date_livraison", label: "Date de livraison", type: "date" },
+  { cle: "disponibilite", label: "Disponibilité", type: "select", options: ["Libre", "Occupé", "Loué"] },
   { cle: "titre_juridique", label: "Titre juridique", type: "select", options: ["Titre foncier", "Réquisition", "Melkia", "En cours"] },
+  { cle: "numero_titre_foncier", label: "Numéro du titre foncier", type: "texte" },
   { cle: "meuble", label: "Meublé", type: "select", options: ["Non", "Partiellement", "Oui"] },
+  { cle: "visite_3d", label: "Visite 3D (lien)", type: "texte" },
 ];
 
 const APPARTEMENT: ChampCarac[] = [
-  { cle: "etage", label: "Étage", type: "nombre" },
+  { cle: "etage", label: "Étage du bien", type: "nombre" },
+  { cle: "detail_etage", label: "Détail de l'étage", type: "select", options: ["Rez-de-chaussée", "Sous-sol", "Étage intermédiaire", "Dernier étage", "Duplex"] },
   { cle: "nb_etages_immeuble", label: "Nombre d'étages de l'immeuble", type: "nombre" },
   { cle: "ascenseur", label: "Ascenseur", type: "bool" },
   { cle: "balcon_terrasse", label: "Balcon / terrasse", type: "nombre", suffixe: "m²" },
@@ -73,11 +79,14 @@ const LOCAL_COMMERCIAL: ChampCarac[] = [
 const TERRAIN: ChampCarac[] = [
   { cle: "surface_terrain", label: "Surface du terrain", type: "nombre", suffixe: "m²" },
   { cle: "titre_juridique", label: "Titre juridique", type: "select", options: ["Titre foncier", "Réquisition", "Melkia", "En cours"] },
+  { cle: "numero_titre_foncier", label: "Numéro du titre foncier", type: "texte" },
   { cle: "zonage", label: "Zonage / vocation", type: "select", options: ["Résidentiel", "Commercial", "Industriel", "Agricole", "Mixte"] },
   { cle: "constructible", label: "Constructible", type: "bool" },
   { cle: "viabilise_eau", label: "Viabilisé — eau", type: "bool" },
   { cle: "viabilise_elec", label: "Viabilisé — électricité", type: "bool" },
   { cle: "cloture", label: "Clôturé", type: "bool" },
+  { cle: "disponibilite", label: "Disponibilité", type: "select", options: ["Libre", "Occupé"] },
+  { cle: "visite_3d", label: "Visite 3D (lien)", type: "texte" },
 ];
 
 /** Champs à afficher pour un type de bien donné (spécifiques + communs). */

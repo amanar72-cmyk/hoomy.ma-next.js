@@ -6,6 +6,12 @@ import { champsRenseignes, type Caracteristiques, type ChampCarac } from "@/lib/
 
 function formater(c: ChampCarac, v: string | number | boolean): string {
   if (c.type === "bool") return "Oui"; // les booléens faux sont filtrés en amont
+  if (c.type === "date" && typeof v === "string") {
+    const d = new Date(v);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString("fr-MA", { day: "2-digit", month: "long", year: "numeric" });
+    }
+  }
   return c.suffixe ? `${v} ${c.suffixe}` : String(v);
 }
 
