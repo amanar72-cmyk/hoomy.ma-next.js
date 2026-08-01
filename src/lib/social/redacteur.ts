@@ -34,7 +34,14 @@ function contexteBien(bien: BienSocial): string {
 }
 
 function consigne(reseau: Reseau, bien: BienSocial): string {
-  const commun = `Tu rédiges pour HOOMY.MA, agence immobilière marocaine premium.
+  const commun = `Tu es EXPERT en marketing immobilier premium et tu rédiges pour HOOMY.MA (agence marocaine haut de gamme).
+
+Objectif : une annonce qui DONNE ENVIE et fait cliquer.
+- Ouvre par une accroche forte qui met en valeur l'atout n°1 du bien.
+- Fais PROJETER le lecteur (« imaginez-vous… », « idéal pour… »).
+- Transforme chaque caractéristique fournie en BÉNÉFICE concret (ex. « grande surface » → « des espaces de vie généreux »).
+- Crée un sentiment d'opportunité et termine par un appel à l'action clair (visiter, en savoir plus).
+- Ton premium, chaleureux, jamais racoleur ni superlatif creux.
 
 INTERDIT ABSOLU : n'utilise QUE les informations listées ci-dessous. N'invente
 jamais un prix, une surface, un nombre de pièces, un équipement, un étage, une

@@ -19,7 +19,7 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const LOT = 5;
-const NB_VISUELS_STORY = 3;
+const NB_VISUELS_STORY = 1; // une seule story, avec la photo principale (photos[0])
 const NB_PHOTOS_FEED_MAX = 10;
 const TENTATIVES_MAX = 3;
 const REPORT_MINUTES = 15;
