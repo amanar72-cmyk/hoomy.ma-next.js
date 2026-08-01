@@ -98,6 +98,9 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
   const [photos, setPhotos] = useState<PhotoEdition[]>(
     (bien.photos ?? []).map((url, i) => ({ url, cheminPrive: bien.photos_originales?.[i] ?? "" }))
   );
+  // Photo principale (cochée) — remise en tête à l'enregistrement (photos[0] = couverture).
+  const [principaleUrl, setPrincipaleUrl] = useState<string | null>(bien.photos?.[0] ?? null);
+  const dragIndex = useRef<number | null>(null);
   const [nouvelleUrl, setNouvelleUrl] = useState("");
   const [verifie, setVerifie] = useState(bien.verifie);
   const [statut, setStatut] = useState(bien.statut ?? "");
@@ -121,31 +124,31 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
   }
 
   function supprimerPhoto(url: string) {
-    setPhotos((prev) => prev.filter((p) => p.url !== url));
+    setPhotos((prev) => {
+      const suivant = prev.filter((p) => p.url !== url);
+      if (url === principaleUrl) setPrincipaleUrl(suivant[0]?.url ?? null);
+      return suivant;
+    });
   }
 
-  function monterPhoto(i: number) {
-    if (i === 0) return;
-    const arr = [...photos];
-    [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
-    setPhotos(arr);
-  }
-
-  function descendrePhoto(i: number) {
-    if (i >= photos.length - 1) return;
-    const arr = [...photos];
-    [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
-    setPhotos(arr);
-  }
-
-  function definirPrincipale(i: number) {
-    if (i === 0) return;
+  function deposerPhoto(cible: number) {
+    const src = dragIndex.current;
+    dragIndex.current = null;
+    if (src === null || src === cible) return;
     setPhotos((prev) => {
       const arr = [...prev];
-      const [choisie] = arr.splice(i, 1);
-      arr.unshift(choisie);
+      const [deplacee] = arr.splice(src, 1);
+      arr.splice(cible, 0, deplacee);
       return arr;
     });
+  }
+
+  /** Ordre final : principale en tête (photos[0] = couverture). */
+  function photosOrdonnees(): PhotoEdition[] {
+    if (!principaleUrl) return photos;
+    const principale = photos.find((p) => p.url === principaleUrl);
+    if (!principale) return photos;
+    return [principale, ...photos.filter((p) => p.url !== principaleUrl)];
   }
 
   function ajouterPhoto() {
@@ -243,8 +246,8 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
         equipements: equipements.length > 0 ? equipements : null,
         composition: composition.length > 0 ? composition : null,
         caracteristiques: filtrerCaracteristiques(type, caracteristiques),
-        photos: photos.length > 0 ? photos.map((p) => p.url) : null,
-        photosOriginales: photos.length > 0 ? photos.map((p) => p.cheminPrive) : null,
+        photos: photos.length > 0 ? photosOrdonnees().map((p) => p.url) : null,
+        photosOriginales: photos.length > 0 ? photosOrdonnees().map((p) => p.cheminPrive) : null,
         verifie,
         statut: statut || null,
         latitude,
@@ -390,43 +393,50 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
       {/* Photos */}
       <Section titre={`Photos (${photos.length})`}>
         {photos.length > 0 ? (
+          <>
+          <p className="text-xs mb-2" style={{ color: "#9DB8AD" }}>
+            Glissez-déposez pour classer • cochez le cercle pour la photo principale • ✕ pour retirer.
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-            {photos.map((p, i) => (
-              <div key={p.url} className="relative rounded-xl overflow-hidden group"
-                style={{ height: 110, background: "#F4F6F5" }}>
+            {photos.map((p, i) => {
+              const estPrincipale = p.url === (principaleUrl ?? photos[0]?.url);
+              return (
+              <div key={p.url}
+                draggable
+                onDragStart={() => { dragIndex.current = i; }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => deposerPhoto(i)}
+                className="relative rounded-xl overflow-hidden cursor-move"
+                style={{ height: 110, background: "#F4F6F5", outline: estPrincipale ? "2px solid #D4AF37" : "none", outlineOffset: -2 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover"
+                <img src={p.url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover pointer-events-none"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                {/* Badge photo principale */}
-                {i === 0 && (
-                  <span className="absolute top-1.5 left-1.5 text-xs px-1.5 py-0.5 rounded-md font-medium z-10"
-                    style={{ background: "rgba(15,76,58,0.92)", color: "#fff" }}>
-                    ★ Principale
-                  </span>
-                )}
-                {/* Contrôles TOUJOURS visibles (tactile / mobile) */}
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 p-1"
-                  style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
-                  {i > 0 && (
-                    <button type="button" onClick={() => definirPrincipale(i)} title="Définir comme principale"
-                      className="text-[11px] px-2 py-1 rounded-md cursor-pointer font-medium"
-                      style={{ background: "rgba(212,175,55,0.95)", color: "#0F4C3A" }}>
-                      ★ Principale
-                    </button>
+
+                {/* Cercle « photo principale » (haut gauche) */}
+                <button type="button" onClick={() => setPrincipaleUrl(p.url)} title="Photo principale"
+                  className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer z-10"
+                  style={{ background: estPrincipale ? "#D4AF37" : "rgba(255,255,255,0.9)", border: estPrincipale ? "none" : "1.5px solid #C4D8CE" }}>
+                  {estPrincipale && (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0F4C3A" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
                   )}
-                  <button type="button" onClick={() => monterPhoto(i)} disabled={i === 0} title="Monter"
-                    className="text-white text-xs w-6 h-6 rounded-md cursor-pointer disabled:opacity-30"
-                    style={{ background: "rgba(255,255,255,0.25)" }}>↑</button>
-                  <button type="button" onClick={() => descendrePhoto(i)} disabled={i === photos.length - 1} title="Descendre"
-                    className="text-white text-xs w-6 h-6 rounded-md cursor-pointer disabled:opacity-30"
-                    style={{ background: "rgba(255,255,255,0.25)" }}>↓</button>
-                  <button type="button" onClick={() => supprimerPhoto(p.url)} title="Supprimer"
-                    className="text-white text-xs w-6 h-6 rounded-md cursor-pointer"
-                    style={{ background: "rgba(220,38,38,0.85)" }}>✕</button>
-                </div>
+                </button>
+
+                {/* × retirer (haut droite) */}
+                <button type="button" onClick={() => supprimerPhoto(p.url)} title="Retirer la photo"
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-white text-sm cursor-pointer z-10"
+                  style={{ background: "rgba(220,38,38,0.92)" }}>✕</button>
+
+                {estPrincipale && (
+                  <span className="absolute bottom-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded-md font-medium"
+                    style={{ background: "rgba(212,175,55,0.95)", color: "#0F4C3A" }}>Principale</span>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
+          </>
         ) : (
           <div className="rounded-xl flex items-center justify-center mb-4"
             style={{ height: 80, background: "#F4F6F5", border: "2px dashed #E0DAC8" }}>
