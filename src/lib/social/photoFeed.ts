@@ -54,12 +54,42 @@ export async function normaliserPhotoFeed(
 
   const avant = await sharp(source).metadata();
 
-  const encoder = async (qualite: number) =>
-    sharp(source)
-      .resize(FEED_L, FEED_H, { fit: "cover", position: "centre" })
+  // Une photo PLUS LARGE que le cadre 4:5 (ratio > 0,8) serait rognée sur les
+  // côtés par un « cover » → effet « zoomé » sur les paysages. Pour celles-là,
+  // on affiche la photo ENTIÈRE (contain) posée sur un fond flou d'elle-même.
+  // Les photos plus HAUTES que 4:5 (portraits) gardent le cover : le rognage
+  // haut/bas y est minime et elles remplissent joliment le cadre.
+  const ratio = (avant.width ?? 0) / (avant.height ?? 1);
+  const estPaysage = ratio > FEED_L / FEED_H;
+
+  const encoder = async (qualite: number): Promise<Buffer> => {
+    if (!estPaysage) {
+      return sharp(source)
+        .resize(FEED_L, FEED_H, { fit: "cover", position: "centre" })
+        .toColourspace("srgb")
+        .jpeg({ quality: qualite, chromaSubsampling: "4:2:0", mozjpeg: true })
+        .toBuffer();
+    }
+
+    // Paysage : fond = même photo en « cover » flouté et légèrement assombri ;
+    // premier plan = photo entière (contain) centrée. Aucun rognage, aucun zoom.
+    const [fond, premierPlan] = await Promise.all([
+      sharp(source)
+        .resize(FEED_L, FEED_H, { fit: "cover", position: "centre" })
+        .blur(30)
+        .modulate({ brightness: 0.9 })
+        .toBuffer(),
+      sharp(source)
+        .resize(FEED_L, FEED_H, { fit: "inside" })
+        .toBuffer(),
+    ]);
+
+    return sharp(fond)
+      .composite([{ input: premierPlan, gravity: "centre" }])
       .toColourspace("srgb")
       .jpeg({ quality: qualite, chromaSubsampling: "4:2:0", mozjpeg: true })
       .toBuffer();
+  };
 
   let qualite = QUALITE;
   let jpeg = await encoder(qualite);
