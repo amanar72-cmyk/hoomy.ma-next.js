@@ -7,6 +7,8 @@ import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte"
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
+import ChampsCaracteristiques from "@/components/partage/ChampsCaracteristiques";
+import { filtrerCaracteristiques, type Caracteristiques } from "@/lib/biens/caracteristiques";
 import { createClient } from "@/lib/supabase/client";
 import { appliquerFlou } from "@/lib/images/flou";
 import { optimiserImage } from "@/lib/images/optimiser";
@@ -28,6 +30,7 @@ type BienComplet = {
   surface: number;
   equipements: string[] | null;
   composition: NiveauBien[] | null;
+  caracteristiques: Caracteristiques | null;
   photos: string[] | null;
   photos_originales: string[] | null;
   verifie: boolean;
@@ -91,6 +94,7 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
   const [surface, setSurface] = useState(bien.surface.toString());
   const [equipements, setEquipements] = useState<string[]>(bien.equipements ?? []);
   const [composition, setComposition] = useState<NiveauBien[]>(bien.composition ?? []);
+  const [caracteristiques, setCaracteristiques] = useState<Caracteristiques>(bien.caracteristiques ?? {});
   const [photos, setPhotos] = useState<PhotoEdition[]>(
     (bien.photos ?? []).map((url, i) => ({ url, cheminPrive: bien.photos_originales?.[i] ?? "" }))
   );
@@ -221,6 +225,7 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
         surface: Math.max(0, parseFloat(surface) || 0),
         equipements: equipements.length > 0 ? equipements : null,
         composition: composition.length > 0 ? composition : null,
+        caracteristiques: filtrerCaracteristiques(type, caracteristiques),
         photos: photos.length > 0 ? photos.map((p) => p.url) : null,
         photosOriginales: photos.length > 0 ? photos.map((p) => p.cheminPrive) : null,
         verifie,
@@ -472,6 +477,11 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
             {equipements.length} équipement{equipements.length > 1 ? "s" : ""} sélectionné{equipements.length > 1 ? "s" : ""}
           </p>
         )}
+      </Section>
+
+      {/* Caractéristiques spécifiques au type (étage, terrain, titre juridique…) */}
+      <Section titre={`Caractéristiques — ${type}`}>
+        <ChampsCaracteristiques type={type} valeur={caracteristiques} onChange={setCaracteristiques} />
       </Section>
 
       {/* Composition par niveau — parité avec l'espace agent (étages, pièces) */}

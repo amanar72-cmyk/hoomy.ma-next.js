@@ -36,6 +36,7 @@ export type DonneesBienClient = {
   salles_bain: number;
   equipements: string[];
   composition: NiveauBien[];
+  caracteristiques: Record<string, unknown>;
   photos: string[];
   photosOriginales: string[];
   titre: string;
@@ -73,6 +74,7 @@ export async function publierBien(donnees: DonneesBienClient): Promise<{ id: str
       surface: donnees.surface,
       equipements: donnees.equipements.length > 0 ? donnees.equipements : null,
       composition: donnees.composition.length > 0 ? donnees.composition : null,
+      caracteristiques: donnees.caracteristiques,
       photos: donnees.photos.length > 0 ? donnees.photos : null,
       photos_originales: donnees.photosOriginales.length > 0 ? donnees.photosOriginales : null,
       verifie: false,

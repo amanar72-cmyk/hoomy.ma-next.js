@@ -10,6 +10,8 @@ import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier"
 import { appliquerFlou } from "@/lib/images/flou";
 import { optimiserImage } from "@/lib/images/optimiser";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
+import ChampsCaracteristiques from "@/components/partage/ChampsCaracteristiques";
+import { filtrerCaracteristiques, type Caracteristiques } from "@/lib/biens/caracteristiques";
 import { sauvegarderBrouillon, chargerBrouillon, supprimerBrouillon } from "@/lib/publier/brouillon";
 import LogoHoomy from "@/components/home/LogoHoomy";
 
@@ -34,6 +36,7 @@ type DonneesWizard = {
   salles_bain: number;
   equipements: string[];
   composition: NiveauBien[];
+  caracteristiques: Caracteristiques;
   photos: PhotoWizard[];
   titre: string;
   description: string;
@@ -257,6 +260,7 @@ export default function WizardPublication({ userId }: { userId: string | null })
     salles_bain: 1,
     equipements: [],
     composition: [],
+    caracteristiques: {},
     photos: [],
     titre: "",
     description: "",
@@ -476,6 +480,7 @@ export default function WizardPublication({ userId }: { userId: string | null })
       salles_bain: estTerrain ? 0 : donnees.salles_bain,
       equipements: estTerrain ? [] : donnees.equipements,
       composition: estTerrain ? [] : donnees.composition,
+      caracteristiques: filtrerCaracteristiques(donnees.type, donnees.caracteristiques),
       photos: photosFinales.map((p) => p.url),
       photosOriginales: photosFinales.map((p) => p.cheminPrive),
       titre: donnees.titre,
@@ -851,6 +856,18 @@ export default function WizardPublication({ userId }: { userId: string | null })
               />
             </div>
             )}
+
+            {/* Caractéristiques spécifiques au type (étage, terrain, titre…) */}
+            <div>
+              <p className="text-sm font-medium mb-3" style={{ color: "#3D4A42" }}>
+                Caractéristiques du {donnees.type ? donnees.type.toLowerCase() : "bien"}
+              </p>
+              <ChampsCaracteristiques
+                type={donnees.type}
+                valeur={donnees.caracteristiques}
+                onChange={(v) => mettreAJour("caracteristiques", v)}
+              />
+            </div>
           </div>
         );
 

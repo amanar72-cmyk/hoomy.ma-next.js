@@ -83,6 +83,7 @@ type DonneesBien = {
   surface: number;
   equipements: string[] | null;
   composition: unknown[] | null;
+  caracteristiques: Record<string, unknown>;
   photos: string[] | null;
   photosOriginales: string[] | null;
   verifie: boolean;
@@ -256,6 +257,7 @@ type NouveauBien = {
   latitude: number | null;
   longitude: number | null;
   equipements: string[] | null;
+  caracteristiques: Record<string, unknown>;
   photos: string[] | null;
   // Fiche du répertoire proprietaires (vendeur) — obligatoire à la création
   vendeurId: string;

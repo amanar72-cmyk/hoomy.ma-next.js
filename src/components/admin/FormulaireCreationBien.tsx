@@ -7,6 +7,8 @@ import ChampLocalisationCarte from "@/components/partage/ChampLocalisationCarte"
 import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier";
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import SelecteurProprietaire, { type ProprietaireOption } from "@/components/proprietaires/SelecteurProprietaire";
+import ChampsCaracteristiques from "@/components/partage/ChampsCaracteristiques";
+import { filtrerCaracteristiques, type Caracteristiques } from "@/lib/biens/caracteristiques";
 
 // ── Constantes partagées (mêmes que FormulaireEditionBien) ───────────────────
 
@@ -63,6 +65,7 @@ export default function FormulaireCreationBien({ proprietaires, vendeurInitial }
   const [sallesBain, setSallesBain] = useState("0");
   const [surface, setSurface] = useState("");
   const [equipements, setEquipements] = useState<string[]>([]);
+  const [caracteristiques, setCaracteristiques] = useState<Caracteristiques>({});
   const [photos, setPhotos] = useState<string[]>([]);
   const [nouvelleUrl, setNouvelleUrl] = useState("");
   const [latitude, setLatitude] = useState<number | null>(null);
@@ -136,6 +139,7 @@ export default function FormulaireCreationBien({ proprietaires, vendeurInitial }
           salles_bain: type === "Terrain" ? 0 : Math.max(0, parseInt(sallesBain) || 0),
           surface: surfaceNum,
           equipements: equipements.length > 0 ? equipements : null,
+          caracteristiques: filtrerCaracteristiques(type, caracteristiques),
           photos: photos.length > 0 ? photos : null,
           latitude,
           longitude,
@@ -357,6 +361,11 @@ export default function FormulaireCreationBien({ proprietaires, vendeurInitial }
             {equipements.length} équipement{equipements.length > 1 ? "s" : ""} sélectionné{equipements.length > 1 ? "s" : ""}
           </p>
         )}
+      </Section>
+
+      {/* Caractéristiques spécifiques au type (étage, terrain, titre juridique…) */}
+      <Section titre={`Caractéristiques — ${type}`}>
+        <ChampsCaracteristiques type={type} valeur={caracteristiques} onChange={setCaracteristiques} />
       </Section>
 
       {/* Info génération auto */}
