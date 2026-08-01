@@ -94,6 +94,18 @@ export function champsPourType(type: string): ChampCarac[] {
   }
 }
 
+/** Champs effectivement RENSEIGNÉS pour ce type (valeur non vide / non false). */
+export function champsRenseignes(
+  type: string,
+  valeurs: Caracteristiques | null | undefined
+): ChampCarac[] {
+  const carac = valeurs ?? {};
+  return champsPourType(type).filter((c) => {
+    const v = carac[c.cle];
+    return v !== undefined && v !== null && v !== "" && v !== false;
+  });
+}
+
 /** Ne garde que les caractéristiques pertinentes pour le type (nettoyage au save). */
 export function filtrerCaracteristiques(type: string, valeurs: Caracteristiques): Caracteristiques {
   const cles = new Set(champsPourType(type).map((c) => c.cle));

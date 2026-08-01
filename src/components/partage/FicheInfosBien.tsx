@@ -3,6 +3,8 @@
 
 import { formaterPrix, formaterMontant } from "@/lib/format";
 import type { NiveauBien } from "@/components/partage/CompositionNiveaux";
+import AfficheCaracteristiques from "@/components/partage/AfficheCaracteristiques";
+import { champsRenseignes, type Caracteristiques } from "@/lib/biens/caracteristiques";
 
 export type BienFiche = {
   reference: string | null;
@@ -18,6 +20,7 @@ export type BienFiche = {
   description: string | null;
   equipements: unknown;
   composition: unknown;
+  caracteristiques?: unknown;
   cree_le: string;
   date_soumission: string | null;
   date_affectation: string | null;
@@ -131,6 +134,16 @@ export default function FicheInfosBien({ bien }: { bien: BienFiche }) {
               </span>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Caractéristiques spécifiques au type */}
+      {champsRenseignes(bien.type, bien.caracteristiques as Caracteristiques | null).length > 0 && (
+        <section className="rounded-2xl p-5" style={{ background: "#fff", border: "1px solid #F0EDE5" }}>
+          <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>
+            Caractéristiques
+          </h2>
+          <AfficheCaracteristiques type={bien.type} caracteristiques={bien.caracteristiques as Caracteristiques | null} />
         </section>
       )}
     </div>

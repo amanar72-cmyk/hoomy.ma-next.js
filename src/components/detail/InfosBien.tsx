@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { BienPublic } from "@/lib/types";
 import type { NiveauBien } from "@/components/partage/CompositionNiveaux";
+import AfficheCaracteristiques from "@/components/partage/AfficheCaracteristiques";
+import { champsRenseignes } from "@/lib/biens/caracteristiques";
 import { calculerFraisAcquisition, formaterDH } from "@/lib/fraisAcquisition";
 
 // ── Emoji dynamique selon le type de bien ─────────────────────────────────────
@@ -309,6 +311,17 @@ export default function InfosBien({ bien }: { bien: BienPublic }) {
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* ── Caractéristiques spécifiques au type ──────────────────────── */}
+      {champsRenseignes(bien.type, bien.caracteristiques).length > 0 && (
+        <section className="mb-9">
+          <h2 className="text-xl font-normal mb-6"
+            style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
+            Caractéristiques
+          </h2>
+          <AfficheCaracteristiques type={bien.type} caracteristiques={bien.caracteristiques} />
         </section>
       )}
 

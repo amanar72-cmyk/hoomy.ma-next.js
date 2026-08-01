@@ -18,6 +18,7 @@ export type Bien = {
   equipements: string[] | null;
   photos: string[] | null;
   composition: import("@/components/partage/CompositionNiveaux").NiveauBien[] | null;
+  caracteristiques: import("@/lib/biens/caracteristiques").Caracteristiques | null;
   verifie: boolean;
   cree_le: string;
 };
@@ -29,7 +30,7 @@ export type BienPublic = Omit<Bien, "latitude" | "longitude">;
 // Colonnes à sélectionner pour tout affichage public — jamais latitude/longitude.
 export const COLONNES_BIEN_PUBLIC =
   "id, reference, slug, titre, description, type, transaction, prix, ville, quartier, " +
-  "chambres, salles_bain, surface, equipements, photos, composition, verifie, cree_le";
+  "chambres, salles_bain, surface, equipements, photos, composition, caracteristiques, verifie, cree_le";
 
 // Point affiché sur la carte des listes : coordonnées APPROXIMATIVES uniquement
 // (floutées côté serveur dans lib/geo/floutage.ts — jamais les exactes).
