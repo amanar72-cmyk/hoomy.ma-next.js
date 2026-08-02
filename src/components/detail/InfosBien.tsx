@@ -16,6 +16,44 @@ function emojiBien(type: string): string {
   return "🏠";
 }
 
+// 4ᵉ carte du bandeau : l'info de « situation » la plus utile à l'acheteur selon
+// le type (l'étage pour un appartement, le niveau pour un local…). Évite la
+// carte « Type » redondante avec le titre et le badge. Renvoie null si aucune
+// info pertinente → on retombe alors sur le type.
+function situationBien(bien: BienPublic): { emoji: string; valeur: string; label: string; cle: string } | null {
+  const c = (bien.caracteristiques ?? {}) as Record<string, string | number | boolean>;
+  const nonVide = (v: unknown) => v !== undefined && v !== null && v !== "";
+  const etageDepuisNombre = (v: string | number | boolean): string => {
+    const n = Number(v);
+    if (Number.isNaN(n)) return String(v);
+    if (n <= 0) return "RDC";
+    return n === 1 ? "1er étage" : `${n}e étage`;
+  };
+
+  switch (bien.type) {
+    case "Appartement":
+      if (nonVide(c.detail_etage)) return { emoji: "🏢", valeur: String(c.detail_etage), label: "Étage", cle: "detail_etage" };
+      if (nonVide(c.etage)) return { emoji: "🏢", valeur: etageDepuisNombre(c.etage), label: "Étage", cle: "etage" };
+      return null;
+    case "Bureau":
+      if (nonVide(c.etage)) return { emoji: "🏢", valeur: etageDepuisNombre(c.etage), label: "Étage", cle: "etage" };
+      return null;
+    case "Local commercial":
+      if (nonVide(c.niveau)) return { emoji: "🏢", valeur: String(c.niveau), label: "Niveau", cle: "niveau" };
+      return null;
+    case "Maison":
+    case "Villa": {
+      if (nonVide(c.nb_niveaux)) {
+        const n = Number(c.nb_niveaux);
+        return { emoji: "🏠", valeur: `${n} niveau${n > 1 ? "x" : ""}`, label: "Niveaux", cle: "nb_niveaux" };
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
+}
+
 function IcPin() {
   return (
     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -160,6 +198,11 @@ export default function InfosBien({ bien }: { bien: BienPublic }) {
   const composition = (bien.composition ?? []) as NiveauBien[];
   const estVente = bien.transaction !== "location";
   const frais = estVente ? calculerFraisAcquisition(bien.prix) : null;
+  // 4ᵉ carte du bandeau : étage/niveau plutôt que « Type » (redondant).
+  const situation = situationBien(bien);
+  // Caractéristiques affichées plus bas, sans l'info déjà remontée dans le bandeau.
+  const caracAffichees = champsRenseignes(bien.type, bien.caracteristiques)
+    .filter((c) => !situation || c.cle !== situation.cle);
 
   return (
     <div>
@@ -270,12 +313,14 @@ export default function InfosBien({ bien }: { bien: BienPublic }) {
           className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
           style={{ background: "var(--fond-secondaire)", border: "1px solid #EDE7D7" }}
         >
-          <span className="text-xl leading-none">{emojiBien(bien.type)}</span>
+          <span className="text-xl leading-none">{situation ? situation.emoji : emojiBien(bien.type)}</span>
           <div>
             <p className="text-sm font-semibold leading-none" style={{ color: "var(--primaire)" }}>
-              {bien.type}
+              {situation ? situation.valeur : bien.type}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--texte-brun)" }}>Type</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--texte-brun)" }}>
+              {situation ? situation.label : "Type"}
+            </p>
           </div>
         </div>
       </div>
@@ -315,13 +360,17 @@ export default function InfosBien({ bien }: { bien: BienPublic }) {
       )}
 
       {/* ── Caractéristiques spécifiques au type ──────────────────────── */}
-      {champsRenseignes(bien.type, bien.caracteristiques).length > 0 && (
+      {caracAffichees.length > 0 && (
         <section className="mb-9">
           <h2 className="text-xl font-normal mb-6"
             style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
             Caractéristiques
           </h2>
-          <AfficheCaracteristiques type={bien.type} caracteristiques={bien.caracteristiques} />
+          <AfficheCaracteristiques
+            type={bien.type}
+            caracteristiques={bien.caracteristiques}
+            exclure={situation ? [situation.cle] : undefined}
+          />
         </section>
       )}
 

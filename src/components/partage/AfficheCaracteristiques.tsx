@@ -18,11 +18,15 @@ function formater(c: ChampCarac, v: string | number | boolean): string {
 type Props = {
   type: string;
   caracteristiques: Caracteristiques | null | undefined;
+  // Clés déjà mises en avant ailleurs (ex. l'étage dans le bandeau) — à ne pas répéter.
+  exclure?: string[];
 };
 
-export default function AfficheCaracteristiques({ type, caracteristiques }: Props) {
+export default function AfficheCaracteristiques({ type, caracteristiques, exclure }: Props) {
   const carac = caracteristiques ?? {};
-  const champs = champsRenseignes(type, caracteristiques);
+  const champs = champsRenseignes(type, caracteristiques).filter(
+    (c) => !exclure?.includes(c.cle)
+  );
 
   if (champs.length === 0) return null;
 
