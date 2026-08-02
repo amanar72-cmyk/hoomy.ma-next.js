@@ -1,10 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { envoyerNotificationPush } from "@/lib/push/notifications";
 import { promouvoirPhotosNettes } from "@/lib/images/promouvoirPhotos";
 import { genererTitreSEO } from "@/lib/ia/genererTitreSEO";
+import { notifierAgentDecisionBien } from "@/lib/email/notifications";
 
 // ── Biens ────────────────────────────────────────────────────────────────────
 
@@ -100,7 +102,11 @@ export async function modifierBien(bienId: string, donnees: DonneesBien) {
   const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
   if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
 
-  const { data: bienActuel } = await supabase.from("biens").select("verifie").eq("id", bienId).single();
+  const { data: bienActuel } = await supabase
+    .from("biens")
+    .select("verifie, statut, agent_id, reference, slug, transaction")
+    .eq("id", bienId)
+    .single();
 
   const { photosOriginales, ...reste } = donnees;
   const updates: Record<string, unknown> = { ...reste, photos_originales: photosOriginales };
@@ -143,6 +149,41 @@ export async function modifierBien(bienId: string, donnees: DonneesBien) {
 
   const { error } = await supabase.from("biens").update(updates).eq("id", bienId);
   if (error) throw new Error(error.message);
+
+  // ── Notification agent : publication / rejet ────────────────────────────────
+  // Uniquement sur la TRANSITION de statut (pas à chaque ré-enregistrement d'un
+  // bien déjà publié). Best-effort : un échec d'e-mail ne casse pas la sauvegarde.
+  const ancienStatut = bienActuel?.statut ?? null;
+  const nouveauStatut = donnees.statut;
+  const agentId = bienActuel?.agent_id as string | null;
+  if (
+    agentId &&
+    nouveauStatut !== ancienStatut &&
+    (nouveauStatut === "finalise" || nouveauStatut === "rejete")
+  ) {
+    try {
+      const admin = createAdminClient();
+      const { data: agent } = await admin
+        .from("profils")
+        .select("email, nom_complet")
+        .eq("id", agentId)
+        .single();
+      if (agent?.email) {
+        await notifierAgentDecisionBien({
+          destinataire: agent.email as string,
+          nomAgent: (agent.nom_complet as string | null) ?? null,
+          bienId,
+          titre: (updates.titre as string) ?? donnees.titre,
+          reference: (bienActuel?.reference as string | null) ?? null,
+          slug: (bienActuel?.slug as string | null) ?? null,
+          transaction: (bienActuel?.transaction as string | null) ?? donnees.transaction,
+          decision: nouveauStatut === "finalise" ? "publie" : "rejete",
+        });
+      }
+    } catch (e) {
+      console.error("[modifierBien] notification agent échouée :", e instanceof Error ? e.message : e);
+    }
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/biens");
@@ -457,4 +498,35 @@ export async function marquerDocumentVerifie(documentId: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/verifications");
+}
+
+/**
+ * Supprime un document du dossier (fichier du bucket privé + ligne
+ * documents_fiche). Réservé à l'admin (back-office). Le client service_role
+ * effectue la suppression après la garde applicative — pas de policy RLS
+ * DELETE à ajouter. La suppression du fichier storage est best-effort : même
+ * si elle échoue (fichier déjà absent), la ligne est retirée.
+ */
+export async function supprimerDocumentFiche(documentId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  const { data: profil } = await supabase.from("profils").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") throw new Error("Accès refusé — réservé aux admins");
+
+  const admin = createAdminClient();
+  const { data: doc } = await admin
+    .from("documents_fiche")
+    .select("id, storage_path, fiche_id")
+    .eq("id", documentId)
+    .single();
+  if (!doc) throw new Error("Document introuvable.");
+
+  if (doc.storage_path) {
+    await admin.storage.from("documents-clients").remove([doc.storage_path as string]);
+  }
+  const { error } = await admin.from("documents_fiche").delete().eq("id", documentId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/biens/${doc.fiche_id}`);
 }

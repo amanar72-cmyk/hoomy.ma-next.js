@@ -1,5 +1,55 @@
 import { envoyerEmail } from "./envoyerEmail";
+import { emailDecisionBien } from "./emailDecisionBien";
 import { formaterPrix } from "@/lib/format";
+
+// Base du back-office pro (pro.hoomy.ma) — même logique que getProUrl côté
+// invitation d'agent. Sert à construire le lien de la fiche dans l'e-mail.
+function baseProUrl(): string {
+  if (process.env.NEXT_PUBLIC_PRO_URL) return process.env.NEXT_PUBLIC_PRO_URL;
+  const site = process.env.NEXT_PUBLIC_SITE_URL;
+  if (site) {
+    try {
+      const u = new URL(site);
+      if (!u.hostname.startsWith("pro.")) u.hostname = "pro." + u.hostname.replace(/^www\./, "");
+      return u.origin;
+    } catch {
+      /* URL mal formée → repli ci-dessous */
+    }
+  }
+  return "https://pro.hoomy.ma";
+}
+
+/**
+ * Prévient l'agent, par e-mail, que le back-office a publié ou rejeté son
+ * annonce. Best-effort (n'interrompt jamais l'action métier).
+ */
+export async function notifierAgentDecisionBien(donnees: {
+  destinataire: string;
+  nomAgent: string | null;
+  bienId: string;
+  titre: string;
+  reference: string | null;
+  slug: string | null;
+  transaction: string;
+  decision: "publie" | "rejete";
+}): Promise<void> {
+  const baseSite = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hoomy.ma";
+  const segment = donnees.transaction === "location" ? "louer" : "acheter";
+  const lien =
+    donnees.decision === "publie"
+      ? `${baseSite}/${segment}/${donnees.slug ?? donnees.bienId}`
+      : `${baseProUrl()}/pro/biens/${donnees.bienId}`;
+
+  const { sujet, texte, html } = emailDecisionBien({
+    nomAgent: donnees.nomAgent ?? "",
+    titre: donnees.titre,
+    reference: donnees.reference,
+    decision: donnees.decision,
+    lien,
+  });
+
+  await envoyerEmail({ destinataire: donnees.destinataire, sujet, texte, html });
+}
 
 
 export async function notifierNouveauBien(donnees: {

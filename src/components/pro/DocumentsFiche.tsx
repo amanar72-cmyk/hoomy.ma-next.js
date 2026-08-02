@@ -13,6 +13,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { afficherToast } from "@/components/ui/Toaster";
+import { supprimerDocumentFiche } from "@/app/admin/actions";
 import type { DocumentFiche } from "@/lib/documents/fiche";
 
 const BUCKET = "documents-clients";
@@ -123,6 +124,27 @@ export default function DocumentsFiche({ bienId, documents, role = "agent" }: Pr
     }
   }
 
+  // Suppression d'un document — réservée au back-office (role admin). Retire le
+  // fichier du bucket privé ET la ligne, via la Server Action (client admin).
+  async function supprimer(type: string, doc: DocumentFiche) {
+    if (!window.confirm("Retirer définitivement ce document ? Cette action est irréversible.")) return;
+    setEnCours(type);
+    try {
+      await supprimerDocumentFiche(doc.id);
+      setDocs((prev) => {
+        const suivant = { ...prev };
+        delete suivant[type];
+        return suivant;
+      });
+      afficherToast("Document retiré ✓");
+      router.refresh();
+    } catch (e) {
+      afficherToast(e instanceof Error ? e.message : "Suppression impossible.");
+    } finally {
+      setEnCours(null);
+    }
+  }
+
   async function voir(doc: DocumentFiche) {
     const supabase = createClient();
     const { data, error } = await supabase.storage
@@ -209,6 +231,17 @@ export default function DocumentsFiche({ bienId, documents, role = "agent" }: Pr
                     >
                       {occupe ? "Envoi…" : "Remplacer"}
                     </button>
+                    {role === "admin" && (
+                      <button
+                        type="button"
+                        onClick={() => supprimer(type, doc)}
+                        disabled={occupe}
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg cursor-pointer hover:opacity-80 disabled:opacity-50"
+                        style={{ background: "transparent", color: "#B42318", border: "1px solid #F3C6C1" }}
+                      >
+                        Retirer
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (
