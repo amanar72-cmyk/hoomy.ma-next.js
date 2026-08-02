@@ -100,17 +100,19 @@ export default async function PageFicheBien({ params, searchParams }: Props) {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 items-start">
-          {/* Colonne principale : formulaire + documents */}
-          <div className="lg:col-span-2 flex flex-col gap-8">
-            <FormulaireEditionBien bien={bienRaw} />
-
-            {/* Documents du dossier — dépôt/visualisation aussi côté admin */}
-            <section>
-              <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>
-                Documents du dossier
-              </h2>
-              <DocumentsFiche bienId={bien.id} documents={documents} role="admin" />
-            </section>
+          {/* Colonne principale : formulaire à onglets (Informations / Photos / Documents) */}
+          <div className="lg:col-span-2">
+            <FormulaireEditionBien
+              bien={bienRaw}
+              documentsSlot={
+                <section>
+                  <h2 className="text-base font-semibold mb-3" style={{ color: "#0F4C3A" }}>
+                    Documents du dossier
+                  </h2>
+                  <DocumentsFiche bienId={bien.id} documents={documents} role="admin" />
+                </section>
+              }
+            />
           </div>
 
           {/* Panneau de droite : Propriétaire (en premier) puis Conseiller traitant */}

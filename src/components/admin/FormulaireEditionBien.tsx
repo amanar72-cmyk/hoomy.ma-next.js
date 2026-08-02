@@ -78,8 +78,18 @@ const EQUIPEMENTS_LISTE = [
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
+export default function FormulaireEditionBien({
+  bien,
+  documentsSlot,
+}: {
+  bien: BienComplet;
+  // Contenu de l'onglet « Documents » (rendu par la page — dépôt/visualisation).
+  documentsSlot?: React.ReactNode;
+}) {
   const router = useRouter();
+
+  // Onglet actif — découpe la page en rubriques (Informations / Photos / Documents).
+  const [onglet, setOnglet] = useState<"infos" | "photos" | "documents">("infos");
 
   // Champs du formulaire
   const [titre, setTitre] = useState(bien.titre);
@@ -300,6 +310,36 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
         </div>
       )}
 
+      {/* ── Onglets (rubriques) ─────────────────────────────────────────────── */}
+      <div className="flex gap-1 border-b overflow-x-auto" style={{ borderColor: "#F0EDE5" }}>
+        {(
+          [
+            { id: "infos", label: "Informations" },
+            { id: "photos", label: `Photos (${photos.length})` },
+            ...(documentsSlot ? [{ id: "documents", label: "Documents" }] : []),
+          ] as { id: "infos" | "photos" | "documents"; label: string }[]
+        ).map((o) => {
+          const actif = onglet === o.id;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => setOnglet(o.id)}
+              className="px-4 py-2.5 text-sm font-medium cursor-pointer whitespace-nowrap relative -mb-px transition-colors"
+              style={{
+                color: actif ? "#0F4C3A" : "#9DB8AD",
+                borderBottom: actif ? "2px solid #0F4C3A" : "2px solid transparent",
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ══ Onglet INFORMATIONS (1/2) ═══════════════════════════════════════════ */}
+      {onglet === "infos" && (
+      <div className="flex flex-col gap-5">
       {/* Informations générales */}
       <Section titre="Informations générales">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -390,7 +430,11 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
         </div>
       </Section>
 
-      {/* Photos */}
+      </div>
+      )}
+
+      {/* ══ Onglet PHOTOS ═══════════════════════════════════════════════════════ */}
+      {onglet === "photos" && (
       <Section titre={`Photos (${photos.length})`}>
         {photos.length > 0 ? (
           <>
@@ -482,10 +526,15 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
           </button>
         </div>
         <p className="text-xs mt-1.5" style={{ color: "#9DB8AD" }}>
-          La première photo sera l'image principale. Survolez pour réorganiser ou supprimer.
+          Cochez le cercle pour choisir la photo principale, glissez-déposez pour classer, ✕ pour retirer.
         </p>
       </Section>
 
+      )}
+
+      {/* ══ Onglet INFORMATIONS (2/2) ═══════════════════════════════════════════ */}
+      {onglet === "infos" && (
+      <div className="flex flex-col gap-5">
       {/* Équipements */}
       <Section titre="Équipements">
         <div className="flex flex-wrap gap-2">
@@ -553,7 +602,13 @@ export default function FormulaireEditionBien({ bien }: { bien: BienComplet }) {
         </div>
       </Section>
 
-      {/* Barre d'actions */}
+      </div>
+      )}
+
+      {/* ══ Onglet DOCUMENTS ════════════════════════════════════════════════════ */}
+      {onglet === "documents" && documentsSlot}
+
+      {/* Barre d'actions (toujours visible) */}
       <div className="flex items-center justify-between pt-2 pb-4">
         <button type="button" onClick={handleSupprimer} disabled={chargement}
           className="px-5 py-2.5 rounded-xl text-sm font-medium border cursor-pointer disabled:opacity-60 transition-colors hover:bg-red-50"
