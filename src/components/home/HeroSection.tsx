@@ -168,7 +168,10 @@ export default function HeroSection({ nbBiensVerifies = 0 }: PropsHero) {
     if (b.prixMin) params.set("prixMin", String(b.prixMin));
     if (b.prixMax) params.set("prixMax", String(b.prixMax));
 
-    router.push(`/${mode === "louer" ? "louer" : "acheter"}?${params.toString()}`);
+    // Chaque onglet vise sa propre page : « Neuf » ne doit pas retomber sur
+    // /acheter (rupture de confiance dès le premier geste).
+    const base = mode === "louer" ? "louer" : mode === "neuf" ? "neuf" : "acheter";
+    router.push(`/${base}?${params.toString()}`);
   }
 
   const budgets = mode === "louer" ? BUDGETS_LOCATION : BUDGETS_VENTE;
