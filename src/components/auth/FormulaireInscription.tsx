@@ -43,6 +43,7 @@ export default function FormulaireInscription() {
   const [chargementGoogle, setChargementGoogle] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState(false);
+  const [tenteEnvoi, setTenteEnvoi] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fermer le dropdown si clic en dehors
@@ -57,6 +58,7 @@ export default function FormulaireInscription() {
   }, []);
 
   async function creerCompte() {
+    setTenteEnvoi(true);
     if (!nomComplet.trim()) { setErreur("Le nom complet est requis."); return; }
     if (!email.includes("@")) { setErreur("Adresse email invalide."); return; }
     if (!numero.trim()) { setErreur("Le numéro de téléphone est requis."); return; }
@@ -146,6 +148,10 @@ export default function FormulaireInscription() {
     color: "var(--primaire)",
     background: "var(--fond-secondaire)",
   };
+  // Repère visuel des champs obligatoires vides après une tentative d'envoi.
+  const colLabel = (vide: boolean) => (tenteEnvoi && vide ? "var(--erreur)" : "#555");
+  const inpErr = (vide: boolean): React.CSSProperties =>
+    tenteEnvoi && vide ? { ...inp, borderColor: "#E5484D" } : inp;
 
   if (succes) {
     return (
@@ -203,33 +209,33 @@ export default function FormulaireInscription() {
           <div className="flex flex-col gap-4">
             {/* Nom */}
             <div>
-              <label className="block text-xs mb-1.5 font-medium" style={{ color: "#555" }}>
+              <label className="block text-xs mb-1.5 font-medium" style={{ color: colLabel(!nomComplet.trim()) }}>
                 Nom complet
               </label>
               <input type="text" value={nomComplet} onChange={(e) => setNomComplet(e.target.value)}
                 autoComplete="name" placeholder="Mohammed Alami"
-                className="w-full border rounded-xl px-4 py-3 text-sm" style={inp} />
+                className="w-full border rounded-xl px-4 py-3 text-sm" style={inpErr(!nomComplet.trim())} />
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-xs mb-1.5 font-medium" style={{ color: "#555" }}>
+              <label className="block text-xs mb-1.5 font-medium" style={{ color: colLabel(!email.includes("@")) }}>
                 Adresse email
               </label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email" placeholder="vous@exemple.com"
-                className="w-full border rounded-xl px-4 py-3 text-sm" style={inp} />
+                className="w-full border rounded-xl px-4 py-3 text-sm" style={inpErr(!email.includes("@"))} />
             </div>
 
             {/* Téléphone avec sélecteur d'indicatif */}
             <div>
-              <label className="block text-xs mb-1.5 font-medium" style={{ color: "#555" }}>
+              <label className="block text-xs mb-1.5 font-medium" style={{ color: colLabel(!numero.trim()) }}>
                 Téléphone <span style={{ color: "var(--erreur)", fontSize: 11 }}>*</span>
               </label>
               <div className="relative" ref={dropdownRef}>
                 {/* Champ combiné */}
                 <div className="flex border rounded-xl overflow-hidden"
-                  style={{ borderColor: "var(--bordure-chaude)", background: "var(--fond-secondaire)" }}>
+                  style={{ borderColor: tenteEnvoi && !numero.trim() ? "#E5484D" : "var(--bordure-chaude)", background: "var(--fond-secondaire)" }}>
 
                   {/* Bouton indicatif */}
                   <button
@@ -309,19 +315,19 @@ export default function FormulaireInscription() {
 
             {/* Mot de passe */}
             <div>
-              <label className="block text-xs mb-1.5 font-medium" style={{ color: "#555" }}>
+              <label className="block text-xs mb-1.5 font-medium" style={{ color: colLabel(!motDePasse) }}>
                 Mot de passe{" "}
                 <span style={{ color: "#B4AD97", fontWeight: 400 }}>(min. {LONGUEUR_MIN} caractères)</span>
               </label>
               <input type="password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)}
                 autoComplete="new-password" placeholder="••••••••"
-                className="w-full border rounded-xl px-4 py-3 text-sm" style={inp} />
+                className="w-full border rounded-xl px-4 py-3 text-sm" style={inpErr(!motDePasse)} />
               <CriteresMotDePasse motDePasse={motDePasse} />
             </div>
 
             {/* Confirmation */}
             <div>
-              <label className="block text-xs mb-1.5 font-medium" style={{ color: "#555" }}>
+              <label className="block text-xs mb-1.5 font-medium" style={{ color: colLabel(!confirmation) }}>
                 Confirmer le mot de passe
               </label>
               <input type="password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)}

@@ -8,7 +8,7 @@ import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier"
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import SelecteurProprietaire, { type ProprietaireOption } from "@/components/proprietaires/SelecteurProprietaire";
 import ChampsCaracteristiques from "@/components/partage/ChampsCaracteristiques";
-import { filtrerCaracteristiques, type Caracteristiques } from "@/lib/biens/caracteristiques";
+import { filtrerCaracteristiques, caracObligatoiresManquantes, type Caracteristiques } from "@/lib/biens/caracteristiques";
 
 // ── Constantes partagées (mêmes que FormulaireEditionBien) ───────────────────
 
@@ -31,10 +31,10 @@ function Section({ titre, children }: { titre: string; children: React.ReactNode
   );
 }
 
-function Champ({ label, children }: { label: string; children: React.ReactNode }) {
+function Champ({ label, children, erreur }: { label: string; children: React.ReactNode; erreur?: boolean }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium" style={{ color: "#555" }}>{label}</label>
+      <label className="text-xs font-medium" style={{ color: erreur ? "#E5484D" : "#555" }}>{label}</label>
       {children}
     </div>
   );
@@ -74,6 +74,7 @@ export default function FormulaireCreationBien({ proprietaires, vendeurInitial }
   // États UI
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [tenteEnvoi, setTenteEnvoi] = useState(false);
 
   // Référence pour savoir quelle action a été déclenchée
   // onClick du bouton submit se déclenche AVANT onSubmit du formulaire
@@ -108,12 +109,18 @@ export default function FormulaireCreationBien({ proprietaires, vendeurInitial }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setTenteEnvoi(true);
 
     if (!titre.trim()) { setErreur("Le titre est requis."); return; }
     const prixNum = parseFloat(prix);
     if (isNaN(prixNum) || prixNum < 0) { setErreur("Veuillez saisir un prix valide."); return; }
     const surfaceNum = parseFloat(surface);
     if (isNaN(surfaceNum) || surfaceNum <= 0) { setErreur("Veuillez saisir une surface valide."); return; }
+    const caracManquantes = caracObligatoiresManquantes(type, caracteristiques);
+    if (caracManquantes.length > 0) {
+      setErreur(`Champs obligatoires à renseigner : ${caracManquantes.map((c) => c.label).join(", ")}.`);
+      return;
+    }
 
     if (!vendeurId) {
       setErreur("Veuillez rattacher le bien à un propriétaire (section en haut du formulaire).");
@@ -196,11 +203,11 @@ export default function FormulaireCreationBien({ proprietaires, vendeurInitial }
       {/* Informations générales */}
       <Section titre="Informations générales">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Champ label="Titre *">
+          <Champ label="Titre *" erreur={tenteEnvoi && !titre.trim()}>
             <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)}
               className={cls} style={inp} placeholder="Ex: Appartement lumineux 3 pièces…" />
           </Champ>
-          <Champ label="Prix (DH) *">
+          <Champ label="Prix (DH) *" erreur={tenteEnvoi && !prix.trim()}>
             <input type="number" value={prix} onChange={(e) => setPrix(e.target.value)}
               min="0" step="1" className={cls} style={inp} placeholder="Ex: 1500000" />
           </Champ>
@@ -365,7 +372,7 @@ export default function FormulaireCreationBien({ proprietaires, vendeurInitial }
 
       {/* Caractéristiques spécifiques au type (étage, terrain, titre juridique…) */}
       <Section titre={`Caractéristiques — ${type}`}>
-        <ChampsCaracteristiques type={type} valeur={caracteristiques} onChange={setCaracteristiques} />
+        <ChampsCaracteristiques type={type} valeur={caracteristiques} onChange={setCaracteristiques} tenteEnvoi={tenteEnvoi} />
       </Section>
 
       {/* Info génération auto */}

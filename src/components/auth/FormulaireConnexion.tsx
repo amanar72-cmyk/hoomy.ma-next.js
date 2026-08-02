@@ -15,8 +15,10 @@ export default function FormulaireConnexion() {
   const [chargement, setChargement] = useState(false);
   const [chargementGoogle, setChargementGoogle] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [tenteEnvoi, setTenteEnvoi] = useState(false);
 
   async function seConnecter() {
+    setTenteEnvoi(true);
     if (!email || !motDePasse) { setErreur("Veuillez remplir tous les champs."); return; }
     setErreur(null);
     setChargement(true);
@@ -108,17 +110,20 @@ export default function FormulaireConnexion() {
 
           <div className="flex flex-col gap-4">
             <div>
-              <label className="block text-xs mb-1.5 font-medium" style={{ color: "#555" }}>
+              <label className="block text-xs mb-1.5 font-medium"
+                style={{ color: tenteEnvoi && !email ? "var(--erreur)" : "#555" }}>
                 Adresse email
               </label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email" placeholder="vous@exemple.com"
-                className="w-full border rounded-xl px-4 py-3 text-sm" style={inp} />
+                className="w-full border rounded-xl px-4 py-3 text-sm"
+                style={{ ...inp, borderColor: tenteEnvoi && !email ? "#E5484D" : "var(--bordure-chaude)" }} />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium" style={{ color: "#555" }}>Mot de passe</label>
+                <label className="text-xs font-medium"
+                  style={{ color: tenteEnvoi && !motDePasse ? "var(--erreur)" : "#555" }}>Mot de passe</label>
                 <Link href="/mot-de-passe-oublie" className="text-xs hover:underline"
                   style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>
                   Mot de passe oublié ?

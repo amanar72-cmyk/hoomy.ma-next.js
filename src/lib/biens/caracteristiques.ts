@@ -15,6 +15,7 @@ export type ChampCarac = {
   type: TypeChamp;
   options?: string[];   // pour type "select"
   suffixe?: string;     // ex. "m²", "m"
+  obligatoire?: boolean; // champ requis à la saisie (validation formulaire)
 };
 
 /** Valeur d'un champ caractéristique. */
@@ -30,7 +31,7 @@ const COMMUNS: ChampCarac[] = [
   { cle: "disponibilite", label: "Disponibilité", type: "select", options: ["Libre", "Occupé", "Loué"] },
   { cle: "titre_juridique", label: "Titre juridique", type: "select", options: ["Titre foncier", "Réquisition", "Melkia", "En cours"] },
   { cle: "numero_titre_foncier", label: "Numéro du titre foncier", type: "texte" },
-  { cle: "meuble", label: "Meublé", type: "select", options: ["Non", "Partiellement", "Oui"] },
+  { cle: "meuble", label: "Meublé", type: "select", options: ["Non", "Partiellement", "Oui"], obligatoire: true },
   { cle: "visite_3d", label: "Visite 3D (lien)", type: "texte" },
 ];
 
@@ -112,6 +113,19 @@ export function champsRenseignes(
   return champsPourType(type).filter((c) => {
     const v = carac[c.cle];
     return v !== undefined && v !== null && v !== "" && v !== false;
+  });
+}
+
+/** Champs OBLIGATOIRES non renseignés pour ce type (validation formulaire). */
+export function caracObligatoiresManquantes(
+  type: string,
+  valeurs: Caracteristiques | null | undefined
+): ChampCarac[] {
+  const carac = valeurs ?? {};
+  return champsPourType(type).filter((c) => {
+    if (!c.obligatoire) return false;
+    const v = carac[c.cle];
+    return v === undefined || v === null || v === "" || v === false;
   });
 }
 

@@ -8,7 +8,7 @@ import SelecteurVilleQuartier from "@/components/partage/SelecteurVilleQuartier"
 import BoutonGenerationIA from "@/components/partage/BoutonGenerationIA";
 import CompositionNiveaux, { type NiveauBien } from "@/components/partage/CompositionNiveaux";
 import ChampsCaracteristiques from "@/components/partage/ChampsCaracteristiques";
-import { filtrerCaracteristiques, type Caracteristiques } from "@/lib/biens/caracteristiques";
+import { filtrerCaracteristiques, caracObligatoiresManquantes, type Caracteristiques } from "@/lib/biens/caracteristiques";
 import { createClient } from "@/lib/supabase/client";
 import { appliquerFlou } from "@/lib/images/flou";
 import { optimiserImage } from "@/lib/images/optimiser";
@@ -54,10 +54,10 @@ function Section({ titre, children }: { titre: string; children: React.ReactNode
   );
 }
 
-function Champ({ label, children }: { label: string; children: React.ReactNode }) {
+function Champ({ label, children, erreur }: { label: string; children: React.ReactNode; erreur?: boolean }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium" style={{ color: "#555" }}>{label}</label>
+      <label className="text-xs font-medium" style={{ color: erreur ? "#E5484D" : "#555" }}>{label}</label>
       {children}
     </div>
   );
@@ -121,6 +121,7 @@ export default function FormulaireEditionBien({
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState(false);
+  const [tenteEnvoi, setTenteEnvoi] = useState(false);
   const [uploadEnCours, setUploadEnCours] = useState(false);
   const [erreurPhoto, setErreurPhoto] = useState<string | null>(null);
   const inputFichierRef = useRef<HTMLInputElement>(null);
@@ -234,9 +235,15 @@ export default function FormulaireEditionBien({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setTenteEnvoi(true);
     if (!titre.trim()) { setErreur("Le titre est requis."); return; }
     const prixNum = parseFloat(prix);
     if (isNaN(prixNum) || prixNum < 0) { setErreur("Prix invalide."); return; }
+    const caracManquantes = caracObligatoiresManquantes(type, caracteristiques);
+    if (caracManquantes.length > 0) {
+      setErreur(`Champs obligatoires à renseigner : ${caracManquantes.map((c) => c.label).join(", ")}.`);
+      return;
+    }
 
     setErreur(null);
     setSucces(false);
@@ -343,11 +350,11 @@ export default function FormulaireEditionBien({
       {/* Informations générales */}
       <Section titre="Informations générales">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Champ label="Titre *">
+          <Champ label="Titre *" erreur={tenteEnvoi && !titre.trim()}>
             <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)}
               className={cls} style={inp} placeholder="Appartement lumineux…" />
           </Champ>
-          <Champ label="Prix (DH)">
+          <Champ label="Prix (DH) *" erreur={tenteEnvoi && !prix.trim()}>
             <input type="number" value={prix} onChange={(e) => setPrix(e.target.value)}
               min="0" step="1" className={cls} style={inp} />
           </Champ>
@@ -561,7 +568,7 @@ export default function FormulaireEditionBien({
 
       {/* Caractéristiques spécifiques au type (étage, terrain, titre juridique…) */}
       <Section titre={`Caractéristiques — ${type}`}>
-        <ChampsCaracteristiques type={type} valeur={caracteristiques} onChange={setCaracteristiques} />
+        <ChampsCaracteristiques type={type} valeur={caracteristiques} onChange={setCaracteristiques} tenteEnvoi={tenteEnvoi} />
       </Section>
 
       {/* Composition par niveau — parité avec l'espace agent (étages, pièces) */}

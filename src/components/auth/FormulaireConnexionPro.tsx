@@ -14,8 +14,10 @@ export default function FormulaireConnexionPro() {
   const [afficherMdp, setAfficherMdp] = useState(false);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [tenteEnvoi, setTenteEnvoi] = useState(false);
 
   async function seConnecter() {
+    setTenteEnvoi(true);
     if (!email || !motDePasse) {
       setErreur("Veuillez remplir tous les champs.");
       return;
@@ -136,7 +138,7 @@ export default function FormulaireConnexionPro() {
 
             {/* Email */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#444" }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: tenteEnvoi && !email ? "#DC2626" : "#444" }}>
                 Adresse email
               </label>
               <input
@@ -153,7 +155,7 @@ export default function FormulaireConnexionPro() {
 
             {/* Mot de passe */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#444" }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: tenteEnvoi && !motDePasse ? "#DC2626" : "#444" }}>
                 Mot de passe
               </label>
               <div className="relative">

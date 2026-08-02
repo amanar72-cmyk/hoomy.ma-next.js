@@ -11,9 +11,12 @@ type Props = {
   type: string;
   valeur: Caracteristiques;
   onChange: (v: Caracteristiques) => void;
+  // Passe à true après une tentative d'envoi → surligne en rouge les champs
+  // obligatoires restés vides.
+  tenteEnvoi?: boolean;
 };
 
-export default function ChampsCaracteristiques({ type, valeur, onChange }: Props) {
+export default function ChampsCaracteristiques({ type, valeur, onChange, tenteEnvoi }: Props) {
   const champs = champsPourType(type);
 
   function set(cle: string, v: ValeurCarac | "") {
@@ -45,17 +48,22 @@ export default function ChampsCaracteristiques({ type, valeur, onChange }: Props
           );
         }
 
+        const vide = v === undefined || v === null || v === "";
+        const erreur = Boolean(tenteEnvoi && c.obligatoire && vide);
+        const styleChamp = erreur ? { ...styleInput, borderColor: "#E5484D" } : styleInput;
+
         return (
           <div key={c.cle} className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium" style={{ color: "#555" }}>
+            <label className="text-xs font-medium" style={{ color: erreur ? "#E5484D" : "#555" }}>
               {c.label}{c.suffixe ? ` (${c.suffixe})` : ""}
+              {c.obligatoire && <span style={{ color: "#E5484D" }}> *</span>}
             </label>
             {c.type === "select" ? (
               <select
                 value={typeof v === "string" ? v : ""}
                 onChange={(e) => set(c.cle, e.target.value)}
                 className={clsInput}
-                style={styleInput}
+                style={styleChamp}
               >
                 <option value="">—</option>
                 {c.options?.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -76,7 +84,7 @@ export default function ChampsCaracteristiques({ type, valeur, onChange }: Props
                   )
                 }
                 className={clsInput}
-                style={styleInput}
+                style={styleChamp}
               />
             )}
           </div>
