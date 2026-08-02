@@ -21,9 +21,14 @@ function appliquerLangue(map: mapboxgl.Map, langue: LangueMapbox) {
     ["get", "name"],
   ];
   map.getStyle()?.layers?.forEach((layer) => {
-    if (layer.type === "symbol" && layer.layout?.["text-field"]) {
-      map.setLayoutProperty(layer.id, "text-field", expression);
-    }
+    if (layer.type !== "symbol") return;
+    const champ = layer.layout?.["text-field"];
+    if (!champ) return;
+    // Ne traduire QUE les libellés basés sur "name" (villes, quartiers, rues,
+    // POI). Les écussons de route affichent le numéro via "ref" ; les réécrire
+    // avec name_xx (vide pour une route) laisse un rectangle blanc vide.
+    if (!JSON.stringify(champ).includes("name")) return;
+    map.setLayoutProperty(layer.id, "text-field", expression);
   });
 }
 
