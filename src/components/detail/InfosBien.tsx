@@ -16,6 +16,15 @@ function emojiBien(type: string): string {
   return "🏠";
 }
 
+// Badge « meublé » — lu depuis la caractéristique commune `meuble`. Mis en avant
+// en haut de fiche (vente comme location) pour renseigner le visiteur d'un coup d'œil.
+// Couleurs fixes (lisibles dans les 2 thèmes), comme le badge « vérifié ».
+const MEUBLE_STYLES = {
+  Oui:           { label: "Meublé",      emoji: "🛋️", bg: "#E8F5EE", color: "#146C43" },
+  Partiellement: { label: "Semi-meublé", emoji: "🛋️", bg: "#FEF3C7", color: "#92400E" },
+  Non:           { label: "Non meublé",  emoji: "",   bg: "#F1EFE9", color: "#6B7A71" },
+} as const;
+
 // 4ᵉ carte du bandeau : l'info de « situation » la plus utile à l'acheteur selon
 // le type (l'étage pour un appartement, le niveau pour un local…). Évite la
 // carte « Type » redondante avec le titre et le badge. Renvoie null si aucune
@@ -200,9 +209,19 @@ export default function InfosBien({ bien }: { bien: BienPublic }) {
   const frais = estVente ? calculerFraisAcquisition(bien.prix) : null;
   // 4ᵉ carte du bandeau : étage/niveau plutôt que « Type » (redondant).
   const situation = situationBien(bien);
-  // Caractéristiques affichées plus bas, sans l'info déjà remontée dans le bandeau.
+  // Badge meublé / non meublé (non pertinent pour un terrain).
+  const meubleBrut = (bien.caracteristiques as Record<string, unknown> | null)?.meuble;
+  const meuble =
+    bien.type !== "Terrain" && typeof meubleBrut === "string" && meubleBrut in MEUBLE_STYLES
+      ? MEUBLE_STYLES[meubleBrut as keyof typeof MEUBLE_STYLES]
+      : null;
+  // Caractéristiques affichées plus bas, sans les infos déjà remontées en haut.
+  const clesExclues = [
+    ...(situation ? [situation.cle] : []),
+    ...(meuble ? ["meuble"] : []),
+  ];
   const caracAffichees = champsRenseignes(bien.type, bien.caracteristiques)
-    .filter((c) => !situation || c.cle !== situation.cle);
+    .filter((c) => !clesExclues.includes(c.cle));
 
   return (
     <div>
@@ -223,6 +242,14 @@ export default function InfosBien({ bien }: { bien: BienPublic }) {
         >
           {bien.type}
         </span>
+        {meuble && (
+          <span
+            className="text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1"
+            style={{ background: meuble.bg, color: meuble.color }}
+          >
+            {[meuble.emoji, meuble.label].filter(Boolean).join(" ")}
+          </span>
+        )}
         {bien.verifie ? (
           <span
             className="text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1"
@@ -369,7 +396,7 @@ export default function InfosBien({ bien }: { bien: BienPublic }) {
           <AfficheCaracteristiques
             type={bien.type}
             caracteristiques={bien.caracteristiques}
-            exclure={situation ? [situation.cle] : undefined}
+            exclure={clesExclues.length ? clesExclues : undefined}
           />
         </section>
       )}
