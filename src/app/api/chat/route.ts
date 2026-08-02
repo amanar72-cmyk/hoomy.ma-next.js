@@ -200,6 +200,14 @@ export async function POST(req: Request) {
     // donc pas d'auth — mais le coût par requête est déjà borné (600 car. par
     // message, 8 000 d'historique, 400 tokens en sortie) : ne manquait qu'une
     // limite sur le VOLUME, sans quoi un script boucle sur le budget Gemini.
+    // Plafond global: protège le budget même si l'identité IP ne peut pas être
+    // établie de manière fiable par le reverse proxy.
+    if (!verifierRateLimit("chat:global", 100, 5 * 60 * 1000)) {
+      return NextResponse.json(
+        { erreur: "Le service est momentanément très sollicité. Réessayez dans quelques minutes." },
+        { status: 429 }
+      );
+    }
     const ip = lireIP(req.headers);
     if (!verifierRateLimit(`chat:${ip}`, 20, 5 * 60 * 1000)) {
       return NextResponse.json(

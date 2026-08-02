@@ -18,6 +18,11 @@ function chaine(v: unknown, max: number): string | null {
 export async function POST(req: NextRequest) {
   const ip = lireIP(req.headers);
 
+  // Filet global : évite le flood du journal même si l'IP est « inconnue »
+  // (proxy sans X-Real-IP) ou en cas de credential-stuffing distribué. Généreux.
+  if (!verifierRateLimit("conn-log:global", 600, 60_000)) {
+    return new Response(null, { status: 429 });
+  }
   // Anti-abus : 30 journalisations / minute / IP
   if (!verifierRateLimit(`conn-log:${ip}`, 30, 60_000)) {
     return new Response(null, { status: 429 });

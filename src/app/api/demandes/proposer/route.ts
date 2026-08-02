@@ -29,6 +29,28 @@ function champ(fd: FormData, cle: string): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
+function estImageValide(fichier: File, octets: Uint8Array): boolean {
+  if (fichier.type === "image/jpeg") {
+    return octets.length >= 3 && octets[0] === 0xff && octets[1] === 0xd8 && octets[2] === 0xff;
+  }
+  if (fichier.type === "image/png") {
+    return octets.length >= 8 && octets.slice(0, 8).every((v, i) => v === [137, 80, 78, 71, 13, 10, 26, 10][i]);
+  }
+  return octets.length >= 12 &&
+    String.fromCharCode(...octets.slice(0, 4)) === "RIFF" &&
+    String.fromCharCode(...octets.slice(8, 12)) === "WEBP";
+}
+
+function lienAnnonceValide(lien: string | null): boolean {
+  if (!lien || lien.length > 2048) return lien === null;
+  try {
+    const url = new URL(lien);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   let fd: FormData;
   try {
@@ -48,7 +70,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true }); // fausse réussite silencieuse, même logique
   }
 
-  // Couche 3 — Rate limiting par IP (5 propositions / 10 min)
+  // Couche 3 — Rate limiting
+  // Filet global : borne le volume même si l'IP n'est pas fiable (proxy sans
+  // X-Real-IP → clé « inconnue » partagée) ou en cas de flood distribué.
+  if (!verifierRateLimit("proposition:global", 300, 10 * 60 * 1000)) {
+    return NextResponse.json({ ok: false, erreur: "Service temporairement très sollicité. Réessayez dans quelques minutes." }, { status: 429 });
+  }
+  // Puis par IP : 5 propositions / 10 min
   const ip = lireIP(req.headers);
   if (!verifierRateLimit(`${ip}-proposition`, 5, 10 * 60 * 1000)) {
     return NextResponse.json({ ok: false, erreur: "Trop de soumissions. Réessayez dans quelques minutes." }, { status: 429 });
@@ -80,6 +108,10 @@ export async function POST(req: NextRequest) {
   if (!type || !ville) {
     return NextResponse.json({ ok: false, erreur: "Type de bien et ville requis." }, { status: 400 });
   }
+  const lienAnnonce = champ(fd, "lien_annonce");
+  if (!lienAnnonceValide(lienAnnonce)) {
+    return NextResponse.json({ ok: false, erreur: "Lien d'annonce invalide." }, { status: 400 });
+  }
 
   const admin = createAdminClient();
 
@@ -109,6 +141,10 @@ export async function POST(req: NextRequest) {
     if (!TYPES_AUTORISES.includes(f.type)) {
       return NextResponse.json({ ok: false, erreur: `Format non supporté pour ${f.name} (JPEG, PNG ou WebP uniquement).` }, { status: 400 });
     }
+    const octets = new Uint8Array(await f.arrayBuffer());
+    if (!estImageValide(f, octets)) {
+      return NextResponse.json({ ok: false, erreur: `Le contenu de ${f.name} ne correspond pas à une image valide.` }, { status: 400 });
+    }
   }
 
   // ── Insertion de la proposition ────────────────────────────────────────────
@@ -133,7 +169,7 @@ export async function POST(req: NextRequest) {
       etage: champ(fd, "etage"),
       description: champ(fd, "description"),
       atouts: champ(fd, "atouts"),
-      lien_annonce: champ(fd, "lien_annonce"),
+      lien_annonce: lienAnnonce,
       photos: null, // rempli après upload
     })
     .select("*")

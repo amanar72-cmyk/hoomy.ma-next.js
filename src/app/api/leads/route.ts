@@ -11,7 +11,17 @@ import { lireIP } from "@/lib/securite/lireIP";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  // 1. Rate limit : 5 soumissions / 10 min / IP (public)
+  // 1. Filet global : borne le volume même quand l'IP n'est pas fiable (proxy
+  // sans X-Real-IP → toutes les requêtes partagent la clé « inconnue »), et
+  // stoppe un flood distribué de bots. Très au-dessus du trafic légitime.
+  if (!verifierRateLimit("leads:global", 300, 10 * 60 * 1000)) {
+    return NextResponse.json(
+      { erreur: "Service temporairement très sollicité. Réessayez dans quelques minutes." },
+      { status: 429 }
+    );
+  }
+
+  // 2. Rate limit : 5 soumissions / 10 min / IP (public)
   const ip = lireIP(req.headers);
   if (!verifierRateLimit(`${ip}-lead`, 5, 10 * 60 * 1000)) {
     return NextResponse.json(
