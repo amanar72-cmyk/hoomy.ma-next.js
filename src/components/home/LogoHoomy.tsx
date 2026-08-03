@@ -1,59 +1,46 @@
-// Composant logo HOOMY réutilisable : [badge H doré] + texte "HOOMY" Marcellus.
+// Composant logo HOOMY réutilisable : mot-symbole "HOOMY" (Marcellus) avec un
+// point accent doré. Le badge « H » a été retiré (doublon avec le H de HOOMY).
 // Pas de "use client" — composant de présentation pur, utilisable en Server Component.
 
 interface Props {
-  tailleBadge?: number; // côté du carré H en px (défaut 30)
+  /** Conservé pour compatibilité des appelants ; n'affiche plus de badge. */
+  tailleBadge?: number;
   tailleTexte?: number; // fontSize de "HOOMY" en px (défaut 19)
   couleurTexte?: string; // couleur du mot HOOMY (défaut var(--primaire))
 }
 
 export default function LogoHoomy({
-  tailleBadge = 30,
   tailleTexte = 19,
   couleurTexte = "var(--primaire)",
 }: Props) {
   return (
-    <div
-      className="flex items-center gap-2"
-      style={{ userSelect: "none" }}
+    <span
+      className="inline-flex items-baseline"
+      style={{ userSelect: "none", gap: Math.max(3, Math.round(tailleTexte * 0.16)) }}
     >
-      {/* ── Badge monogramme H ───────────────────────────────────────────── */}
-      <div
-        style={{
-          width: tailleBadge,
-          height: tailleBadge,
-          borderRadius: 8,
-          background: "#D4AF37",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "var(--font-marcellus), serif",
-            fontSize: Math.round(tailleBadge * 0.56),
-            fontWeight: 400,
-            color: "#0F4C3A",
-            lineHeight: 1,
-          }}
-        >
-          H
-        </span>
-      </div>
-
-      {/* ── Nom ─────────────────────────────────────────────────────────── */}
       <span
         style={{
           fontFamily: "var(--font-marcellus), serif",
           color: couleurTexte,
           fontSize: tailleTexte,
-          letterSpacing: "0.12em",
+          letterSpacing: "0.2em",
+          lineHeight: 1,
         }}
       >
         HOOMY
       </span>
-    </div>
+      {/* Point accent doré — retouche discrète, évoque le « .ma », sans second H */}
+      <span
+        aria-hidden="true"
+        style={{
+          width: Math.max(4, Math.round(tailleTexte * 0.24)),
+          height: Math.max(4, Math.round(tailleTexte * 0.24)),
+          borderRadius: "50%",
+          background: "var(--accent)",
+          display: "inline-block",
+          flexShrink: 0,
+        }}
+      />
+    </span>
   );
 }

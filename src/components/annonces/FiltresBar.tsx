@@ -19,6 +19,9 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Barre repliée par défaut (minimaliste). Le panneau détaillé s'ouvre au clic.
+  const [ouvert, setOuvert] = useState(false);
+
   // État local initialisé depuis les props serveur ; le composant est remonté
   // via key={} à chaque navigation, donc les valeurs restent synchronisées.
   const [ville, setVille] = useState(defaultFiltres.ville);
@@ -38,8 +41,19 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
     if (prixMax) params.set("prixMax", prixMax);
     if (chambres) params.set("chambres", chambres);
     if (defaultFiltres.tri) params.set("tri", defaultFiltres.tri);
+    setOuvert(false); // on replie après application
     router.push(`${pathname}?${params.toString()}`);
   }
+
+  // Résumé compact des filtres actifs (affiché barre repliée).
+  const resume: string[] = [
+    ville || null,
+    type || null,
+    prixMin ? `dès ${Number(prixMin).toLocaleString("fr-FR")} DH` : null,
+    prixMax ? `jusqu'à ${Number(prixMax).toLocaleString("fr-FR")} DH` : null,
+    chambres ? `${chambres} ch.` : null,
+  ].filter((x): x is string => Boolean(x));
+  const nbActifs = resume.length;
 
   function reinitialiser() {
     setVille("");
@@ -61,8 +75,63 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
       className="bg-white border-b"
       style={{ borderColor: "#E8E2D2", boxShadow: "0 2px 8px rgba(15,76,58,0.06)" }}
     >
-      <div className="max-w-6xl mx-auto px-6 py-3">
-        <div className="flex flex-wrap items-end gap-3">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5">
+
+        {/* ── Barre compacte (toujours visible) ─────────────────────────────── */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setOuvert((o) => !o)}
+            aria-expanded={ouvert}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium border transition-colors hover:bg-gray-50 cursor-pointer flex-shrink-0"
+            style={{ borderColor: "var(--primaire)", color: "var(--primaire)" }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="4" y1="6" x2="20" y2="6" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
+            </svg>
+            Filtres
+            {nbActifs > 0 && (
+              <span
+                className="inline-flex items-center justify-center text-xs font-bold rounded-full"
+                style={{ background: "var(--accent)", color: "var(--texte-sur-accent)", minWidth: 18, height: 18, padding: "0 5px" }}
+              >
+                {nbActifs}
+              </span>
+            )}
+            <svg
+              width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"
+              style={{ transform: ouvert ? "rotate(180deg)" : "none", transition: "transform 0.18s" }}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          {/* Résumé des filtres actifs (masqué si aucun) */}
+          {nbActifs > 0 && !ouvert && (
+            <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap min-w-0">
+              {resume.map((r) => (
+                <span
+                  key={r}
+                  className="text-xs px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0"
+                  style={{ background: "var(--fond-secondaire)", color: "var(--primaire)", border: "1px solid var(--bordure-chaude)" }}
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Compteur résultats */}
+          <p className="ml-auto text-sm flex-shrink-0" style={{ color: "var(--texte-chaud)" }}>
+            <span className="font-semibold" style={{ color: "var(--primaire)" }}>{total}</span>{" "}
+            <span className="hidden sm:inline">bien{total !== 1 ? "s" : ""} trouvé{total !== 1 ? "s" : ""}</span>
+            <span className="sm:hidden">bien{total !== 1 ? "s" : ""}</span>
+          </p>
+        </div>
+
+        {/* ── Panneau détaillé (déroulant) ──────────────────────────────────── */}
+        {ouvert && (
+        <div className="flex flex-wrap items-end gap-3 pt-3 mt-3 border-t" style={{ borderColor: "#F0EBDD" }}>
 
           {/* Ville */}
           <div>
@@ -150,13 +219,8 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
             </button>
           </div>
 
-          {/* Compteur résultats */}
-          <p className="ml-auto text-sm hidden md:block" style={{ color: "var(--texte-chaud)" }}>
-            <span className="font-semibold" style={{ color: "var(--primaire)" }}>{total}</span>{" "}
-            bien{total !== 1 ? "s" : ""} trouvé{total !== 1 ? "s" : ""}
-          </p>
-
         </div>
+        )}
       </div>
     </div>
   );
