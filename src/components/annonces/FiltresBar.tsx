@@ -72,8 +72,8 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
 
   return (
     <div
-      className="bg-white border-b"
-      style={{ borderColor: "#E8E2D2", boxShadow: "0 2px 8px rgba(15,76,58,0.06)" }}
+      className="border-b"
+      style={{ background: "var(--fond-principal)", borderColor: "#ECE6D8" }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5">
 
@@ -121,12 +121,15 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
             </div>
           )}
 
-          {/* Compteur résultats */}
-          <p className="ml-auto text-sm flex-shrink-0" style={{ color: "var(--texte-chaud)" }}>
+          {/* Compteur résultats — pastille douce */}
+          <span
+            className="ml-auto flex-shrink-0 text-xs px-2.5 py-1 rounded-full whitespace-nowrap"
+            style={{ background: "var(--fond-secondaire)", color: "var(--texte-chaud)", border: "1px solid var(--bordure-chaude)" }}
+          >
             <span className="font-semibold" style={{ color: "var(--primaire)" }}>{total}</span>{" "}
             <span className="hidden sm:inline">bien{total !== 1 ? "s" : ""} trouvé{total !== 1 ? "s" : ""}</span>
             <span className="sm:hidden">bien{total !== 1 ? "s" : ""}</span>
-          </p>
+          </span>
         </div>
 
         {/* ── Panneau détaillé (déroulant) ──────────────────────────────────── */}
