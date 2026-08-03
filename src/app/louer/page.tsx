@@ -105,11 +105,7 @@ export default async function PageLouer({ searchParams }: Props) {
             >
               Biens à louer au Maroc
             </h1>
-            <p className="text-sm" style={{ color: "var(--texte-chaud)" }}>
-              <span className="font-semibold" style={{ color: "var(--primaire)" }}>{biens.length}</span>{" "}
-              bien{biens.length !== 1 ? "s" : ""} disponible{biens.length !== 1 ? "s" : ""}
-              {" "}<span style={{ color: "#B4AD97" }}>· Prix en DH/mois</span>
-            </p>
+            <p className="text-sm" style={{ color: "#B4AD97" }}>Prix en DH/mois</p>
           </div>
           <TriSelect key={tri} tri={tri} paramsActifs={paramsActifs} />
         </div>

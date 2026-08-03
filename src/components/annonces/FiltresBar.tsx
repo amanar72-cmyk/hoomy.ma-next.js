@@ -72,8 +72,8 @@ export default function FiltresBar({ defaultFiltres, total }: Props) {
 
   return (
     <div
-      className="border-b"
-      style={{ background: "var(--fond-principal)", borderColor: "#ECE6D8" }}
+      className="border-b sticky top-0 z-30"
+      style={{ background: "var(--fond-principal)", borderColor: "#ECE6D8", boxShadow: "0 1px 10px rgba(15,76,58,0.05)" }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5">
 

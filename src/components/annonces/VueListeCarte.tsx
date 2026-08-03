@@ -132,20 +132,20 @@ export default function VueListeCarte({ points, children }: Props) {
   // ── Vue liste : bannière d'aperçu + liste ─────────────────────────────────
   return (
     <>
-      <div className="max-w-6xl mx-auto px-6 pt-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
         <button
           type="button"
           onClick={() => allerVue("map")}
           aria-label={`Voir les ${nb} biens sur la carte`}
-          className="relative block w-full overflow-hidden rounded-2xl cursor-pointer group"
-          style={{ height: 170, border: "1px solid var(--bordure-legere)", background: "#EDF3EF" }}
+          className="relative block w-full overflow-hidden rounded-xl cursor-pointer group"
+          style={{ height: 104, border: "1px solid var(--bordure-legere)", background: "#EDF3EF" }}
         >
-          <ApercuStatique points={points} dim="1000x300" />
-          {/* Voile pour la lisibilité du bouton central */}
-          <div className="absolute inset-0" style={{ background: "rgba(10,30,20,0.28)" }} />
+          <ApercuStatique points={points} dim="1200x220" />
+          {/* Voile léger pour la lisibilité du bouton */}
+          <div className="absolute inset-0" style={{ background: "rgba(10,30,20,0.16)" }} />
           <span
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-full transition-transform group-hover:scale-105"
-            style={{ background: "var(--primaire)", color: "var(--texte-sur-primaire)", boxShadow: "0 8px 28px rgba(15,76,58,0.35)" }}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-full transition-transform group-hover:scale-105"
+            style={{ background: "rgba(255,255,255,0.96)", color: "var(--primaire)", boxShadow: "0 4px 16px rgba(15,76,58,0.18)" }}
           >
             <IcCarte />
             Voir sur la carte ({nb})

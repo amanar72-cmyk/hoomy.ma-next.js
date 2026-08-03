@@ -104,15 +104,11 @@ export default async function PageAcheter({ searchParams }: Props) {
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 mb-8">
           <div>
             <h1
-              className="text-3xl font-normal mb-1"
+              className="text-3xl font-normal"
               style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}
             >
               Biens à vendre au Maroc
             </h1>
-            <p className="text-sm" style={{ color: "var(--texte-chaud)" }}>
-              <span className="font-semibold" style={{ color: "var(--primaire)" }}>{biens.length}</span>{" "}
-              bien{biens.length !== 1 ? "s" : ""} disponible{biens.length !== 1 ? "s" : ""}
-            </p>
           </div>
           <TriSelect key={tri} tri={tri} paramsActifs={paramsActifs} />
         </div>
