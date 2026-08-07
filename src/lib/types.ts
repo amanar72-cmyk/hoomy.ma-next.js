@@ -34,7 +34,14 @@ export type BienPublic = Omit<Bien, "latitude" | "longitude">;
 // Colonnes à sélectionner pour tout affichage public — jamais latitude/longitude.
 export const COLONNES_BIEN_PUBLIC =
   "id, reference, slug, titre, description, type, transaction, prix, ville, quartier, " +
-  "chambres, salles_bain, surface, equipements, photos, composition, caracteristiques, verifie, est_agence_partenaire, cree_le";
+  "chambres, salles_bain, surface, equipements, photos, composition, caracteristiques, verifie, cree_le";
+
+// Variante incluant le flag « agence partenaire » — à n'utiliser QUE là où la
+// colonne biens.est_agence_partenaire existe déjà en base (badge public). La
+// séparer de COLONNES_BIEN_PUBLIC évite de casser toutes les listes publiques
+// si la migration n'a pas encore été appliquée.
+export const COLONNES_BIEN_PUBLIC_BADGE =
+  COLONNES_BIEN_PUBLIC + ", est_agence_partenaire";
 
 // Point affiché sur la carte des listes : coordonnées APPROXIMATIVES uniquement
 // (floutées côté serveur dans lib/geo/floutage.ts — jamais les exactes).

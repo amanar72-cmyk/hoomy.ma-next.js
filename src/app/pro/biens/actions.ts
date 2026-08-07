@@ -154,13 +154,18 @@ export async function creerBienAgent(donnees: DonneesBienAgent): Promise<{ id: s
       vendeur_id: vendeurId,
       statut: "brouillon",
       verifie: false,
-      // Marque « Agence partenaire » figée à la création (badge public générique).
-      est_agence_partenaire: profil?.role === "agence",
     })
     .select("id")
     .single();
 
   if (error || !bien) throw new Error(error?.message ?? "Erreur lors de la création.");
+
+  // Marque « Agence partenaire » — best-effort et séparé de l'insert : si la
+  // colonne biens.est_agence_partenaire n'existe pas encore (migration non
+  // appliquée), l'erreur est ignorée et la création n'est jamais bloquée.
+  if (profil?.role === "agence") {
+    await supabase.from("biens").update({ est_agence_partenaire: true }).eq("id", bien.id);
+  }
 
   revalidatePath("/pro/biens");
 
