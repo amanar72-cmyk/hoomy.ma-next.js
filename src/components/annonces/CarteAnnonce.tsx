@@ -234,6 +234,16 @@ export default function CarteAnnonce({ bien }: { bien: BienPublic }) {
                 Bientôt disponible
               </span>
             )}
+
+            {/* Badge « Agence partenaire » — générique, jamais le nom de l'agence */}
+            {bien.est_agence_partenaire && (
+              <span
+                className="text-xs font-semibold px-2.5 py-1 rounded-full w-fit leading-none"
+                style={{ background: "var(--accent)", color: "var(--texte-sur-accent)" }}
+              >
+                Agence partenaire
+              </span>
+            )}
           </div>
 
           {/* ── Compteur photos ── */}

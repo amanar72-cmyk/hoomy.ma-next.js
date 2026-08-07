@@ -250,6 +250,14 @@ export default function InfosBien({ bien }: { bien: BienPublic }) {
             {[meuble.emoji, meuble.label].filter(Boolean).join(" ")}
           </span>
         )}
+        {bien.est_agence_partenaire && (
+          <span
+            className="text-xs font-semibold px-2.5 py-1 rounded-lg"
+            style={{ background: "var(--accent)", color: "var(--texte-sur-accent)" }}
+          >
+            Agence partenaire
+          </span>
+        )}
         {bien.verifie ? (
           <span
             className="text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1"

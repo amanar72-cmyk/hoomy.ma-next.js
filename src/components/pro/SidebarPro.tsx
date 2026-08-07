@@ -148,6 +148,13 @@ export default function SidebarPro({ nomUtilisateur, role, avatarUrl }: Props) {
   }
 
   const initiale = nomUtilisateur.charAt(0).toUpperCase();
+
+  // Navigation : le catalogue des biens publiés est réservé aux agences
+  // partenaires (et admin pour supervision) — inséré après « Mes biens ».
+  const navItems = [...NAV_AGENT] as { href: string; ico: string; label: string; exact?: boolean }[];
+  if (role === "agence" || role === "admin") {
+    navItems.splice(2, 0, { href: "/pro/catalogue", ico: "catalogue", label: "Catalogue des biens" });
+  }
   const badge = role === "admin" ? "Admin" : "Pro";
 
   const corps = (
@@ -168,7 +175,7 @@ export default function SidebarPro({ nomUtilisateur, role, avatarUrl }: Props) {
 
       {/* Navigation principale */}
       <nav className="flex-1 px-3 pt-4 pb-2 flex flex-col gap-0.5 overflow-y-auto">
-        {NAV_AGENT.map((item) => (
+        {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}

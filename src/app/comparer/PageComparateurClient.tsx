@@ -188,8 +188,9 @@ export default function PageComparateurClient() {
       }
 
       // Conserver l'ordre des IDs de l'URL
+      const rows = biensData as unknown as BienComplet[];
       const biensOrdres = ids
-        .map((id) => biensData.find((b) => b.id === id))
+        .map((id) => rows.find((b) => b.id === id))
         .filter((b): b is BienComplet => !!b);
 
       setBiens(biensOrdres);

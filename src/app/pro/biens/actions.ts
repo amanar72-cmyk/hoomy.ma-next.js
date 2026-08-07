@@ -132,6 +132,8 @@ export async function creerBienAgent(donnees: DonneesBienAgent): Promise<{ id: s
       vendeur_id: vendeurId,
       statut: "brouillon",
       verifie: false,
+      // Marque « Agence partenaire » figée à la création (badge public générique).
+      est_agence_partenaire: profil?.role === "agence",
     })
     .select("id")
     .single();

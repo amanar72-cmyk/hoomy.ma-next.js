@@ -18,7 +18,7 @@ export default async function PageAdminUtilisateurs({ searchParams }: { searchPa
 
   const { data: utilisateurs, count } = await query.limit(100);
 
-  const ROLES = ["acheteur", "vendeur", "agent", "admin"];
+  const ROLES = ["acheteur", "vendeur", "agent", "agence", "admin"];
 
   return (
     <div className="p-6 lg:p-10 max-w-7xl mx-auto">
