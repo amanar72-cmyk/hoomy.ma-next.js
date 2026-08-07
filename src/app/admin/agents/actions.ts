@@ -44,6 +44,7 @@ type DonneesAgent = {
   email: string;
   telephone: string;
   zones: string[];
+  role?: "agent" | "agence";
 };
 
 export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
@@ -61,6 +62,9 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
   const telephone = donnees.telephone.trim();
   if (!/^\+[1-9]\d{7,14}$/.test(telephone))
     throw new Error("Le numéro de téléphone est requis (format international +212…).");
+
+  // Rôle choisi à l'invitation : agent (défaut) ou agence.
+  const role: "agent" | "agence" = donnees.role === "agence" ? "agence" : "agent";
 
   // ── 2. Invitation via Supabase (service_role) ──────────────────────────────
   // C'est SUPABASE qui envoie l'e-mail : sa délivrance vers les adresses
@@ -90,7 +94,7 @@ export async function ajouterAgent(donnees: DonneesAgent): Promise<void> {
       id: invited.user.id,
       nom_complet: donnees.nomComplet,
       telephone,
-      role: "agent",
+      role,
       zones: donnees.zones.length > 0 ? donnees.zones : null,
     });
 

@@ -36,6 +36,7 @@ export default function FormulaireInvitationAgent() {
   const [nomComplet, setNomComplet] = useState("");
   const [email, setEmail]           = useState("");
   const [telephone, setTelephone]   = useState<string | undefined>(undefined);
+  const [role, setRole]             = useState<"agent" | "agence">("agent");
   const [zones, setZones]           = useState<string[]>([]);
   const [chargement, setChargement] = useState(false);
   const [succes, setSucces]         = useState<string | null>(null);
@@ -64,11 +65,13 @@ export default function FormulaireInvitationAgent() {
         email: email.trim().toLowerCase(),
         telephone: telephone ?? "",
         zones,
+        role,
       });
       setSucces(`Invitation envoyée à ${email.trim().toLowerCase()}`);
       setNomComplet("");
       setEmail("");
       setTelephone(undefined);
+      setRole("agent");
       setZones([]);
     } catch (err) {
       setErreur(err instanceof Error ? err.message : "Erreur inconnue — réessayez.");
@@ -103,7 +106,20 @@ export default function FormulaireInvitationAgent() {
 
         <Champ label="Nom complet" required>
           <input type="text" value={nomComplet} onChange={(e) => setNomComplet(e.target.value)}
-            placeholder="Prénom Nom" className={cls} style={inp} />
+            placeholder="Prénom Nom (ou nom de l'agence)" className={cls} style={inp} />
+        </Champ>
+
+        <Champ label="Rôle" required>
+          <select value={role} onChange={(e) => setRole(e.target.value as "agent" | "agence")}
+            className={cls} style={inp}>
+            <option value="agent">Agent</option>
+            <option value="agence">Agence partenaire</option>
+          </select>
+          <p className="text-xs mt-1" style={{ color: "#999" }}>
+            {role === "agence"
+              ? "Compte agence : ses annonces portent le badge « Agence partenaire » et il accède au catalogue des biens."
+              : "Conseiller HOOMY classique."}
+          </p>
         </Champ>
 
         <Champ label="Adresse e-mail" required>
@@ -158,7 +174,7 @@ export default function FormulaireInvitationAgent() {
         <svg className="flex-shrink-0 mt-0.5" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
-        L'agent recevra un e-mail avec un lien pour créer son mot de passe. Aucun mot de passe n'est défini par l'administrateur.
+        La personne invitée recevra un e-mail avec un lien pour créer son mot de passe. Aucun mot de passe n'est défini par l'administrateur.
       </div>
 
       {/* Submit */}
@@ -166,7 +182,7 @@ export default function FormulaireInvitationAgent() {
         <button type="submit" disabled={chargement}
           className="px-7 py-2.5 rounded-xl text-sm font-semibold cursor-pointer disabled:opacity-60 hover:opacity-90 transition-opacity"
           style={{ background: "#111", color: "#fff" }}>
-          {chargement ? "Envoi de l'invitation…" : "Inviter l'agent"}
+          {chargement ? "Envoi de l'invitation…" : role === "agence" ? "Inviter l'agence" : "Inviter l'agent"}
         </button>
       </div>
     </form>
