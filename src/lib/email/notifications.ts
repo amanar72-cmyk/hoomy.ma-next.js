@@ -1,6 +1,38 @@
 import { envoyerEmail } from "./envoyerEmail";
 import { emailDecisionBien } from "./emailDecisionBien";
 import { formaterPrix } from "@/lib/format";
+import { CONTACT } from "@/lib/contact";
+
+/**
+ * Prévient HOOMY (contact@hoomy.ma) qu'un bien vient d'être TRANSMIS au
+ * back-office pour validation, en indiquant qui l'a envoyé (agence ou agent,
+ * avec son nom). Best-effort. Destinataire interne @hoomy.ma → délivré par le
+ * SMTP Hostinger.
+ */
+export async function notifierBienTransmis(donnees: {
+  titre: string;
+  ville: string;
+  prix: number;
+  transaction: string;
+  reference: string | null;
+  auteur: string; // ex. « Immo Casa (Agence) » ou « Karim B. (Agent) »
+}): Promise<void> {
+  await envoyerEmail({
+    destinataire: CONTACT.email,
+    sujet: `📥 Bien transmis au back-office — ${donnees.titre}`,
+    texte: [
+      "Un bien vient d'être transmis au back-office pour validation.",
+      "",
+      `Envoyé par : ${donnees.auteur}`,
+      `Référence : ${donnees.reference ?? "—"}`,
+      `Titre : ${donnees.titre}`,
+      `Ville : ${donnees.ville}`,
+      `Prix : ${formaterPrix(donnees.prix, donnees.transaction)}`,
+      "",
+      "À traiter : https://hoomy.ma/admin/verifications",
+    ].join("\n"),
+  });
+}
 
 // Base du back-office pro (pro.hoomy.ma) — même logique que getProUrl côté
 // invitation d'agent. Sert à construire le lien de la fiche dans l'e-mail.

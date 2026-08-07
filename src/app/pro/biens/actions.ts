@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { notifierNouveauBien } from "@/lib/email/notifications";
+import { notifierNouveauBien, notifierBienTransmis } from "@/lib/email/notifications";
 import { dossierComplet, MESSAGE_DOCUMENTS_MANQUANTS } from "@/lib/documents/fiche";
 
 // ── Slug / référence ──────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ export async function transmettreAuBo(bienId: string) {
   // S'assurer que le bien appartient bien à cet agent
   const { data: bien } = await supabase
     .from("biens")
-    .select("agent_id")
+    .select("agent_id, titre, reference, ville, prix, transaction")
     .eq("id", bienId)
     .single();
   if (!bien || bien.agent_id !== user.id) throw new Error("Accès refusé.");
@@ -55,6 +55,28 @@ export async function transmettreAuBo(bienId: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/pro/biens");
+
+  // Notifier HOOMY (contact@hoomy.ma) : qui a envoyé le bien (agence ou agent,
+  // avec son nom). Best-effort — un échec e-mail ne casse pas la transmission.
+  try {
+    const { data: profil } = await supabase
+      .from("profils")
+      .select("nom_complet, role")
+      .eq("id", user.id)
+      .single();
+    const roleLabel = profil?.role === "agence" ? "Agence" : "Agent";
+    const auteur = `${(profil?.nom_complet as string | null) ?? user.email ?? "Utilisateur"} (${roleLabel})`;
+    await notifierBienTransmis({
+      titre: bien.titre as string,
+      ville: bien.ville as string,
+      prix: bien.prix as number,
+      transaction: bien.transaction as string,
+      reference: (bien.reference as string | null) ?? null,
+      auteur,
+    });
+  } catch (e) {
+    console.error("[transmettreAuBo] notification e-mail échouée :", e instanceof Error ? e.message : e);
+  }
 }
 
 // ── Accepter un bien depuis la file ──────────────────────────────────────────
