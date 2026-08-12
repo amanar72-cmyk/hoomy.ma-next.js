@@ -83,7 +83,11 @@ function Lightbox({
       role="dialog"
       aria-modal="true"
       aria-label={`Galerie — ${titre}`}
-      className="fixed inset-0 z-[200] flex flex-col"
+      // z-[10100] : la visionneuse plein écran doit passer AU-DESSUS de tous
+      // les éléments flottants, sinon ils recouvrent la photo sur mobile —
+      // la barre de prix (10000), le bouton de chat (9999) et la fenêtre de
+      // chat (9998). Elle était à 200, donc sous les trois.
+      className="fixed inset-0 z-[10100] flex flex-col"
       style={{ background: "rgba(8,12,10,0.97)" }}
       // Fond de la lightbox toujours quasi-noir (jamais réactif au thème) :
       // les icônes/textes ci-dessous restent blancs en dur — var(--fond-secondaire)
