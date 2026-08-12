@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
+import { appelerGemini } from "@/lib/ia/gemini";
 
 // ─── Prompt système ────────────────────────────────────────────────────────────
 
@@ -101,14 +102,7 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
+    const geminiRes = await appelerGemini(apiKey, payload);
 
     const geminiData = await geminiRes.json();
 

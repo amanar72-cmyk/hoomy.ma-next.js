@@ -1,4 +1,5 @@
 import "server-only";
+import { appelerGemini } from "./gemini";
 
 // Génération du TITRE d'une annonce via Gemini — court, attractif, optimisé SEO.
 // Best-effort : renvoie null en cas d'échec (clé absente, timeout, réponse
@@ -44,18 +45,14 @@ export async function genererTitreSEO(bien: InfosBien): Promise<string | null> {
   ].filter(Boolean).join("\n");
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    const res = await appelerGemini(
+      apiKey,
       {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: lignes }] }],
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          generationConfig: { temperature: 0.6, maxOutputTokens: 80, topP: 0.9 },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      }
+        contents: [{ role: "user", parts: [{ text: lignes }] }],
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        generationConfig: { temperature: 0.6, maxOutputTokens: 80, topP: 0.9 },
+      },
+      { signal: AbortSignal.timeout(10_000) }
     );
     if (!res.ok) return null;
 

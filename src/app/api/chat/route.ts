@@ -2,6 +2,9 @@ import { LIBELLE_VILLES_ACTIVES } from "@/lib/villes";
 import { NextResponse } from "next/server";
 import { verifierRateLimit } from "@/lib/securite/rateLimiter";
 import { lireIP } from "@/lib/securite/lireIP";
+// Aliasé : ce fichier a déjà sa propre fonction locale `appelGemini`, qui gère
+// le retry et le format de réponse par-dessus l'appel HTTP partagé.
+import { appelerGemini as appelerGeminiPartage } from "@/lib/ia/gemini";
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 // Conçu pour résister aux tentatives de détournement (jailbreak / prompt injection).
@@ -150,15 +153,12 @@ async function appelGemini(
     ],
   };
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(15_000), // timeout 15 s
-    }
-  );
+  // Passe par le point d'entrée partagé : même modèle qu'avant, mais le nom
+  // vit désormais dans lib/ia/gemini.ts — un seul endroit à corriger le jour
+  // où Google le retire (ce qui a déjà cassé trois autres fonctionnalités).
+  const res = await appelerGeminiPartage(apiKey, payload, {
+    signal: AbortSignal.timeout(15_000),
+  });
 
   const data = await res.json();
 
