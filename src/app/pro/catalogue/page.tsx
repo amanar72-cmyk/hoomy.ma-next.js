@@ -5,6 +5,7 @@ import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 import { LISTE_VILLES_ACTIVES } from "@/lib/villes";
 import { CONTACT } from "@/lib/contact";
 import { formaterPrix } from "@/lib/format";
+import { urlPubliqueBien } from "@/lib/biens/lienPublic";
 
 export const metadata: Metadata = {
   title: "Catalogue des biens — Espace Pro HOOMY.MA",
@@ -128,7 +129,8 @@ export default async function PageCatalogue({ searchParams }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {biens.map((bien) => {
             const photo = Array.isArray(bien.photos) ? bien.photos[0] : null;
-            const lien = `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug ?? bien.id}`;
+            // URL absolue : le catalogue est servi depuis pro.hoomy.ma.
+            const lien = urlPubliqueBien(bien);
             return (
               <div key={bien.id} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: "#fff", border: "1px solid #F0EDE5", boxShadow: "0 2px 12px rgba(15,76,58,0.05)" }}>
                 {/* Photo */}
@@ -170,10 +172,11 @@ export default async function PageCatalogue({ searchParams }: Props) {
                     {formaterPrix(bien.prix, bien.transaction)}
                   </p>
                   <div className="flex gap-2 pt-1">
-                    <Link href={lien} className="flex-1 text-center text-xs font-semibold px-3 py-2 rounded-lg transition-opacity hover:opacity-90"
+                    <a href={lien} target="_blank" rel="noopener noreferrer"
+                      className="flex-1 text-center text-xs font-semibold px-3 py-2 rounded-lg transition-opacity hover:opacity-90"
                       style={{ background: "#F4F6F5", color: "#0F4C3A", border: "1px solid #E0DAC8", textDecoration: "none" }}>
-                      Voir l'annonce
-                    </Link>
+                      Voir l&apos;annonce
+                    </a>
                     <a href={CONTACT.telephoneLien} className="flex-1 text-center text-xs font-semibold px-3 py-2 rounded-lg transition-opacity hover:opacity-90"
                       style={{ background: "#0F4C3A", color: "#fff", textDecoration: "none" }}>
                       Contacter HOOMY

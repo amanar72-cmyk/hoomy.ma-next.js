@@ -9,6 +9,8 @@ import CarteBienListe, { type BienListe } from "@/components/partage/CarteBienLi
 import { transmettreAuBo } from "./actions";
 import { nbDocsParFiche, TYPES_DOCUMENTS_FICHE } from "@/lib/documents/fiche";
 import { infoStatut, ORDRE_STATUTS_BIEN } from "@/lib/biens/statuts";
+import { peutEtreVisualise, urlPubliqueBien } from "@/lib/biens/lienPublic";
+import BoutonVisualiserBien from "@/components/partage/BoutonVisualiserBien";
 
 export const metadata: Metadata = {
   title: "Mes biens — Espace Pro HOOMY.MA",
@@ -264,11 +266,10 @@ export default async function PageProMesBiens({ searchParams }: { searchParams: 
           const nbDocs = docsParBien.get(bien.id) ?? 0;
           const docsComplets = nbDocs >= TYPES_DOCUMENTS_FICHE.length;
           const aTransmettre = STATUTS_A_TRANSMETTRE.includes(bien.statut ?? "");
-          const estPublie = bien.statut === "finalise" || bien.statut === "transacte";
-          const lienAnnonce =
-            estPublie && bien.slug
-              ? `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug}`
-              : null;
+          // URL absolue vers hoomy.ma — un chemin relatif resterait sur
+          // pro.hoomy.ma (voir lib/biens/lienPublic.ts).
+          const estPublie = peutEtreVisualise(bien.statut);
+          const lienAnnonce = urlPubliqueBien(bien);
 
           return (
             <CarteBienListe
@@ -300,19 +301,13 @@ export default async function PageProMesBiens({ searchParams }: { searchParams: 
                       Transmettre au BO
                     </button>
                   )
-                ) : lienAnnonce ? (
-                  <Link
+                ) : estPublie ? (
+                  <BoutonVisualiserBien
                     href={lienAnnonce}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl hover:opacity-90 transition-opacity whitespace-nowrap"
-                    style={{ background: "#D4AF37", color: "#0F4C3A", textDecoration: "none" }}
-                  >
-                    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                    Voir l&apos;annonce
-                  </Link>
+                    actif
+                    statut={bien.statut}
+                    compact
+                  />
                 ) : (
                   <span
                     className="text-xs font-medium px-3 py-1.5 rounded-xl whitespace-nowrap"

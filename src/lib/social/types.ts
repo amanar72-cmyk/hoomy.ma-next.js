@@ -45,17 +45,18 @@ export type BienSocial = {
 };
 
 /**
- * URL publique du bien.
+ * URL publique du bien — réexportée depuis lib/biens/lienPublic.ts.
  *
  * ⚠️ Le cahier des charges indiquait https://hoomy.ma/biens/{slug} — cette
  * route N'EXISTE PAS dans l'application. Les pages de détail réelles sont
  * /acheter/{slug} et /louer/{slug} selon la transaction. Publier /biens/…
  * aurait envoyé tout le trafic Facebook et Instagram sur une page 404.
+ *
+ * La règle vivait ici en double avec celle du back-office. Cette duplication
+ * est exactement ce qui a permis aux liens « Voir l'annonce » de partir en
+ * chemin relatif : une seule définition désormais.
  */
-export function urlPubliqueBien(bien: Pick<BienSocial, "slug" | "id" | "transaction">): string {
-  const segment = bien.transaction === "location" ? "louer" : "acheter";
-  return `https://hoomy.ma/${segment}/${bien.slug ?? bien.id}`;
-}
+export { urlPubliqueBien } from "@/lib/biens/lienPublic";
 
 /** Base de l'API Graph, version pilotée par META_API_VERSION. */
 export function baseGraph(): string {

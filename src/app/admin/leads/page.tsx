@@ -6,6 +6,7 @@ import RappelLead from "@/components/leads/RappelLead";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
 import { nettoyerRecherche } from "@/lib/utils/recherche";
 import ErreurChargement from "@/components/ui/ErreurChargement";
+import { urlPubliqueBien } from "@/lib/biens/lienPublic";
 
 export const metadata: Metadata = {
   title: "Leads qualifiés — Administration HOOMY.MA",
@@ -432,14 +433,15 @@ export default async function PageAdminLeadsQualifies({ searchParams }: { search
               {lead.biens && (
                 <p className="text-xs mb-2" style={{ color: "#999" }}>
                   Bien :{" "}
-                  <Link
-                    href={`/${lead.biens.transaction === "location" ? "louer" : "acheter"}/${lead.biens.slug ?? lead.bien_id}`}
+                  <a
+                    href={urlPubliqueBien({ ...lead.biens, id: lead.bien_id ?? "" })}
                     className="font-medium hover:underline"
                     style={{ color: "#0F4C3A" }}
                     target="_blank"
+                    rel="noopener noreferrer"
                   >
                     {lead.biens.titre}
-                  </Link>
+                  </a>
                 </p>
               )}
 

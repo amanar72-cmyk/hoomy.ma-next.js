@@ -15,6 +15,8 @@ import { urlsPhotosNettes } from "@/lib/images/photosBien";
 import { formaterPrix } from "@/lib/format";
 import { documentsParType, TYPES_DOCUMENTS_FICHE, MESSAGE_DOCUMENTS_MANQUANTS } from "@/lib/documents/fiche";
 import { infoStatut } from "@/lib/biens/statuts";
+import { peutEtreVisualise, urlPubliqueBien } from "@/lib/biens/lienPublic";
+import BoutonVisualiserBien from "@/components/partage/BoutonVisualiserBien";
 import VendeurEtAcheteursBien from "@/components/proprietaires/VendeurEtAcheteursBien";
 
 export const metadata: Metadata = {
@@ -189,10 +191,10 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
     bien.verifie
   );
 
-  const estPublie = bien.statut === "finalise" || bien.statut === "transacte";
-  const lienAnnonce = estPublie && bien.slug
-    ? `/${bien.transaction === "location" ? "louer" : "acheter"}/${bien.slug}`
-    : null;
+  // URL ABSOLUE : un chemin relatif resterait sur pro.hoomy.ma, où le
+  // middleware le renvoie vers l'accueil de l'espace (voir lib/biens/lienPublic.ts).
+  const estPublie = peutEtreVisualise(bien.statut);
+  const lienAnnonce = urlPubliqueBien(bien);
   const statutInfo = infoStatut(bien.statut);
 
   const ongletActif = ["fiche", "photos", "documents", "demandes"].includes(onglet ?? "")
@@ -251,20 +253,7 @@ export default async function PageFicheBienAgent({ params, searchParams }: Props
               {bien.reference}
             </span>
           )}
-          {lienAnnonce && (
-            <Link
-              href={lienAnnonce}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl hover:opacity-90 transition-opacity"
-              style={{ background: "#D4AF37", color: "#0F4C3A", textDecoration: "none" }}
-            >
-              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              Voir l&apos;annonce
-            </Link>
-          )}
+          <BoutonVisualiserBien href={lienAnnonce} actif={estPublie} statut={bien.statut} />
           {estModifiable && (
             <Link
               href={`/pro/biens/${id}?modifier=1`}

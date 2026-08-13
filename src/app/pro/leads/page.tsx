@@ -9,6 +9,7 @@ import RappelLead from "@/components/leads/RappelLead";
 import ErreurChargement from "@/components/ui/ErreurChargement";
 import { changerStatutLead } from "@/app/pro/actions";
 import { formatPhoneMaroc } from "@/lib/utils/telephone";
+import { urlPubliqueBien } from "@/lib/biens/lienPublic";
 
 export const metadata: Metadata = {
   title: "Leads — Espace Pro HOOMY.MA",
@@ -220,14 +221,21 @@ export default async function PageProLeads({ searchParams }: { searchParams: Sea
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-xs" style={{ color: "#666" }}>
                     <span className="tabular-nums">{telA.affichage ?? l.telephone}</span>
                     {l.biens && (
-                      <Link
-                        href={`/${l.biens.transaction === "location" ? "louer" : "acheter"}/${l.biens.slug ?? ""}`}
-                        target="_blank"
-                        className="hover:underline font-medium"
-                        style={{ color: "#A07C1E", textDecoration: "none" }}
-                      >
-                        🏠 {l.biens.titre}
-                      </Link>
+                      l.biens.slug ? (
+                        <a
+                          href={urlPubliqueBien({ ...l.biens, id: "" })}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline font-medium"
+                          style={{ color: "#A07C1E", textDecoration: "none" }}
+                        >
+                          🏠 {l.biens.titre}
+                        </a>
+                      ) : (
+                        // Sans slug il n'y a pas de fiche publique à ouvrir :
+                        // un lien enverrait l'agent sur « Bien non trouvé ».
+                        <span style={{ color: "#A07C1E" }}>🏠 {l.biens.titre}</span>
+                      )
                     )}
                     {l.budget && <span>Budget : {l.budget}</span>}
                     {(l.zones ?? []).length > 0 && <span>Zones : {(l.zones ?? []).join(", ")}</span>}
