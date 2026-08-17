@@ -5,7 +5,6 @@ import { obtenirPositionApprox } from "@/lib/geo/positionApprox";
 import type { Metadata } from "next";
 import type { BienPublic } from "@/lib/types";
 import { COLONNES_BIEN_PUBLIC } from "@/lib/types";
-import Link from "next/link";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import GaleriePhotos from "@/components/detail/GaleriePhotos";
@@ -99,30 +98,41 @@ export default async function PageDetailAchat({ params }: Props) {
       )}
       <Navbar />
 
-      {/* ── Fil d'Ariane ─────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-6 pt-5">
-        <nav
-          aria-label="Fil d'Ariane"
-          className="flex items-center flex-wrap gap-1.5 text-xs"
-          style={{ color: "var(--texte-tertiaire)" }}
-        >
-          <Link href="/" className="hover:underline" style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>Accueil</Link>
-          <span aria-hidden="true">›</span>
-          <Link href="/acheter" className="hover:underline" style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>Acheter</Link>
-          <span aria-hidden="true">›</span>
-          <Link href={`/acheter?ville=${encodeURIComponent(bien.ville)}`} className="hover:underline" style={{ color: "var(--primaire-clair)", textDecoration: "none" }}>{bien.ville}</Link>
-          <span aria-hidden="true">›</span>
-          <span className="truncate max-w-[200px]" style={{ color: "var(--texte-corps)" }}>{bien.titre}</span>
-        </nav>
-      </div>
+      {/* ── Fil d'Ariane — invisible, réservé aux moteurs ──────────────────
+          Le fil visible occupait le haut de page et repoussait la photo vers
+          le bas. Il est retiré de l'affichage (la photo démarre juste sous la
+          navbar, un bouton retour est posé dessus), mais PAS supprimé : sans
+          ces données structurées, Google perdrait le chemin
+          Accueil › Acheter › Ville affiché sous le résultat de recherche. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Accueil", item: "https://hoomy.ma/" },
+              { "@type": "ListItem", position: 2, name: "Acheter", item: "https://hoomy.ma/acheter" },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: bien.ville,
+                item: `https://hoomy.ma/acheter?ville=${encodeURIComponent(bien.ville)}`,
+              },
+              { "@type": "ListItem", position: 4, name: bien.titre },
+            ],
+          }),
+        }}
+      />
 
       {/* ── Galerie pleine largeur (plein bord sur mobile, insérée sur desktop) ── */}
-      <div className="max-w-7xl mx-auto px-0 md:px-6 pt-4">
+      <div className="max-w-7xl mx-auto px-0 md:px-6 pt-0 md:pt-4">
         <GaleriePhotos
           photos={bien.photos ?? []}
           titre={bien.titre}
           transaction={bien.transaction}
           verifie={bien.verifie}
+          hrefRetour="/acheter"
         />
       </div>
 
