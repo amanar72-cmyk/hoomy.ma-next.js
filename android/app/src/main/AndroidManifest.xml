@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+
+        <!-- Icône et couleur des notifications push. Sans ces deux lignes,
+             Android affiche un carré gris générique dans la barre d'état. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/hoomy_or" />
+    </application>
+
+    <!-- ═══ Permissions ═══════════════════════════════════════════════════
+         Les plugins Capacitor ne déclarent RIEN eux-mêmes : leurs manifestes
+         sont vides, c'est à l'application de demander ce dont elle a besoin.
+         Chaque ligne ci-dessous correspond à une fonction réellement utilisée. -->
+
+    <!-- Charger pro.hoomy.ma dans la WebView -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Plugin Network : détecter la perte de réseau et basculer hors ligne -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Notifications push. Depuis Android 13 (API 33), l'autorisation est
+         demandée à l'utilisateur exactement comme sur iOS. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Plugin Haptics : vibration de retour -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Photos de biens prises sur le terrain -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Photothèque. Android a changé de modèle en 13 : READ_MEDIA_IMAGES
+         remplace READ_EXTERNAL_STORAGE, d'où les bornes maxSdkVersion. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- Situer un bien sur la carte -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- required="false" : un appareil sans appareil photo (certaines tablettes)
+         doit tout de même pouvoir installer l'app depuis le Play Store. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+</manifest>

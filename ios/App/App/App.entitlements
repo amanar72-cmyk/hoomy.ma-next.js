@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Notifications distantes. Sans cette clé, iOS refuse
+	     `registerForRemoteNotifications` avec « no valid aps-environment
+	     entitlement string found » et aucun jeton APNs n'est jamais délivré.
+
+	     Valeur « development » volontaire : c'est ce qu'écrit Xcode en activant
+	     la capacité Push Notifications. Lors d'un archivage signé avec un profil
+	     de distribution (TestFlight, App Store), Xcode la remplace
+	     automatiquement par « production ». Le serveur, lui, s'adapte tout seul
+	     au bon environnement (voir src/lib/push/apns.ts). -->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

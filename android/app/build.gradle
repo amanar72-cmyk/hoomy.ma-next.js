@@ -1,0 +1,83 @@
+apply plugin: 'com.android.application'
+
+// Identifiants de signature, lus depuis un fichier HORS DÉPÔT.
+// Absents (poste d'un collègue, CI non configurée), la compilation debug
+// fonctionne quand même : seul « assembleRelease » exige la clé.
+def fichierCles = rootProject.file('keystore.properties')
+def cles = new Properties()
+if (fichierCles.exists()) {
+    cles.load(new FileInputStream(fichierCles))
+}
+
+android {
+    namespace = "ma.hoomy.pro"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "ma.hoomy.pro"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (cles.containsKey('storeFile')) {
+                storeFile rootProject.file(cles['storeFile'])
+                storePassword cles['storePassword']
+                keyAlias cles['keyAlias']
+                keyPassword cles['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // Signature de production dès que keystore.properties est présent.
+            // Sinon on laisse Gradle produire un APK non signé, plutôt que de
+            // le signer avec la clé de debug — que tout le monde possède.
+            if (cles.containsKey('storeFile')) {
+                signingConfig signingConfigs.release
+            }
+            // R8 laissé désactivé : l'app est une coque, il n'y a presque pas
+            // de code Java à réduire, et l'obfuscation casse volontiers la
+            // réflexion utilisée par les plugins Capacitor.
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

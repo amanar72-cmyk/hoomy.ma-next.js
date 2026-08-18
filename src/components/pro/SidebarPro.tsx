@@ -158,7 +158,18 @@ export default function SidebarPro({ nomUtilisateur, role, avatarUrl }: Props) {
   const badge = role === "admin" ? "Admin" : "Pro";
 
   const corps = (
-    <div className="flex flex-col h-full" style={{ background: "#111", minWidth: 240, width: 240 }}>
+    <div
+      className="flex flex-col h-full"
+      style={{
+        background: "#111",
+        minWidth: 240,
+        width: 240,
+        // Le tiroir occupe toute la hauteur : on écarte le logo de l'encoche et
+        // le dernier lien de la barre d'accueil de l'iPhone.
+        paddingTop: "var(--pro-safe-haut)",
+        paddingBottom: "var(--pro-safe-bas)",
+      }}
+    >
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 pt-6 pb-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
@@ -261,7 +272,15 @@ export default function SidebarPro({ nomUtilisateur, role, avatarUrl }: Props) {
       <div className="lg:hidden">
         <div
           className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4"
-          style={{ background: "#111", height: 52, borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+          style={{
+            background: "#111",
+            // Dans l'app iOS, la barre commence à y=0 : sans cette marge elle
+            // passerait SOUS l'encoche / la Dynamic Island. --pro-safe-haut vaut
+            // 0 partout ailleurs (voir globals.css), la barre reste donc à 52px.
+            height: "calc(52px + var(--pro-safe-haut))",
+            paddingTop: "var(--pro-safe-haut)",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+          }}
         >
           <span style={{ fontFamily: "var(--font-marcellus),serif", color: "#fff", fontSize: 15, letterSpacing: 1 }}>
             HOOMY
@@ -296,7 +315,7 @@ export default function SidebarPro({ nomUtilisateur, role, avatarUrl }: Props) {
           </div>
         </div>
 
-        <div style={{ height: 52 }} />
+        <div style={{ height: "calc(52px + var(--pro-safe-haut))" }} />
       </div>
     </>
   );

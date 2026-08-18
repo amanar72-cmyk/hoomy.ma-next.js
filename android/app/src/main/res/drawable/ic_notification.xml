@@ -1,0 +1,28 @@
+<!-- Icône de notification.
+
+     Android ignore les couleurs d'une icône de notification : seul le canal
+     alpha est lu, la silhouette est reteintée avec default_notification_color.
+     Elle est donc dessinée en blanc plein, sans le toit doré qui deviendrait
+     indistinct. Une icône colorée apparaîtrait comme un carré gris. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64"
+    android:tint="#FFFFFF">
+
+    <!-- Toit -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,8 L56,27 L51,33 L32,18 L13,33 L8,27 Z" />
+    <!-- Montants et traverse du H -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15,32 h9 v22 h-9 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,32 h9 v22 h-9 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15,39 h34 v8 h-34 Z" />
+</vector>

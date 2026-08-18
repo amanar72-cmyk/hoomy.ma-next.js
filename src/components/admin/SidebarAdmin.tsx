@@ -170,7 +170,16 @@ export default function SidebarAdmin({ nomAdmin, avatarUrl, nbLeadsNouveaux = 0 
   const initiale = nomAdmin.charAt(0).toUpperCase();
 
   const corps = (
-    <div className="flex flex-col h-full" style={{ background: "#111", minWidth: 240, width: 240 }}>
+    <div
+      className="flex flex-col h-full"
+      style={{
+        background: "#111",
+        minWidth: 240,
+        width: 240,
+        paddingTop: "var(--pro-safe-haut)",
+        paddingBottom: "var(--pro-safe-bas)",
+      }}
+    >
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 pt-6 pb-5"
@@ -263,7 +272,13 @@ export default function SidebarAdmin({ nomAdmin, avatarUrl, nbLeadsNouveaux = 0 
       <div className="lg:hidden">
         <div
           className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4"
-          style={{ background: "#111", height: 52, borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+          style={{
+            background: "#111",
+            // Marge d'encoche dans l'app iOS ; --pro-safe-haut vaut 0 ailleurs.
+            height: "calc(52px + var(--pro-safe-haut))",
+            paddingTop: "var(--pro-safe-haut)",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+          }}
         >
           <span style={{ fontFamily: "var(--font-marcellus),serif", color: "#fff", fontSize: 15, letterSpacing: 1 }}>
             HOOMY
@@ -297,7 +312,7 @@ export default function SidebarAdmin({ nomAdmin, avatarUrl, nbLeadsNouveaux = 0 
           </div>
         </div>
 
-        <div style={{ height: 52 }} />
+        <div style={{ height: "calc(52px + var(--pro-safe-haut))" }} />
       </div>
     </>
   );

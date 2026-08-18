@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { estAppNative } from "@/lib/mobile/natif";
 
 // Typage minimal de l'événement natif beforeinstallprompt
 interface BeforeInstallPromptEvent extends Event {
@@ -14,6 +15,15 @@ export default function PwaInstaller() {
   const [ferme, setFerme] = useState(false);
 
   useEffect(() => {
+    // Dans l'application iOS, rien de tout ceci n'a de sens : l'app EST déjà
+    // installée, et le Service Worker ferait doublon avec le cache de la
+    // WebView tout en risquant de servir des chunks périmés après une mise à
+    // jour du site. On sort avant toute inscription.
+    if (estAppNative()) {
+      setInstalle(true);
+      return;
+    }
+
     // Le SW (scope "/") fait du cache-first sur /_next/static/. En prod les chunks
     // sont hashés → sûr. En DEV/localhost, les chunks ne sont pas hashés de la même
     // façon : le SW sert des bundles périmés et casse le HMR

@@ -1,0 +1,162 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# HOOMY PRO — construction de l'application iOS
+#
+# Compiler une app iOS exige macOS et Xcode : impossible depuis le Codespace
+# Linux où vit ce dépôt. Codemagic loue une machine macOS le temps du build,
+# signe l'application avec le certificat Apple et l'envoie sur TestFlight.
+#
+# Prérequis à configurer UNE FOIS dans l'interface Codemagic (voir
+# mobile/README.md pour la marche à suivre détaillée) :
+#   · une intégration « App Store Connect » nommée exactement comme ci-dessous ;
+#   · la variable APP_STORE_APPLE_ID (identifiant numérique de l'app dans
+#     App Store Connect), dans le groupe « hoomy-ios ».
+# ═══════════════════════════════════════════════════════════════════════════════
+
+workflows:
+  ios-testflight:
+    name: HOOMY PRO — iOS (TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    integrations:
+      # Le nom doit correspondre exactement à l'intégration créée dans Codemagic.
+      app_store_connect: hoomy_app_store
+
+    environment:
+      node: 20
+      xcode: latest
+      groups:
+        - hoomy_ios          # doit fournir APP_STORE_APPLE_ID
+      vars:
+        PROJET_XCODE: "ios/App/App.xcodeproj"
+        SCHEMA_XCODE: "App"
+        BUNDLE_ID: "ma.hoomy.pro"
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: ma.hoomy.pro
+
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        # Seule la pose d'une étiquette « ios-v1.2.3 » déclenche un build : le
+        # travail quotidien sur le site ne doit pas consommer de minutes macOS.
+        - pattern: "ios-v*"
+          include: true
+
+    scripts:
+      - name: Installer les dépendances
+        script: npm ci
+
+      - name: Synchroniser la coque Capacitor
+        # Régénère ios/App/App/capacitor.config.json et le bundle local
+        # (mobile/www → ios/App/App/public), volontairement non versionnés.
+        script: npx cap sync ios
+
+      - name: Calculer le numéro de build
+        # TestFlight refuse deux envois portant le même numéro : on repart
+        # systématiquement du dernier publié, + 1.
+        script: |
+          DERNIER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "0")
+          cd ios/App
+          agvtool new-version -all $(($DERNIER + 1))
+
+      - name: Installer les profils de signature
+        script: xcode-project use-profiles
+
+      - name: Construire l'IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$PROJET_XCODE" \
+            --scheme "$SCHEMA_XCODE"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Envoi sur TestFlight uniquement. La soumission à la revue App Store
+        # reste un geste manuel et délibéré.
+        submit_to_testflight: true
+      email:
+        recipients:
+          - amanar72@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ═════════════════════════════════════════════════════════════════════════
+  # Android — APK signé, prêt à distribuer
+  # ═════════════════════════════════════════════════════════════════════════
+  # Contrairement à iOS, Android se compile sur une machine Linux : l'instance
+  # est bien moins chère en minutes, et le build peut aussi tourner en local
+  # (npm run android:apk).
+  #
+  # À configurer une fois dans Codemagic, groupe de variables « hoomy_android » :
+  #   · CM_KEYSTORE          → le fichier hoomy-pro.keystore, en pièce jointe
+  #   · CM_KEYSTORE_PASSWORD → mot de passe du magasin
+  #   · CM_KEY_ALIAS         → hoomy-pro
+  #   · CM_KEY_PASSWORD      → mot de passe de la clé
+  android-apk:
+    name: HOOMY PRO — Android (APK signé)
+    instance_type: linux_x2
+    max_build_duration: 30
+
+    environment:
+      groups:
+        - hoomy_android
+      node: 20
+      java: 21
+
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: "android-v*"
+          include: true
+
+    scripts:
+      - name: Installer les dépendances
+        script: |
+          npm ci
+
+      - name: Synchroniser la coque Capacitor
+        script: |
+          npx cap sync android
+
+      - name: Reconstituer le magasin de clés
+        script: |
+          # Le keystore n'est jamais dans le dépôt : Codemagic le restitue
+          # depuis ses variables chiffrées, le temps du build.
+          echo "$CM_KEYSTORE" | base64 --decode > "$CM_BUILD_DIR/android/hoomy-pro.keystore"
+          cat > "$CM_BUILD_DIR/android/keystore.properties" <<PROPS
+          storeFile=hoomy-pro.keystore
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          keyPassword=$CM_KEY_PASSWORD
+          PROPS
+
+      - name: Numéroter la version
+        script: |
+          # versionCode doit croître à chaque publication, sinon Android refuse
+          # la mise à jour. Le numéro de build Codemagic fait l'affaire.
+          sed -i "s/versionCode 1/versionCode $BUILD_NUMBER/" android/app/build.gradle
+
+      - name: Compiler l'APK
+        script: |
+          cd android && ./gradlew assembleRelease
+
+    artifacts:
+      - android/app/build/outputs/apk/release/*.apk
+      # AAB également, au cas où le Play Store serait retenu plus tard.
+      - android/app/build/outputs/bundle/release/*.aab
+
+    publishing:
+      email:
+        recipients:
+          - amanar72@gmail.com
+        notify:
+          success: true
+          failure: true

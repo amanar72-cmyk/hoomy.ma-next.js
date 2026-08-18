@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Identité HOOMY PRO. Ces trois noms sont ceux qu'attend styles.xml ;
+         sans cette redéfinition, le thème reprendrait l'indigo et le rose du
+         gabarit Material livré par la bibliothèque Capacitor. -->
+    <color name="colorPrimary">#111111</color>
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="colorAccent">#D4AF37</color>
+
+    <!-- Or zellige — teinte des notifications dans la barre d'état. -->
+    <color name="hoomy_or">#D4AF37</color>
+</resources>

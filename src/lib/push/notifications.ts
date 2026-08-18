@@ -1,5 +1,7 @@
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { envoyerNotificationApns } from "./apns";
+import { envoyerNotificationFcm } from "./fcm";
 
 // Initialisation différée — setVapidDetails lance une exception si les clés sont
 // absentes. En l'appelant au niveau module, tout import de ce fichier (même indirect
@@ -24,7 +26,27 @@ export type PayloadPush = {
   url?: string;
 };
 
+/**
+ * Envoie une notification à un utilisateur sur TOUS ses canaux : navigateurs
+ * abonnés au Web Push, iPhones et appareils Android porteurs de l'app HOOMY PRO.
+ *
+ * Les trois canaux partent en parallèle et sont indépendants : un Web Push mal
+ * configuré ne doit pas priver les mobiles de leurs notifications, une clé APNs
+ * manquante ne doit pas bloquer Android, et réciproquement.
+ */
 export async function envoyerNotificationPush(
+  userId: string,
+  payload: PayloadPush,
+): Promise<void> {
+  await Promise.allSettled([
+    envoyerVersNavigateurs(userId, payload),
+    envoyerNotificationApns(userId, payload),
+    envoyerNotificationFcm(userId, payload),
+  ]);
+}
+
+/** Volet navigateur de l'envoi (Web Push / VAPID). */
+async function envoyerVersNavigateurs(
   userId: string,
   payload: PayloadPush,
 ): Promise<void> {
@@ -76,13 +98,9 @@ export async function envoyerNotificationPush(
 }
 
 export async function envoyerNotificationAuxAdmins(payload: PayloadPush): Promise<void> {
-  try {
-    initialiserVapid();
-  } catch (err) {
-    console.error("[push] Configuration VAPID invalide :", err instanceof Error ? err.message : err);
-    return;
-  }
-
+  // Pas de garde VAPID ici : envoyerNotificationPush vérifie désormais chaque
+  // canal séparément. La conserver aurait privé les admins équipés de l'app iOS
+  // de toute notification dès que les clés Web Push manquaient.
   const admin = createAdminClient();
   const { data: admins, error: erreurLecture } = await admin
     .from("profils")

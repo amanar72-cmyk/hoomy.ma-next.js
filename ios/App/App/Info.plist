@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CAPACITOR_DEBUG</key>
+	<string>$(CAPACITOR_DEBUG)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+        <string>HOOMY PRO</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+    <false/>
+    <key>UISceneConfigurations</key>
+    <dict>
+      <key>UIWindowSceneSessionRoleApplication</key>
+      <array>
+        <dict>
+            <key>UISceneConfigurationName</key>
+            <string>Default Configuration</string>
+            <key>UISceneDelegateClassName</key>
+            <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+            <key>UISceneStoryboardFile</key>
+            <string>Main</string>
+        </dict>
+      </array>
+    </dict>
+	</dict>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+	<!-- ─── Permissions déclarées à l'utilisateur ─────────────────────────────
+	     Ces textes s'affichent DANS la fenêtre de confirmation iOS. Apple rejette
+	     toute app dont un plugin touche à la caméra ou à la position sans une
+	     description explicite du motif. Rédigés en français : l'app est en français. -->
+	<key>NSCameraUsageDescription</key>
+	<string>HOOMY PRO utilise l'appareil photo pour prendre les photos de vos biens immobiliers et les ajouter directement à vos annonces.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>HOOMY PRO accède à vos photos pour illustrer vos annonces immobilières.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>HOOMY PRO enregistre dans vos photos les documents et visuels générés pour vos biens.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>HOOMY PRO utilise votre position pour situer un bien sur la carte et retrouver les annonces proches de vous.</string>
+
+	<!-- ─── Notifications push (APNs) ────────────────────────────────────────
+	     Autorise l'app à être réveillée par le serveur pour un nouveau lead,
+	     une visite programmée ou un message client. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- ─── Conformité export ────────────────────────────────────────────────
+	     L'app n'utilise que le HTTPS standard d'iOS. Déclarer `false` ici évite
+	     de répondre au questionnaire de chiffrement à CHAQUE envoi de build. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+</dict>
+</plist>

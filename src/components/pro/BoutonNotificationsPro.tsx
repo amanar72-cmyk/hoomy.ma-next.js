@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { enregistrerAbonnementPush, supprimerAbonnementPush } from "@/app/pro/push/actions";
+import { estAppNative } from "@/lib/mobile/natif";
 
-type Etat = "chargement" | "actif" | "inactif" | "refuse" | "non_supporte";
+type Etat = "chargement" | "actif" | "inactif" | "refuse" | "non_supporte" | "gere_par_lapp";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -19,6 +20,16 @@ export default function BoutonNotificationsPro() {
   const [endpoint, setEndpoint] = useState<string | null>(null);
 
   useEffect(() => {
+    // Application iOS : les notifications passent par APNs, pas par le Web
+    // Push. WKWebView n'expose pas PushManager — sans ce court-circuit, le test
+    // ci-dessous conclurait « non supporté » et afficherait une cloche grisée
+    // alors que les notifications fonctionnent. L'autorisation est demandée au
+    // démarrage par PontNatif : ce bouton n'a plus rien à piloter.
+    if (estAppNative()) {
+      setEtat("gere_par_lapp");
+      return;
+    }
+
     if (
       !("Notification" in window) ||
       !("PushManager" in window) ||
@@ -89,6 +100,9 @@ export default function BoutonNotificationsPro() {
       setEtat("inactif");
     }
   }
+
+  // Rien à afficher dans l'app iOS : réglage à faire dans les Réglages système.
+  if (etat === "gere_par_lapp") return null;
 
   const actif = etat === "actif";
   const enCours = etat === "chargement";

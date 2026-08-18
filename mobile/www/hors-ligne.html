@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>HOOMY PRO — Hors ligne</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #111111;
+        color: #faf7f0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .centre {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 0 32px calc(env(safe-area-inset-bottom) + 24px);
+        text-align: center;
+        box-sizing: border-box;
+      }
+      .marque { font-size: 1.25rem; letter-spacing: 0.18em; color: #d4af37; }
+      h1 { font-size: 1.05rem; font-weight: 600; margin: 12px 0 0; }
+      p { font-size: 0.9rem; line-height: 1.5; color: #9ca3af; margin: 0; max-width: 300px; }
+      button {
+        margin-top: 12px;
+        background: #d4af37;
+        color: #111111;
+        border: 0;
+        border-radius: 12px;
+        padding: 13px 28px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        font-family: inherit;
+      }
+      button:active { opacity: 0.85; }
+      .etat { font-size: 0.78rem; color: #6b7280; min-height: 1.2em; }
+    </style>
+  </head>
+  <body>
+    <div class="centre">
+      <div class="marque">HOOMY PRO</div>
+      <h1>Connexion indisponible</h1>
+      <p>Impossible de joindre le serveur HOOMY. Vérifiez votre connexion internet, puis réessayez.</p>
+      <button type="button" id="reessayer">Réessayer</button>
+      <div class="etat" id="etat"></div>
+    </div>
+
+    <script>
+      // L'URL du serveur est injectée par Capacitor dans la configuration native.
+      // On la relit à chaud pour éviter de la coder en dur à deux endroits.
+      var URL_SERVEUR = "https://pro.hoomy.ma";
+      try {
+        var conf = window.Capacitor && window.Capacitor.getConfig && window.Capacitor.getConfig();
+        if (conf && conf.server && conf.server.url) URL_SERVEUR = conf.server.url;
+      } catch (e) {}
+
+      var bouton = document.getElementById("reessayer");
+      var etat = document.getElementById("etat");
+
+      bouton.addEventListener("click", function () {
+        etat.textContent = "Tentative de reconnexion…";
+        window.location.replace(URL_SERVEUR);
+      });
+
+      // Retour automatique dès que le téléphone retrouve du réseau.
+      window.addEventListener("online", function () {
+        etat.textContent = "Connexion retrouvée — chargement…";
+        window.location.replace(URL_SERVEUR);
+      });
+    </script>
+  </body>
+</html>

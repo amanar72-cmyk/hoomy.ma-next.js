@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fond de l'icône adaptative : le noir du chrome HOOMY PRO, identique à
+         l'icône iOS et au manifeste PWA. -->
+    <color name="ic_launcher_background">#111111</color>
+</resources>

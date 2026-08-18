@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+
+        <!-- ══ Bord-à-bord ══════════════════════════════════════════════
+             Depuis Android 15 (API 35), toute app visant SDK 35+ dessine sous
+             les barres système, et Android 16 ignore la dérogation. Le
+             targetSdk étant 36, autant l'assumer explicitement plutôt que de
+             le subir : barres transparentes, contenu étendu jusqu'aux
+             encoches. La WebView remonte alors de vraies valeurs dans
+             env(safe-area-inset-*), que globals.css consomme déjà via ses
+             variables de zone sûre : le même mécanisme que sur iOS, sans une
+             ligne de CSS supplémentaire. -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Barre supérieure du back-office en #111 : il faut des icônes claires. -->
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    </style>
+</resources>

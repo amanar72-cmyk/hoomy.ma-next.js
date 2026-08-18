@@ -17,7 +17,15 @@ const marcellus = Marcellus({ subsets: ["latin"], weight: "400", variable: "--fo
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
-  title: "HOOMY.MA — L'immobilier premium au Maroc",
+  // template : les pages enfants ne déclarent QUE leur titre propre, le suffixe
+  // de marque est ajouté ici. Toute page qui écrit elle-même « | HOOMY.MA »
+  // se retrouverait avec le suffixe en double — les titres des pages ont été
+  // nettoyés en conséquence.
+  // default : titre de l'accueil et de toute page sans titre propre.
+  title: {
+    default: "HOOMY.MA — L'immobilier premium au Maroc",
+    template: "%s | HOOMY.MA",
+  },
   description:
     `Appartements, villas, riads et bureaux vérifiés à ${LIBELLE_VILLES_ACTIVES}.`,
 
@@ -102,12 +110,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   "description":
                     `Plateforme immobilière premium au Maroc — appartements, villas, riads et bureaux vérifiés à ${LIBELLE_VILLES_ACTIVES}.`,
                   "areaServed": { "@type": "Country", "name": "Maroc" },
-                  "knowsLanguage": ["fr", "ar"],
+                  // Le site est intégralement en français : aucun système de
+                  // langue, aucune URL arabe, aucun hreflang. Déclarer l'arabe
+                  // annonçait aux moteurs un contenu qui n'existe pas.
+                  "knowsLanguage": ["fr"],
                   "contactPoint": {
                     "@type": "ContactPoint",
                     "email": "contact@hoomy.ma",
                     "contactType": "customer service",
-                    "availableLanguage": ["French", "Arabic"],
+                    "availableLanguage": ["French"],
                   },
                 },
                 {
@@ -139,7 +150,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {/* Splash affiché uniquement à la première visite de session (cookie "splash_vu" absent) */}
           <SplashScreen splashDeja={splashDeja} />
           {children}
-          <BulleChatConditionnelle />
+          {/* Chat client : jamais sur le sous-domaine pro. L'exclusion interne à
+              BulleChatConditionnelle porte sur les CHEMINS (/pro, /admin), ce qui
+              laissait passer /connexion — servi à la racine de pro.hoomy.ma, et
+              premier écran de l'application iOS. Même raisonnement que
+              estSitePublic() : filtrer sur l'hôte, pas sur le chemin. */}
+          {sitePublic && <BulleChatConditionnelle />}
           <Analytique
             gaId={process.env.NEXT_PUBLIC_GA_ID}
             metaPixelId={process.env.NEXT_PUBLIC_META_PIXEL_ID}

@@ -45,3 +45,11 @@ next-env.d.ts
 # ex: 6a386b6a14088.next.config.ts, 6a3869acef422.next.config.ts
 [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].next.config*
 .cache/
+
+# Android — secrets de signature. Les perdre rend TOUTE mise à jour de l'app
+# impossible pour les utilisateurs déjà équipés : à sauvegarder ailleurs.
+android/keystore.properties
+android/*.keystore
+android/*.jks
+# Chemin du SDK, propre à chaque machine
+android/local.properties

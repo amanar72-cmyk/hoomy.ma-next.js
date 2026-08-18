@@ -68,6 +68,17 @@
   /* ── Héritage Tailwind (requis pour --color-background/foreground) ── */
   --background: #FAF7F0;
   --foreground: #1A2822;
+
+  /* ── Zones sûres iOS (encoche, Dynamic Island, barre d'accueil) ───────────
+     Utilisées par le chrome du back-office (barre mobile, tiroir, contenu)
+     pour ne pas passer sous l'encoche dans l'app iOS.
+
+     Inertes ailleurs : env(safe-area-inset-*) ne vaut autre chose que 0 que si
+     la page déclare `viewport-fit=cover` ET tourne sur un écran à encoche.
+     Seuls les gabarits du sous-domaine pro le déclarent (pro/, admin/,
+     connexion/) — le site public n'est donc pas affecté. */
+  --pro-safe-haut: env(safe-area-inset-top, 0px);
+  --pro-safe-bas:  env(safe-area-inset-bottom, 0px);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

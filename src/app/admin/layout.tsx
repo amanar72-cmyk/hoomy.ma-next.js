@@ -2,10 +2,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SidebarAdmin from "@/components/admin/SidebarAdmin";
 import PwaInstaller from "@/components/pro/PwaInstaller";
-import type { Metadata } from "next";
+import PontNatif from "@/components/mobile/PontNatif";
+import { estAppNative } from "@/lib/mobile/natif-serveur";
+import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "Administration — HOOMY PRO",
+  title: "Administration — Espace Pro",
   manifest: "/manifest-pro.json",
   appleWebApp: {
     capable: true,
@@ -17,7 +19,20 @@ export const metadata: Metadata = {
   },
 };
 
+// Même raison que dans pro/layout.tsx : sans viewport-fit=cover, les variables
+// --pro-safe-* restent à zéro et le back-office passerait sous l'encoche.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#111111",
+};
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Lu depuis l'en-tête User-Agent : disponible dès la première requête,
+  // avant toute hydratation.
+  const dansAppNative = await estAppNative();
+
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -49,12 +64,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         avatarUrl={profil.avatar_url ?? null}
         nbLeadsNouveaux={nbLeadsNouveaux ?? 0}
       />
-      <main className="flex-1 overflow-auto mt-[52px] lg:mt-0" style={{ minHeight: "100vh" }}>
+      <main
+        className="flex-1 overflow-auto mt-[calc(52px+var(--pro-safe-haut))] lg:mt-0"
+        style={{ minHeight: "100vh", paddingBottom: "var(--pro-safe-bas)" }}
+      >
         {children}
       </main>
 
       {/* Bandeau d'installation PWA */}
-      <PwaInstaller />
+      {/* Bandeau d'installation PWA. Décidé côté serveur à partir du
+          User-Agent : dans l'app native le composant n'est même pas rendu, ce
+          qui évite à la fois un aller-retour d'hydratation et toute tentative
+          d'inscription du Service Worker. */}
+      {!dansAppNative && <PwaInstaller />}
+
+      {/* Les comptes admin ouvrent le back-office dans la même app iOS que les
+          agents : le pont natif doit être monté ici aussi. */}
+      <PontNatif />
     </div>
   );
 }
