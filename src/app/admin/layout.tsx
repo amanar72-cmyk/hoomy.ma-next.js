@@ -7,7 +7,7 @@ import { estAppNative } from "@/lib/mobile/natif-serveur";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "Administration — Espace Pro",
+  title: "Administration",
   manifest: "/manifest-pro.json",
   appleWebApp: {
     capable: true,

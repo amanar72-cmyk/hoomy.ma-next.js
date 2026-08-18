@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { journaliserConnexion } from "@/lib/securite/journalConnexion";
+import BarreEtatNative from "@/components/mobile/BarreEtatNative";
 
 const ROLES_PRO = ["admin", "agent", "agence"];
 
@@ -85,6 +86,10 @@ export default function FormulaireConnexionPro() {
       className="min-h-screen flex items-center justify-center px-4 py-12"
       style={{ background: "#F5F5F5" }}
     >
+      {/* Le formulaire est sur fond clair : sans cela, l'application mobile
+          garderait les icônes blanches réglées pour le back-office. */}
+      <BarreEtatNative fond="clair" />
+
       <div className="w-full max-w-sm">
 
         {/* Logo */}
@@ -116,14 +121,11 @@ export default function FormulaireConnexionPro() {
           }}
         >
           <h1
-            className="text-base font-semibold mb-1 text-center"
+            className="text-base font-semibold mb-7 text-center"
             style={{ color: "#111" }}
           >
             Connexion
           </h1>
-          <p className="text-xs text-center mb-7" style={{ color: "#999" }}>
-            Agents &amp; Administrateurs HOOMY.MA
-          </p>
 
           {erreur && (
             <div
@@ -203,22 +205,6 @@ export default function FormulaireConnexionPro() {
             >
               {chargement ? "Connexion…" : "Se connecter"}
             </button>
-          </div>
-
-          {/* Note accès réservé */}
-          <div
-            className="mt-6 px-3 py-2.5 rounded-xl text-center"
-            style={{ background: "#FAFAFA", border: "1px solid #EBEBEB" }}
-          >
-            <p className="text-xs" style={{ color: "#999" }}>
-              Accès réservé aux{" "}
-              <span style={{ color: "#D4AF37", fontWeight: 600 }}>agents et administrateurs</span>.
-              <br />
-              Vous êtes client ?{" "}
-              <a href="/" style={{ color: "#555", textDecoration: "underline", fontWeight: 500 }}>
-                Accédez à hoomy.ma
-              </a>
-            </p>
           </div>
         </div>
       </div>

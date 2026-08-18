@@ -17,11 +17,12 @@ import { enregistrerAppareilPush } from "@/app/pro/push/actions";
  * l'application native : dans un navigateur ordinaire, tout le corps de l'effet
  * est court-circuité dès la première ligne.
  *
- * Trois responsabilités :
+ * Quatre responsabilités :
  *   1. signaler le contexte natif au CSS (marges d'encoche) ;
  *   2. habiller le système (barre d'état, écran de démarrage) ;
- *   3. brancher les notifications APNs — demande d'autorisation, enregistrement
- *      du jeton (APNs sur iOS, FCM sur Android), navigation au tap.
+ *   3. brancher les notifications — demande d'autorisation, enregistrement du
+ *      jeton (APNs sur iOS, FCM sur Android), navigation au tap ;
+ *   4. rendre au bouton retour Android son comportement attendu.
  */
 export default function PontNatif() {
   const router = useRouter();
@@ -39,21 +40,48 @@ export default function PontNatif() {
     let annule = false;
 
     async function demarrer() {
+      const plateforme = Capacitor.getPlatform() === "android" ? "android" : "ios";
+
       // ── Habillage système ──────────────────────────────────────────────
       // Style.Dark = texte CLAIR (l'intitulé du plugin décrit le fond, pas le
       // texte). La barre supérieure du back-office est #111 : il faut du blanc.
       await StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+
+      if (plateforme === "android") {
+        // Android 15+ impose le bord-à-bord : la WebView passe DÉJÀ sous la
+        // barre d'état. On le déclare explicitement pour que les marges de zone
+        // sûre du CSS soient calculées sur la bonne hauteur, et on rend la
+        // barre transparente pour que le #111 du back-office la remplisse.
+        await StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+      }
+
       await SplashScreen.hide().catch(() => {});
+
+      // ── Bouton retour physique (Android) ───────────────────────────────
+      // Sans écouteur, Android FERME l'application au premier appui sur retour,
+      // même au milieu d'un formulaire — le comportement par défaut de
+      // Capacitor. On rétablit l'usage attendu : revenir en arrière dans la
+      // navigation, et seulement à la racine mettre l'app en arrière-plan
+      // (comme le bouton accueil) plutôt que de la tuer.
+      if (plateforme === "android") {
+        const retour = await App.addListener("backButton", ({ canGoBack }) => {
+          if (canGoBack) {
+            window.history.back();
+          } else {
+            App.minimizeApp().catch(() => {});
+          }
+        });
+        aRetirer.push(retour);
+      }
 
       // ── Notifications ──────────────────────────────────────────────────
       const jetonRecu = await PushNotifications.addListener("registration", async (jeton) => {
         try {
           const infos = await App.getInfo();
-          // Détermine le service destinataire : Apple (APNs) ou Google (FCM).
-          // Les deux jetons cohabitent dans la même table et ne sont pas
-          // interchangeables — sans cette mention, chaque service recevrait
+          // « plateforme » aiguille le jeton vers le bon service : Apple (APNs)
+          // ou Google (FCM). Les deux cohabitent dans la même table et ne sont
+          // pas interchangeables — sans cette mention, chaque service recevrait
           // les jetons de l'autre et les rejetterait un par un.
-          const plateforme = Capacitor.getPlatform() === "android" ? "android" : "ios";
           await enregistrerAppareilPush({
             jeton: jeton.value,
             plateforme,
@@ -69,7 +97,8 @@ export default function PontNatif() {
       aRetirer.push(jetonRecu);
 
       const erreurJeton = await PushNotifications.addListener("registrationError", (err) => {
-        console.warn("[HOOMY PRO] APNs a refusé l'enregistrement :", err.error);
+        const service = plateforme === "android" ? "FCM" : "APNs";
+        console.warn(`[HOOMY PRO] ${service} a refusé l'enregistrement :`, err.error);
       });
       aRetirer.push(erreurJeton);
 
@@ -97,9 +126,10 @@ export default function PontNatif() {
             : etat;
 
       if (accord.receive === "granted" && !annule) {
-        // Déclenche APNs ; le jeton arrive dans l'écouteur « registration ».
+        // Déclenche l'enregistrement ; le jeton arrive dans « registration ».
         await PushNotifications.register();
       }
+
     }
 
     demarrer().catch((err) => console.warn("[HOOMY PRO] Pont natif :", err));
