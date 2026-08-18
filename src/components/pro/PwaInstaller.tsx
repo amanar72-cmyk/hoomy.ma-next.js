@@ -21,6 +21,24 @@ export default function PwaInstaller() {
     // jour du site. On sort avant toute inscription.
     if (estAppNative()) {
       setInstalle(true);
+
+      // Ne PAS se contenter de sortir : un appareil équipé d'une version
+      // antérieure de l'app a déjà un Service Worker enregistré, posé avant que
+      // ce garde-fou n'existe. Il survit aux déploiements et continue
+      // d'intercepter les requêtes — de quoi faire croire qu'une mise à jour du
+      // site « n'arrive pas ». On le retire et on purge ses caches.
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+          .catch(() => {});
+      }
+      if ("caches" in window) {
+        caches
+          .keys()
+          .then((cles) => Promise.all(cles.map((c) => caches.delete(c))))
+          .catch(() => {});
+      }
       return;
     }
 
