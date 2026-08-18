@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import FormulaireInvitationAgent from "@/components/admin/FormulaireInvitationAgent";
 
 export const metadata: Metadata = {
-  title: "Inviter un agent — Admin HOOMY.MA",
+  title: "Inviter un agent — Administration",
 };
 
 export default function PageNouvelAgent() {

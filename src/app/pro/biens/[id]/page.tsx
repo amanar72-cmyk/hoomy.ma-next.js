@@ -20,7 +20,7 @@ import BoutonVisualiserBien from "@/components/partage/BoutonVisualiserBien";
 import VendeurEtAcheteursBien from "@/components/proprietaires/VendeurEtAcheteursBien";
 
 export const metadata: Metadata = {
-  title: "Fiche bien — Espace Pro HOOMY.MA",
+  title: "Fiche bien — Espace Pro",
 };
 
 type Props = {

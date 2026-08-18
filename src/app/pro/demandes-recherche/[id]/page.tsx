@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import CartePropositionLecture from "@/components/pro/demandes/CartePropositionLecture";
 import { LIBELLES_STATUT_DEMANDE, LIBELLE_TRANSACTION, formaterFourchetteBudget, type DemandeRecherche, type PropositionBien } from "@/lib/demandes/types";
 
-export const metadata: Metadata = { title: "Demande de recherche — Espace Pro HOOMY.MA" };
+export const metadata: Metadata = { title: "Demande de recherche — Espace Pro" };
 
 type Props = { params: Promise<{ id: string }> };
 

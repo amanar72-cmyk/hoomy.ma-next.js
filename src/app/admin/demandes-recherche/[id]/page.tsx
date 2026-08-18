@@ -6,7 +6,7 @@ import ActionsModerationDemande from "@/components/admin/demandes/ActionsModerat
 import CartePropositionAdmin from "@/components/admin/demandes/CartePropositionAdmin";
 import { LIBELLES_STATUT_DEMANDE, LIBELLE_TRANSACTION, formaterFourchetteBudget, type DemandeRecherche, type PropositionBien } from "@/lib/demandes/types";
 
-export const metadata: Metadata = { title: "Demande de recherche — Administration HOOMY.MA" };
+export const metadata: Metadata = { title: "Demande de recherche — Administration" };
 
 type Props = { params: Promise<{ id: string }> };
 

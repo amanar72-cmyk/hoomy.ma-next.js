@@ -10,7 +10,7 @@ import LigneLeadAVerifier, { type LeadAVerifier } from "@/components/admin/leads
 // part ailleurs : /admin/leads les exclut explicitement de l'onglet « Tous ».
 
 export const metadata: Metadata = {
-  title: "Leads à vérifier — Administration HOOMY.MA",
+  title: "Leads à vérifier — Administration",
 };
 export const dynamic = "force-dynamic";
 

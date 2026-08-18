@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import FormulaireProfil from "./FormulaireProfil";
 
 export const metadata: Metadata = {
-  title: "Paramètres — Mon espace HOOMY.MA",
+  title: "Paramètres — Mon espace",
 };
 
 export default async function PageParametres() {

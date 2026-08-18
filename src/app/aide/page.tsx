@@ -1,6 +1,6 @@
 import PageEnConstruction from "@/components/ui/PageEnConstruction";
 
-export const metadata = { title: "Centre d'aide | HOOMY.MA" };
+export const metadata = { title: "Centre d'aide" };
 
 export default function PageAide() {
   return (

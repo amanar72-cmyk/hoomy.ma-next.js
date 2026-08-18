@@ -5,7 +5,7 @@ import CartePrixShell from "@/components/carte-prix/CartePrixShell";
 import Navbar from "@/components/home/Navbar";
 
 export const metadata: Metadata = {
-  title: "Carte des prix immobiliers au Maroc — HOOMY.MA",
+  title: "Carte des prix immobiliers au Maroc",
   description:
     "Explorez les prix au m² par ville et par quartier : Casablanca, Rabat, Marrakech, Tanger, Agadir.",
 };

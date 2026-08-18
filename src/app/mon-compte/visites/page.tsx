@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import BoutonCalendrier from "@/components/ui/BoutonCalendrier";
 
 export const metadata: Metadata = {
-  title: "Mes visites — Mon espace HOOMY.MA",
+  title: "Mes visites — Mon espace",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────

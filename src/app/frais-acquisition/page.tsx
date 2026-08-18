@@ -5,7 +5,7 @@ import CalculateurFrais from "@/components/outils/CalculateurFrais";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
 
 export const metadata: Metadata = {
-  title: "Calculateur de frais d'acquisition | HOOMY.MA",
+  title: "Calculateur de frais d'acquisition",
   description:
     "Estimez vos frais d'acquisition immobilière au Maroc : droits d'enregistrement, conservation foncière, honoraires du notaire. Calcul en temps réel.",
 };

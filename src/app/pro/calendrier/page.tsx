@@ -8,7 +8,7 @@ import BoutonCalendrier from "@/components/ui/BoutonCalendrier";
 import RappelsAPasser from "@/components/leads/RappelsAPasser";
 
 export const metadata: Metadata = {
-  title: "Calendrier des visites — Espace Pro HOOMY.MA",
+  title: "Calendrier des visites — Espace Pro",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────

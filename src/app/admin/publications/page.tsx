@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import ActionsPublication from "@/components/admin/publications/ActionsPublication";
 import { urlPubliqueBien, type PublicationSociale } from "@/lib/social/types";
 
-export const metadata: Metadata = { title: "Publications sociales — Administration HOOMY.MA" };
+export const metadata: Metadata = { title: "Publications sociales — Administration" };
 export const dynamic = "force-dynamic";
 
 // File des publications Facebook / Instagram. Lecture en service_role : la

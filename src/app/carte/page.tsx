@@ -3,7 +3,7 @@ import Navbar from "@/components/home/Navbar";
 import CarteIntelligente from "@/components/carte/CarteIntelligente";
 
 export const metadata: Metadata = {
-  title: "Carte des quartiers | HOOMY.MA",
+  title: "Carte des quartiers",
   description:
     "Explorez les prix au m², les scores de qualité de vie et les tendances par quartier dans les principales villes du Maroc.",
 };

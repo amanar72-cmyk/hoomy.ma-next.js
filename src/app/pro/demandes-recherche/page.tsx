@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { LIBELLES_STATUT_DEMANDE, LIBELLE_TRANSACTION, type DemandeRecherche } from "@/lib/demandes/types";
 
-export const metadata: Metadata = { title: "Recherches clients — Espace Pro HOOMY.MA" };
+export const metadata: Metadata = { title: "Recherches clients — Espace Pro" };
 
 // Demandes créées PAR CET AGENT (cree_par) — lecture en service_role avec
 // filtre explicite en application (la RLS session-based ne couvre pas ce cas

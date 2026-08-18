@@ -7,7 +7,7 @@ import SelectRole from "@/components/admin/SelectRole";
 import SelecteurConseillerAdmin from "@/components/admin/SelecteurConseillerAdmin";
 
 export const metadata: Metadata = {
-  title: "Agents — Administration HOOMY.MA",
+  title: "Agents — Administration",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────

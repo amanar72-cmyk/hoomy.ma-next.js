@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import WizardPublication from "@/components/publier/WizardPublication";
 
 export const metadata: Metadata = {
-  title: "Publier votre annonce immobilière gratuitement | HOOMY.MA",
+  title: "Publier votre annonce immobilière gratuitement",
   description:
     "Vendez ou louez votre bien au Maroc avec HOOMY : publication gratuite, photos illimitées, accompagnement par un conseiller dédié.",
   alternates: { canonical: "/publier" },

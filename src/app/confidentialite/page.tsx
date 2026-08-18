@@ -1,6 +1,6 @@
 import PageEnConstruction from "@/components/ui/PageEnConstruction";
 
-export const metadata = { title: "Politique de confidentialité | HOOMY.MA" };
+export const metadata = { title: "Politique de confidentialité" };
 
 export default function PageConfidentialite() {
   return (

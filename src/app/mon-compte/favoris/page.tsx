@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { formaterPrix } from "@/lib/format";
 
 export const metadata: Metadata = {
-  title: "Mes favoris — Mon espace HOOMY.MA",
+  title: "Mes favoris — Mon espace",
 };
 
 type BienFavori = {

@@ -1,6 +1,6 @@
 import PageEnConstruction from "@/components/ui/PageEnConstruction";
 
-export const metadata = { title: "À propos | HOOMY.MA" };
+export const metadata = { title: "À propos" };
 
 export default function PageAPropos() {
   return (

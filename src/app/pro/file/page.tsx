@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import ListeBiensFileRealtime, { type BienFile } from "@/components/pro/ListeBiensFileRealtime";
 
 export const metadata: Metadata = {
-  title: "File d'affectation — Espace Pro HOOMY.MA",
+  title: "File d'affectation — Espace Pro",
 };
 
 export default async function PageFileAffectation() {

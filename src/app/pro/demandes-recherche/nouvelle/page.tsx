@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import FormulaireDemandeRechercheInterne from "@/components/demandes/FormulaireDemandeRechercheInterne";
 import { creerDemandeRechercheAgent } from "../actions";
 
-export const metadata: Metadata = { title: "Nouvelle demande — Espace Pro HOOMY.MA" };
+export const metadata: Metadata = { title: "Nouvelle demande — Espace Pro" };
 
 export default function PageNouvelleDemandeAgent() {
   return (

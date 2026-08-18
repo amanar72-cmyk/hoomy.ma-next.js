@@ -16,7 +16,7 @@ import { LIBELLE_TRANSACTION, formaterFourchetteBudget } from "@/lib/demandes/ty
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Demandes de recherche — Trouvez un client pour votre bien | HOOMY.MA",
+  title: "Demandes de recherche — Trouvez un client pour votre bien",
   description: `Des clients recherchent activement un bien à ${LIBELLE_VILLES_ACTIVES}. Consultez leurs critères et proposez le vôtre.`,
   alternates: { canonical: "/demandes" },
 };

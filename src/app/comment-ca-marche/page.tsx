@@ -1,6 +1,6 @@
 import PageEnConstruction from "@/components/ui/PageEnConstruction";
 
-export const metadata = { title: "Comment ça marche | HOOMY.MA" };
+export const metadata = { title: "Comment ça marche" };
 
 export default function PageCommentCaMarche() {
   return (

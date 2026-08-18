@@ -123,6 +123,16 @@ export async function middleware(request: NextRequest) {
   );
   if (estCheminPublic) return supabaseResponse;
 
+  // B1ter. robots.txt → pass-through, AVANT le contrôle de session.
+  // Sans cette exemption, un robot non authentifié demandant
+  // pro.hoomy.ma/robots.txt est redirigé vers /connexion et reçoit du HTML.
+  // Un robots.txt illisible est interprété par Google comme « tout est
+  // autorisé » — soit précisément l'inverse du Disallow: / que app/robots.ts
+  // renvoie sur ce sous-domaine.
+  if (pathname === '/robots.txt') {
+    return supabaseResponse;
+  }
+
   // B1bis. Routes API → pass-through (JAMAIS redirigées vers une page).
   // Chaque route API porte SA PROPRE garde (ex. /api/agent/simulateur vérifie
   // le rôle admin et renvoie 401/403 en JSON). Sans ce pass-through, la

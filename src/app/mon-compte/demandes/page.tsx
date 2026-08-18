@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Mes demandes — Mon espace HOOMY.MA",
+  title: "Mes demandes — Mon espace",
 };
 
 type Demande = {

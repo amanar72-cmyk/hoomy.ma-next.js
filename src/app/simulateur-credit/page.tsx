@@ -5,7 +5,7 @@ import CalculateurCredit from "@/components/outils/CalculateurCredit";
 import { SeparateurZellige } from "@/components/ui/MotifZellige";
 
 export const metadata: Metadata = {
-  title: "Simulateur de crédit immobilier | HOOMY.MA",
+  title: "Simulateur de crédit immobilier",
   description:
     "Calculez votre mensualité, le coût total du crédit et votre taux d'endettement. Simulateur de prêt immobilier adapté au marché marocain.",
 };

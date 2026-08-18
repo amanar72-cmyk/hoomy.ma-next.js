@@ -409,6 +409,36 @@ export default function InfosBien({ bien }: { bien: BienPublic }) {
         </section>
       )}
 
+      {/* ── Description ───────────────────────────────────────────────────
+          Le texte rédigé pour le bien est le SEUL contenu qui distingue une
+          fiche d'une autre : sans lui, une annonce se résume à un titre et à
+          quelques chiffres, ce qui ne suffit ni au visiteur ni aux moteurs.
+          Il était stocké en base et n'était affiché nulle part.
+
+          whiteSpace: pre-line préserve les retours à la ligne saisis par
+          l'agent sans exiger de balisage.
+
+          Rien n'est rendu si le champ est vide : pas de bloc creux, pas de
+          texte de remplacement. */}
+      {(bien.description ?? "").trim() && (
+        <section className="mb-9">
+          <h2 className="text-xl font-normal mb-4"
+            style={{ fontFamily: "var(--font-marcellus), serif", color: "var(--primaire)" }}>
+            Description
+          </h2>
+          <p
+            className="text-[15px] leading-relaxed"
+            style={{
+              fontFamily: "var(--font-outfit), sans-serif",
+              color: "var(--texte-corps)",
+              whiteSpace: "pre-line",
+            }}
+          >
+            {bien.description!.trim()}
+          </p>
+        </section>
+      )}
+
       {/* ── Composition par niveau ────────────────────────────────────── */}
       {composition.length > 0 && <SectionComposition composition={composition} />}
 

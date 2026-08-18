@@ -1,10 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import { notFound, permanentRedirect } from "next/navigation";
-import { formaterPrix } from "@/lib/format";
 import { obtenirPositionApprox } from "@/lib/geo/positionApprox";
 import type { Metadata } from "next";
 import type { BienPublic } from "@/lib/types";
 import { COLONNES_BIEN_PUBLIC } from "@/lib/types";
+import { descriptionMeta, jsonLdBien, jsonLdFilAriane } from "@/lib/seo/bien";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import GaleriePhotos from "@/components/detail/GaleriePhotos";
@@ -40,10 +40,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   // Même logique que la page (slug puis UUID) — l'URL canonique reste toujours le slug
   const data = await fetchBien(slug);
-  if (!data) return { title: "Bien non trouvé | HOOMY.MA" };
+  if (!data) return { title: "Bien non trouvé" };
   const slugCanonique = data.slug ?? slug;
-  const titre = `${data.titre} — À vendre à ${data.ville} | HOOMY.MA`;
-  const description = `${data.titre} à vendre à ${data.ville}. Prix : ${formaterPrix(Number(data.prix), "vente")}.`;
+  // Pas de « | HOOMY.MA » ici : le suffixe est ajouté par title.template du
+  // layout racine. L'écrire aussi donnerait « … | HOOMY.MA | HOOMY.MA ».
+  const titre = `${data.titre} — À vendre à ${data.ville}`;
+  // Texte réel du bien si disponible, formule générique sinon (lib/seo/bien.ts).
+  const description = descriptionMeta(data as unknown as BienPublic);
   const ogImage = `/api/og?slug=${slugCanonique}&v=2`; // v=2 : force WhatsApp à recharger le nouveau design
   const pageUrl = `/acheter/${slugCanonique}`;
   return {
@@ -98,31 +101,22 @@ export default async function PageDetailAchat({ params }: Props) {
       )}
       <Navbar />
 
-      {/* ── Fil d'Ariane — invisible, réservé aux moteurs ──────────────────
-          Le fil visible occupait le haut de page et repoussait la photo vers
-          le bas. Il est retiré de l'affichage (la photo démarre juste sous la
-          navbar, un bouton retour est posé dessus), mais PAS supprimé : sans
-          ces données structurées, Google perdrait le chemin
-          Accueil › Acheter › Ville affiché sous le résultat de recherche. */}
+      {/* ── Données structurées ───────────────────────────────────────────
+          Fil d'Ariane : le fil VISIBLE a été retiré (la photo démarre sous la
+          navbar), mais le chemin reste déclaré aux moteurs — sans lui, Google
+          perd la ligne Accueil › Acheter › Ville sous le résultat de recherche.
+
+          RealEstateListing : sans cette déclaration, rien n'indique aux
+          moteurs que la page décrit un bien à vendre avec un prix. C'est ce
+          qui ouvre l'accès aux résultats enrichis (prix, photo, disponibilité).
+          Tous les champs proviennent de la base ; les absents sont omis. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Accueil", item: "https://hoomy.ma/" },
-              { "@type": "ListItem", position: 2, name: "Acheter", item: "https://hoomy.ma/acheter" },
-              {
-                "@type": "ListItem",
-                position: 3,
-                name: bien.ville,
-                item: `https://hoomy.ma/acheter?ville=${encodeURIComponent(bien.ville)}`,
-              },
-              { "@type": "ListItem", position: 4, name: bien.titre },
-            ],
-          }),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFilAriane(bien)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBien(bien)) }}
       />
 
       {/* ── Galerie pleine largeur (plein bord sur mobile, insérée sur desktop) ── */}

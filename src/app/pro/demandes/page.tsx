@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import ActionsDemandeVisite from "@/components/pro/ActionsDemandeVisite";
 
 export const metadata: Metadata = {
-  title: "Mes demandes — Espace Pro HOOMY.MA",
+  title: "Mes demandes — Espace Pro",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────

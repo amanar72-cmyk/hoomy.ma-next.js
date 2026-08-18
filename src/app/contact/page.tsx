@@ -3,7 +3,7 @@ import Footer from "@/components/home/Footer";
 import { CONTACT, LIEN_WHATSAPP } from "@/lib/contact";
 
 export const metadata = {
-  title: "Contact | HOOMY.MA",
+  title: "Contact",
   description: "Contactez l'équipe HOOMY par téléphone, WhatsApp ou email. Nous sommes disponibles pour vous accompagner dans votre projet immobilier.",
 };
 

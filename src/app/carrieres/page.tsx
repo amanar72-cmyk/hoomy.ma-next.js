@@ -1,6 +1,6 @@
 import PageEnConstruction from "@/components/ui/PageEnConstruction";
 
-export const metadata = { title: "Carrières | HOOMY.MA" };
+export const metadata = { title: "Carrières" };
 
 export default function PageCarrieres() {
   return (

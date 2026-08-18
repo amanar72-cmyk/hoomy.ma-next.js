@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Mes recherches — Mon espace HOOMY.MA",
+  title: "Mes recherches — Mon espace",
 };
 
 export default async function PageMesRecherches() {

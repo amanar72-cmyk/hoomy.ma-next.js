@@ -6,7 +6,7 @@ import BoutonAction from "@/components/admin/BoutonAction";
 import { demanderClotureDemande } from "./actions";
 import { LIBELLES_STATUT_DEMANDE, LIBELLE_TRANSACTION, formaterFourchetteBudget, type DemandeRecherche } from "@/lib/demandes/types";
 
-export const metadata: Metadata = { title: "Ma recherche publiée — Mon espace HOOMY.MA" };
+export const metadata: Metadata = { title: "Ma recherche publiée — Mon espace" };
 
 const COULEURS_STATUT: Record<string, { bg: string; color: string }> = {
   brouillon:     { bg: "#F3F4F6", color: "#374151" },

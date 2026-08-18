@@ -4,7 +4,11 @@ import type { Metadata } from "next";
 import SidebarClient from "@/components/compte/SidebarClient";
 
 export const metadata: Metadata = {
-  title: "Mon espace — HOOMY.MA",
+  title: "Mon espace",
+  // Espace personnel : aucune valeur d'indexation, et ces pages ne doivent
+  // jamais apparaître dans les résultats de recherche. Hérité par toutes les
+  // sous-pages qui ne redéfinissent pas `robots`.
+  robots: { index: false, follow: false },
 };
 
 export default async function MonCompteLayout({ children }: { children: React.ReactNode }) {

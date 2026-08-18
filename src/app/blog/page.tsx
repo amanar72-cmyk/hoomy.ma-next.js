@@ -1,6 +1,6 @@
 import PageEnConstruction from "@/components/ui/PageEnConstruction";
 
-export const metadata = { title: "Blog | HOOMY.MA" };
+export const metadata = { title: "Blog" };
 
 export default function PageBlog() {
   return (

@@ -5,7 +5,7 @@ import Footer from "@/components/home/Footer";
 import { FondZellige } from "@/components/ui/MotifZellige";
 
 export const metadata: Metadata = {
-  title: "Estimation immobilière — bientôt disponible | HOOMY.MA",
+  title: "Estimation immobilière — bientôt disponible",
   description:
     "L'estimation en ligne HOOMY arrive très bientôt. En attendant, déposez votre bien ou demandez à être rappelé par un conseiller.",
 };

@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import FormulaireDemandeRecherche from "@/components/demandes/FormulaireDemandeRecherche";
 import type { DemandeRecherche } from "@/lib/demandes/types";
 
-export const metadata: Metadata = { title: "Modifier ma demande — Mon espace HOOMY.MA" };
+export const metadata: Metadata = { title: "Modifier ma demande — Mon espace" };
 
 type Props = { params: Promise<{ id: string }> };
 

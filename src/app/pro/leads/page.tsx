@@ -12,7 +12,7 @@ import { formatPhoneMaroc } from "@/lib/utils/telephone";
 import { urlPubliqueBien } from "@/lib/biens/lienPublic";
 
 export const metadata: Metadata = {
-  title: "Leads — Espace Pro HOOMY.MA",
+  title: "Leads — Espace Pro",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────

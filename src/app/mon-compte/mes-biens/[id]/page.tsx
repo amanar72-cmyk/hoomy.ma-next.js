@@ -17,7 +17,7 @@ import { formatPhoneMaroc } from "@/lib/utils/telephone";
 // (le propriétaire ne voit que SES biens et SES documents cin/certificat).
 
 export const metadata: Metadata = {
-  title: "Mon bien — HOOMY.MA",
+  title: "Mon bien",
 };
 
 type Props = { params: Promise<{ id: string }> };

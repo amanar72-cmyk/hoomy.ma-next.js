@@ -1,6 +1,6 @@
 import PageEnConstruction from "@/components/ui/PageEnConstruction";
 
-export const metadata = { title: "Mentions légales | HOOMY.MA" };
+export const metadata = { title: "Mentions légales" };
 
 export default function PageMentionsLegales() {
   return (

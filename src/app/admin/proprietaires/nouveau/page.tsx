@@ -3,7 +3,7 @@ import Link from "next/link";
 import FormulaireProprietaire from "@/components/proprietaires/FormulaireProprietaire";
 
 export const metadata: Metadata = {
-  title: "Nouveau propriétaire | HOOMY Admin",
+  title: "Nouveau propriétaire — Administration",
 };
 
 export default function PageNouveauProprietaireAdmin() {

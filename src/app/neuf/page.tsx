@@ -1,6 +1,6 @@
 import PageEnConstruction from "@/components/ui/PageEnConstruction";
 
-export const metadata = { title: "Programmes Neufs | HOOMY.MA" };
+export const metadata = { title: "Programmes Neufs" };
 
 export default function PageNeuf() {
   return (

@@ -9,7 +9,7 @@ import ErreurChargement from "@/components/ui/ErreurChargement";
 import { urlPubliqueBien } from "@/lib/biens/lienPublic";
 
 export const metadata: Metadata = {
-  title: "Leads qualifiés — Administration HOOMY.MA",
+  title: "Leads qualifiés — Administration",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────

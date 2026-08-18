@@ -8,7 +8,7 @@ import SimulateurAgent from "@/components/admin/SimulateurAgent";
 // tester la mémoire dans les mêmes conditions que WhatsApp.
 
 export const metadata: Metadata = {
-  title: "Agent IA — Simulateur | HOOMY PRO",
+  title: "Agent IA — Simulateur — Espace Pro",
 };
 
 export default function PageAgentSimulateur() {

@@ -13,7 +13,7 @@ import { peutEtreVisualise, urlPubliqueBien } from "@/lib/biens/lienPublic";
 import BoutonVisualiserBien from "@/components/partage/BoutonVisualiserBien";
 
 export const metadata: Metadata = {
-  title: "Mes biens — Espace Pro HOOMY.MA",
+  title: "Mes biens — Espace Pro",
 };
 
 const PAR_PAGE = 10;

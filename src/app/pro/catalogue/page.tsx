@@ -8,7 +8,7 @@ import { formaterPrix } from "@/lib/format";
 import { urlPubliqueBien } from "@/lib/biens/lienPublic";
 
 export const metadata: Metadata = {
-  title: "Catalogue des biens — Espace Pro HOOMY.MA",
+  title: "Catalogue des biens — Espace Pro",
 };
 
 const TYPES = ["Appartement", "Maison", "Villa", "Riad", "Bureau", "Local commercial", "Terrain"];

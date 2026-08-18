@@ -3,7 +3,7 @@ import Navbar from "@/components/home/Navbar";
 import PageComparateurClient from "./PageComparateurClient";
 
 export const metadata = {
-  title: "Comparateur de biens | HOOMY.MA",
+  title: "Comparateur de biens",
   description: "Comparez jusqu'à 4 biens immobiliers côte à côte avec analyse IA.",
 };
 

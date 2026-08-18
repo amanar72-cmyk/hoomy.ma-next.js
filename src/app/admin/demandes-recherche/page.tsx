@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import TableauAdmin from "@/components/admin/TableauAdmin";
 import { LIBELLES_STATUT_DEMANDE, LIBELLE_TRANSACTION, type DemandeRecherche } from "@/lib/demandes/types";
 
-export const metadata: Metadata = { title: "Demandes de recherche — Administration HOOMY.MA" };
+export const metadata: Metadata = { title: "Demandes de recherche — Administration" };
 
 const COULEURS_STATUT: Record<string, { bg: string; color: string }> = {
   brouillon:     { bg: "#F3F4F6", color: "#374151" },

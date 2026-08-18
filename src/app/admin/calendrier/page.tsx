@@ -7,7 +7,7 @@ import { changerStatutLeadAdmin } from "@/app/admin/actions";
 import RappelsAPasser from "@/components/leads/RappelsAPasser";
 
 export const metadata: Metadata = {
-  title: "Calendrier global — Administration HOOMY.MA",
+  title: "Calendrier global — Administration",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────

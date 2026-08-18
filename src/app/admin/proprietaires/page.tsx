@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ListeProprietaires from "@/components/proprietaires/ListeProprietaires";
 
 export const metadata: Metadata = {
-  title: "Propriétaires | HOOMY Admin",
+  title: "Propriétaires — Administration",
 };
 
 type SearchParams = Promise<{ q?: string }>;

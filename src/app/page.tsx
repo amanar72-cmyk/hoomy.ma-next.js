@@ -14,6 +14,16 @@ import { Reveal } from "@/components/ui/Reveal";
 import { LISTE_VILLES_ACTIVES, FILTRE_VILLES_ACTIVES_OR } from "@/lib/villes";
 import { COLONNES_BIEN_PUBLIC, type BienPublic } from "@/lib/types";
 
+import type { Metadata } from "next";
+
+// L'accueil hérite du titre, de la description et des cartes sociales du
+// layout racine (title.default). Seul le canonical lui manquait : sans lui,
+// une arrivée sur /?utm_source=… ou /?ville=… peut être indexée comme une URL
+// distincte de la racine.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
 export const dynamic = "force-dynamic";
 
 // Diffusion publique : uniquement les villes actives (src/lib/villes.ts)

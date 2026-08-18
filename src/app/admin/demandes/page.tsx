@@ -5,7 +5,7 @@ import ActionsLead from "@/components/pro/ActionsLead";
 import { changerStatutLeadAdmin } from "@/app/admin/actions";
 
 export const metadata: Metadata = {
-  title: "Demandes clients — Administration HOOMY.MA",
+  title: "Demandes clients — Administration",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────

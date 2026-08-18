@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import FormulaireCreationBienAgent from "@/components/pro/FormulaireCreationBienAgent";
 
 export const metadata: Metadata = {
-  title: "Créer un bien — Espace Pro HOOMY.MA",
+  title: "Créer un bien — Espace Pro",
 };
 
 type SearchParams = Promise<{ vendeur?: string }>;

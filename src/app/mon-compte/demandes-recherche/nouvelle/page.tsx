@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import FormulaireDemandeRecherche from "@/components/demandes/FormulaireDemandeRecherche";
 
-export const metadata: Metadata = { title: "Nouvelle demande de recherche — Mon espace HOOMY.MA" };
+export const metadata: Metadata = { title: "Nouvelle demande de recherche — Mon espace" };
 
 export default async function PageNouvelleDemandeRecherche() {
   const supabase = await createClient();

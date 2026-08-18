@@ -26,11 +26,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: p.priorite,
   }));
 
-  // Fiches biens publiées (vérifiées) — URLs canoniques par slug
+  // Fiches biens réellement en ligne — URLs canoniques par slug.
+  //
+  // CRITÈRE : statut = 'finalise', et RIEN D'AUTRE.
+  //
+  // Le filtre portait auparavant sur `verifie`, qui est une colonne
+  // INDÉPENDANTE : c'est le badge « Vérifié HOOMY », pas un critère de
+  // publication. Un bien non vérifié est bel et bien affiché au public — le
+  // composant Badges lui pose la pastille « Bientôt disponible » (voir
+  // components/detail/GaleriePhotos.tsx). Filtrer dessus excluait donc du
+  // sitemap des pages parfaitement vivantes, et laissait entrer un bien
+  // vérifié mais non finalisé, dont la page publique répond « Bien non
+  // trouvé » (la RLS anonyme ne sert que les biens finalisés).
+  //
+  // Aujourd'hui les deux colonnes coïncident (11 biens sur 11) : ce
+  // changement ne modifie donc pas le sitemap servi, il supprime la
+  // divergence future.
   const { data: biens } = await supabase
     .from("biens")
     .select("slug, transaction, cree_le")
-    .eq("verifie", true)
+    .eq("statut", "finalise")
     .not("slug", "is", null);
 
   const fiches: MetadataRoute.Sitemap = (biens ?? []).map((b) => ({

@@ -22,7 +22,7 @@ async function chargerDemande(reference: string): Promise<DemandePublique | null
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { reference } = await params;
   const demande = await chargerDemande(reference);
-  if (!demande) return { title: "Demande introuvable | HOOMY.MA" };
+  if (!demande) return { title: "Demande introuvable" };
   return {
     title: `${demande.type_bien ?? "Bien"} recherché à ${demande.ville} — ${demande.reference} | HOOMY.MA`,
     description: `Un client recherche ${demande.type_bien ?? "un bien"} à ${demande.ville}${demande.quartiers?.length ? ` (${demande.quartiers.join(", ")})` : ""}. Proposez votre bien.`,

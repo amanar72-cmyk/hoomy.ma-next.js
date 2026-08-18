@@ -10,11 +10,12 @@ import { obtenirPointsCarteDepuisIds } from "@/lib/geo/positionApprox";
 import type { BienPublic, FiltresActifs } from "@/lib/types";
 import { TRI_MAP, COLONNES_BIEN_PUBLIC } from "@/lib/types";
 import { FILTRE_VILLES_ACTIVES_OR, LIBELLE_VILLES_ACTIVES } from "@/lib/villes";
+import { jsonLdFilArianeListe } from "@/lib/seo/bien";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Louer un bien immobilier au Maroc — Appartements, villas, bureaux | HOOMY.MA",
+  title: "Louer un bien immobilier au Maroc — Appartements, villas, bureaux",
   description: `Trouvez votre location au Maroc : appartements, villas, riads et bureaux vérifiés à ${LIBELLE_VILLES_ACTIVES}.`,
   alternates: { canonical: "/louer" },
 };
@@ -87,6 +88,13 @@ export default async function PageLouer({ searchParams }: Props) {
   return (
     <main style={{ background: "var(--fond-principal)", minHeight: "100vh" }}>
       <Navbar />
+
+      {/* Fil d'Ariane déclaré aux moteurs : Google affiche ce chemin sous le
+          résultat de recherche à la place de l'URL brute. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFilArianeListe("location")) }}
+      />
 
       <FiltresBar
         key={JSON.stringify(filtresActifs)}
