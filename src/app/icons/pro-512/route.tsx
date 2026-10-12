@@ -1,7 +1,5 @@
 import { ImageResponse } from "next/og";
 
-export const contentType = "image/png";
-
 export function GET() {
   return new ImageResponse(
     (

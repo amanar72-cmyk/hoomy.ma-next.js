@@ -1,7 +1,5 @@
 import { ImageResponse } from "next/og";
 
-export const contentType = "image/png";
-
 // PNG 600×200 — utilisé comme logo dans les données structurées Schema.org
 export function GET() {
   return new ImageResponse(
