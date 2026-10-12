@@ -2,11 +2,11 @@
 // Pour modifier le numéro ou l'email, changer uniquement ici.
 
 export const CONTACT = {
-  telephone:          "+212708789680",
-  telephoneAffichage: "+212 708-789680",
-  telephoneLien:      "tel:+212708789680",
+  telephone:          "+212661306194",
+  telephoneAffichage: "+212 661 30 61 94",
+  telephoneLien:      "tel:+212661306194",
 
-  whatsappNumero:     "212708789680",
+  whatsappNumero:     "212661306194",
   email:              "contact@hoomy.ma",
   emailLien:          "mailto:contact@hoomy.ma",
 } as const;
