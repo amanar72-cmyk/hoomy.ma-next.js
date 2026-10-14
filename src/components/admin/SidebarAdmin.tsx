@@ -109,6 +109,7 @@ const Ico = {
 
 const NAV_ADMIN = [
   { href: "/admin",               ico: "dashboard",    label: "Tableau de bord", exact: true },
+  { href: "/admin/audience",      ico: "dashboard",    label: "Audience du site" },
   { href: "/admin/biens",         ico: "biens",        label: "Biens" },
   { href: "/admin/proprietaires", ico: "proprietaires", label: "Propriétaires" },
   { href: "/admin/verifications", ico: "verif",        label: "Vérifications" },

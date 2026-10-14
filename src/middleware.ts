@@ -60,7 +60,13 @@ export async function middleware(request: NextRequest) {
   // signature X-Twilio-Signature (whatsapp) / X-Hub-Signature-256 (meta).
   // Volontairement limité à ces préfixes : admin, pro et mon-compte restent
   // protégés comme avant.
-  if (pathname.startsWith('/api/whatsapp') || pathname.startsWith('/api/meta')) {
+  // /api/mesure (mesure d'audience sans cookie) : appelée à chaque page vue,
+  // n'a besoin d'aucune session → on évite l'appel auth.getUser() à chaque fois.
+  if (
+    pathname.startsWith('/api/whatsapp') ||
+    pathname.startsWith('/api/meta') ||
+    pathname === '/api/mesure'
+  ) {
     return NextResponse.next();
   }
 

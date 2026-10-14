@@ -4,6 +4,7 @@ import { Marcellus, Outfit } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
 import Analytique from "@/components/analytique/Analytique";
+import MesureAudience from "@/components/analytique/MesureAudience";
 import { COOKIE_CONSENTEMENT, estConsentementValide } from "@/lib/consentement";
 import { estSitePublic } from "@/lib/hote";
 import BulleChatConditionnelle from "@/components/chat/BulleChatConditionnelle";
@@ -132,6 +133,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             estSitePublic={sitePublic}
             consentementInitial={consentement}
           />
+          {/* Mesure d'audience interne sans cookie : indépendante du bandeau. */}
+          {sitePublic && <MesureAudience />}
           <BarreComparateur />
           <Toaster />
         </ComparateurProvider>
