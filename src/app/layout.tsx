@@ -2,7 +2,6 @@ import { LIBELLE_VILLES_ACTIVES } from "@/lib/villes";
 import type { Metadata } from "next";
 import { Marcellus, Outfit } from "next/font/google";
 import { cookies } from "next/headers";
-import Script from "next/script";
 import "./globals.css";
 import Analytique from "@/components/analytique/Analytique";
 import { COOKIE_CONSENTEMENT, estConsentementValide } from "@/lib/consentement";
@@ -48,14 +47,9 @@ export const metadata: Metadata = {
   },
 };
 
-// Script inline exécuté AVANT le premier rendu pour éviter le flash de mauvais thème.
-// Lit le cookie hoomy_theme ; si absent, respecte prefers-color-scheme.
-const SCRIPT_ANTI_FLASH = `(function(){try{var c=document.cookie.match(/(?:^|; )hoomy_theme=([^;]*)/);var t=c?c[1]:null;if(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)t='dark';if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})()`;
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Lecture des cookies côté serveur — évite le flash de thème et le double splash
+  // Lecture des cookies côté serveur — évite le double splash
   const cookieStore = await cookies();
-  const theme = cookieStore.get("hoomy_theme")?.value === "dark" ? "dark" : "light";
   const splashDeja = !!cookieStore.get("splash_vu")?.value;
 
   // Mesure d'audience : uniquement sur le site public, uniquement après accord.
@@ -64,18 +58,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const sitePublic = await estSitePublic();
 
   return (
-    // suppressHydrationWarning : évite l'erreur React si le script inline
-    // modifie data-theme avant hydratation (première visite dark mode système)
-    <html lang="fr" data-theme={theme} suppressHydrationWarning>
+    // Mode sombre supprimé (octobre 2026) : le site est toujours en thème clair,
+    // quel que soit le réglage du téléphone ou un ancien cookie hoomy_theme.
+    <html lang="fr" data-theme="light">
       <head>
-        {/* Anti-flash : exécuté avant le paint via next/script (beforeInteractive)
-            — évite le <script> rendu comme composant React (warning d'hydratation)
-            tout en garantissant la pose de data-theme avant le premier rendu. */}
-        <Script
-          id="anti-flash-theme"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: SCRIPT_ANTI_FLASH }}
-        />
         {/* Données structurées Schema.org — Organization + RealEstateAgent + WebSite */}
         <script
           type="application/ld+json"

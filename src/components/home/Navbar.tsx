@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import MenuUtilisateur from "./MenuUtilisateur";
-import ToggleTheme from "@/components/ui/ToggleTheme";
 import NavbarShell from "./NavbarShell";
 import MenuMobileHamburger from "./MenuMobileHamburger";
 import LogoHoomy from "./LogoHoomy";
@@ -102,9 +101,6 @@ export default async function Navbar() {
 
         {/* ── Actions droite ──────────────────────────────────────────────── */}
         <div className="flex items-center gap-2">
-          {/* Thème jour/nuit */}
-          <ToggleTheme />
-
           {user ? (
             <>
               {/* Bouton publier un bien — visible connecté */}
