@@ -88,6 +88,13 @@ export default function ScriptsTracking({ gaId, metaPixelId }: Props) {
             fbq('set', 'autoConfig', false, '${metaPixelId}');
             fbq('init', '${metaPixelId}');
             fbq('track', 'PageView');
+            // Événements émis avant le chargement du pixel (ViewContent d'une
+            // fiche, Lead) : file remplie par trackMeta (src/lib/meta/pixel.ts).
+            var fileMeta = window.__fileMeta || [];
+            window.__fileMeta = [];
+            for (var i = 0; i < fileMeta.length; i++) {
+              fbq('track', fileMeta[i][0], fileMeta[i][1]);
+            }
           `}
         </Script>
       )}
