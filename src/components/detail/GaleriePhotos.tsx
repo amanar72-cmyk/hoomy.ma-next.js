@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 // ── Geste de balayage tactile (swipe) ──────────────────────────────────────────
 // Seuil de 40px : assez court pour être réactif, assez long pour ne pas
@@ -41,6 +42,36 @@ type Props = {
 
 // ── Lightbox plein écran ──────────────────────────────────────────────────────
 
+// Fond plein et opaque : sur iPhone, l'ancien fond semi-transparent laissait
+// deviner la page derrière la visionneuse.
+const FOND_LIGHTBOX = "#080C0A";
+
+/**
+ * Hauteur maximale de la photo = écran − bandeau du haut − bande de vignettes.
+ * 100dvh (et non 100vh) suit la barre d'adresse de Safari qui apparaît et
+ * disparaît, sinon le bas de la photo passerait sous la barre.
+ * Mobile : bandeau 61px + vignettes 63px ≈ 124px (+ marge).
+ * Desktop : bandeau 69px + vignettes 69px + respiration 32px ≈ 170px.
+ */
+const CLASSES_PHOTO =
+  "block w-auto h-auto object-contain select-none " +
+  "max-w-[100vw] max-h-[calc(100dvh-132px)] " +
+  "md:max-w-[calc(100vw-48px)] md:max-h-[calc(100dvh-172px)] md:rounded-xl";
+
+// Flèches POSÉES SUR la photo (et non plus isolées dans les marges de côté) :
+// cercle sombre translucide + flou, lisible sur une photo claire comme foncée.
+const CLASSES_FLECHE =
+  "absolute top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 rounded-full " +
+  "flex items-center justify-center cursor-pointer transition-transform active:scale-95 md:hover:scale-105";
+const STYLE_FLECHE: React.CSSProperties = {
+  background: "rgba(8,12,10,0.45)",
+  color: "#fff",
+  border: "1px solid rgba(255,255,255,0.22)",
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+  boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+};
+
 function Lightbox({
   photos,
   indexInitial,
@@ -53,6 +84,7 @@ function Lightbox({
   onClose: () => void;
 }) {
   const [index, setIndex] = useState(indexInitial);
+  const vignettesRef = useRef<HTMLDivElement>(null);
 
   const precedent = useCallback(
     () => setIndex((i) => (i - 1 + photos.length) % photos.length),
@@ -78,32 +110,34 @@ function Lightbox({
     };
   }, [onClose, precedent, suivant]);
 
+  // La vignette active reste visible quand on navigue avec les flèches.
+  useEffect(() => {
+    const actif = vignettesRef.current?.querySelector<HTMLElement>('[aria-current="true"]');
+    actif?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [index]);
+
   const swipe = useSwipe(precedent, suivant);
 
-  return (
+  const contenu = (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={`Galerie — ${titre}`}
       // z-[10100] : la visionneuse plein écran doit passer AU-DESSUS de tous
-      // les éléments flottants, sinon ils recouvrent la photo sur mobile —
-      // la barre de prix (10000), le bouton de chat (9999) et la fenêtre de
-      // chat (9998). Elle était à 200, donc sous les trois.
+      // les éléments flottants (barre de prix 10000, bouton de chat 9999,
+      // fenêtre de chat 9998).
       className="fixed inset-0 z-[10100] flex flex-col"
-      style={{ background: "rgba(8,12,10,0.97)" }}
-      // Fond de la lightbox toujours quasi-noir (jamais réactif au thème) :
-      // les icônes/textes ci-dessous restent blancs en dur — var(--fond-secondaire)
-      // deviendrait vert nuit foncé en mode sombre, invisible sur ce fond.
+      style={{ background: FOND_LIGHTBOX }}
     >
       <div
-        className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+        className="flex items-center justify-between px-4 py-3 md:px-5 md:py-4 flex-shrink-0"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
       >
-        <p className="text-sm truncate max-w-xs" style={{ color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-marcellus),serif" }}>
+        <p className="text-sm truncate min-w-0 mr-4" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "var(--font-marcellus),serif" }}>
           {titre}
         </p>
-        <div className="flex items-center gap-5">
-          <span className="text-sm tabular-nums" style={{ color: "rgba(255,255,255,0.5)" }}>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <span className="text-sm tabular-nums" style={{ color: "rgba(255,255,255,0.7)" }}>
             {index + 1}&thinsp;/&thinsp;{photos.length}
           </span>
           <button
@@ -111,7 +145,7 @@ function Lightbox({
             onClick={onClose}
             aria-label="Fermer la galerie"
             className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-colors"
-            style={{ background: "rgba(255,255,255,0.1)", color: "#fff" }}
+            style={{ background: "rgba(255,255,255,0.14)", color: "#fff" }}
           >
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -120,49 +154,55 @@ function Lightbox({
         </div>
       </div>
 
-      <div
-        className="flex-1 flex items-center justify-center relative min-h-0 px-16 py-4"
-        {...swipe}
-      >
-        <img
-          key={index}
-          src={photos[index]}
-          alt={`${titre} — photo ${index + 1}`}
-          className="max-h-full max-w-full object-contain rounded-xl motion-safe:transition-opacity motion-safe:duration-200"
-          draggable={false}
-        />
-        {photos.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={precedent}
-              aria-label="Photo précédente"
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105"
-              style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
-            >
-              <svg width="19" height="19" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={suivant}
-              aria-label="Photo suivante"
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105"
-              style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
-            >
-              <svg width="19" height="19" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-          </>
-        )}
+      {/*
+        Zone photo SANS marge latérale sur mobile : l'ancienne marge de 64px de
+        chaque côté (réservée aux flèches) rétrécissait une photo paysage à
+        ~270px de large sur iPhone. Elle prend désormais toute la largeur, et
+        les flèches sont posées dessus.
+      */}
+      <div className="flex-1 flex items-center justify-center min-h-0 md:px-6 md:py-4" {...swipe}>
+        <div className="relative">
+          <img
+            key={index}
+            src={photos[index]}
+            alt={`${titre} — photo ${index + 1}`}
+            className={CLASSES_PHOTO}
+            draggable={false}
+          />
+          {photos.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={precedent}
+                aria-label="Photo précédente"
+                className={`${CLASSES_FLECHE} left-2.5 md:left-4`}
+                style={STYLE_FLECHE}
+              >
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={suivant}
+                aria-label="Photo suivante"
+                className={`${CLASSES_FLECHE} right-2.5 md:right-4`}
+                style={STYLE_FLECHE}
+              >
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {photos.length > 1 && (
         <div
-          className="flex-shrink-0 py-3 px-4 flex gap-2 overflow-x-auto justify-center"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
+          ref={vignettesRef}
+          className="galerie-scroll flex-shrink-0 py-3 px-4 flex gap-2 overflow-x-auto md:justify-center"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.08)", scrollbarWidth: "none" }}
         >
           {photos.map((url, i) => (
             <button
@@ -171,11 +211,9 @@ function Lightbox({
               onClick={() => setIndex(i)}
               aria-label={`Photo ${i + 1}`}
               aria-current={i === index ? "true" : undefined}
-              className="flex-shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all"
+              className="flex-shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all w-[52px] h-[38px] md:w-[60px] md:h-[44px]"
               style={{
-                width: 60,
-                height: 44,
-                opacity: i === index ? 1 : 0.38,
+                opacity: i === index ? 1 : 0.4,
                 outline: i === index ? "2px solid #D4AF37" : "2px solid transparent",
                 outlineOffset: 2,
               }}
@@ -187,6 +225,10 @@ function Lightbox({
       )}
     </div>
   );
+
+  // Rendue directement dans <body> : aucun parent (animation, transform,
+  // overflow) ne peut ainsi la rogner ni la faire passer sous la page.
+  return createPortal(contenu, document.body);
 }
 
 // ── Bouton retour posé sur la photo ──────────────────────────────────────────
